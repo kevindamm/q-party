@@ -21,21 +21,6 @@ type ChallengeGroupCreate struct {
 	hooks    []Hook
 }
 
-// AddCategoryIDs adds the "category" edge to the Category entity by IDs.
-func (cgc *ChallengeGroupCreate) AddCategoryIDs(ids ...int) *ChallengeGroupCreate {
-	cgc.mutation.AddCategoryIDs(ids...)
-	return cgc
-}
-
-// AddCategory adds the "category" edges to the Category entity.
-func (cgc *ChallengeGroupCreate) AddCategory(c ...*Category) *ChallengeGroupCreate {
-	ids := make([]int, len(c))
-	for i := range c {
-		ids[i] = c[i].ID
-	}
-	return cgc.AddCategoryIDs(ids...)
-}
-
 // AddChallengeIDs adds the "challenges" edge to the Challenge entity by IDs.
 func (cgc *ChallengeGroupCreate) AddChallengeIDs(ids ...int) *ChallengeGroupCreate {
 	cgc.mutation.AddChallengeIDs(ids...)
@@ -49,6 +34,21 @@ func (cgc *ChallengeGroupCreate) AddChallenges(c ...*Challenge) *ChallengeGroupC
 		ids[i] = c[i].ID
 	}
 	return cgc.AddChallengeIDs(ids...)
+}
+
+// AddCategoryIDs adds the "category" edge to the Category entity by IDs.
+func (cgc *ChallengeGroupCreate) AddCategoryIDs(ids ...int) *ChallengeGroupCreate {
+	cgc.mutation.AddCategoryIDs(ids...)
+	return cgc
+}
+
+// AddCategory adds the "category" edges to the Category entity.
+func (cgc *ChallengeGroupCreate) AddCategory(c ...*Category) *ChallengeGroupCreate {
+	ids := make([]int, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
+	}
+	return cgc.AddCategoryIDs(ids...)
 }
 
 // AddEpisodeRoundIDs adds the "episode_round" edge to the EpisodeRound entity by IDs.
@@ -126,22 +126,6 @@ func (cgc *ChallengeGroupCreate) createSpec() (*ChallengeGroup, *sqlgraph.Create
 		_node = &ChallengeGroup{config: cgc.config}
 		_spec = sqlgraph.NewCreateSpec(challengegroup.Table, sqlgraph.NewFieldSpec(challengegroup.FieldID, field.TypeInt))
 	)
-	if nodes := cgc.mutation.CategoryIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
-			Inverse: true,
-			Table:   challengegroup.CategoryTable,
-			Columns: challengegroup.CategoryPrimaryKey,
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(category.FieldID, field.TypeInt),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges = append(_spec.Edges, edge)
-	}
 	if nodes := cgc.mutation.ChallengesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
@@ -151,6 +135,22 @@ func (cgc *ChallengeGroupCreate) createSpec() (*ChallengeGroup, *sqlgraph.Create
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(challenge.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := cgc.mutation.CategoryIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   challengegroup.CategoryTable,
+			Columns: challengegroup.CategoryPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(category.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

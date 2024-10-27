@@ -24,10 +24,10 @@ type ChallengeGroup struct {
 
 // ChallengeGroupEdges holds the relations/edges for other nodes in the graph.
 type ChallengeGroupEdges struct {
-	// Category holds the value of the category edge.
-	Category []*Category `json:"category,omitempty"`
 	// Challenges holds the value of the challenges edge.
 	Challenges []*Challenge `json:"challenges,omitempty"`
+	// Category holds the value of the category edge.
+	Category []*Category `json:"category,omitempty"`
 	// EpisodeRound holds the value of the episode_round edge.
 	EpisodeRound []*EpisodeRound `json:"episode_round,omitempty"`
 	// loadedTypes holds the information for reporting if a
@@ -35,22 +35,22 @@ type ChallengeGroupEdges struct {
 	loadedTypes [3]bool
 }
 
-// CategoryOrErr returns the Category value or an error if the edge
-// was not loaded in eager-loading.
-func (e ChallengeGroupEdges) CategoryOrErr() ([]*Category, error) {
-	if e.loadedTypes[0] {
-		return e.Category, nil
-	}
-	return nil, &NotLoadedError{edge: "category"}
-}
-
 // ChallengesOrErr returns the Challenges value or an error if the edge
 // was not loaded in eager-loading.
 func (e ChallengeGroupEdges) ChallengesOrErr() ([]*Challenge, error) {
-	if e.loadedTypes[1] {
+	if e.loadedTypes[0] {
 		return e.Challenges, nil
 	}
 	return nil, &NotLoadedError{edge: "challenges"}
+}
+
+// CategoryOrErr returns the Category value or an error if the edge
+// was not loaded in eager-loading.
+func (e ChallengeGroupEdges) CategoryOrErr() ([]*Category, error) {
+	if e.loadedTypes[1] {
+		return e.Category, nil
+	}
+	return nil, &NotLoadedError{edge: "category"}
 }
 
 // EpisodeRoundOrErr returns the EpisodeRound value or an error if the edge
@@ -103,14 +103,14 @@ func (cg *ChallengeGroup) Value(name string) (ent.Value, error) {
 	return cg.selectValues.Get(name)
 }
 
-// QueryCategory queries the "category" edge of the ChallengeGroup entity.
-func (cg *ChallengeGroup) QueryCategory() *CategoryQuery {
-	return NewChallengeGroupClient(cg.config).QueryCategory(cg)
-}
-
 // QueryChallenges queries the "challenges" edge of the ChallengeGroup entity.
 func (cg *ChallengeGroup) QueryChallenges() *ChallengeQuery {
 	return NewChallengeGroupClient(cg.config).QueryChallenges(cg)
+}
+
+// QueryCategory queries the "category" edge of the ChallengeGroup entity.
+func (cg *ChallengeGroup) QueryCategory() *CategoryQuery {
+	return NewChallengeGroupClient(cg.config).QueryCategory(cg)
 }
 
 // QueryEpisodeRound queries the "episode_round" edge of the ChallengeGroup entity.

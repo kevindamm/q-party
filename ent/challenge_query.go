@@ -20,11 +20,11 @@ import (
 // ChallengeQuery is the builder for querying Challenge entities.
 type ChallengeQuery struct {
 	config
-	ctx        *QueryContext
-	order      []challenge.OrderOption
-	inters     []Interceptor
-	predicates []predicate.Challenge
-	withColumn *ChallengeGroupQuery
+	ctx                *QueryContext
+	order              []challenge.OrderOption
+	inters             []Interceptor
+	predicates         []predicate.Challenge
+	withChallengeGroup *ChallengeGroupQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -61,8 +61,8 @@ func (cq *ChallengeQuery) Order(o ...challenge.OrderOption) *ChallengeQuery {
 	return cq
 }
 
-// QueryColumn chains the current query on the "column" edge.
-func (cq *ChallengeQuery) QueryColumn() *ChallengeGroupQuery {
+// QueryChallengeGroup chains the current query on the "challenge_group" edge.
+func (cq *ChallengeQuery) QueryChallengeGroup() *ChallengeGroupQuery {
 	query := (&ChallengeGroupClient{config: cq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := cq.prepareQuery(ctx); err != nil {
@@ -75,7 +75,7 @@ func (cq *ChallengeQuery) QueryColumn() *ChallengeGroupQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(challenge.Table, challenge.FieldID, selector),
 			sqlgraph.To(challengegroup.Table, challengegroup.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, true, challenge.ColumnTable, challenge.ColumnPrimaryKey...),
+			sqlgraph.Edge(sqlgraph.M2M, true, challenge.ChallengeGroupTable, challenge.ChallengeGroupPrimaryKey...),
 		)
 		fromU = sqlgraph.SetNeighbors(cq.driver.Dialect(), step)
 		return fromU, nil
@@ -270,26 +270,26 @@ func (cq *ChallengeQuery) Clone() *ChallengeQuery {
 		return nil
 	}
 	return &ChallengeQuery{
-		config:     cq.config,
-		ctx:        cq.ctx.Clone(),
-		order:      append([]challenge.OrderOption{}, cq.order...),
-		inters:     append([]Interceptor{}, cq.inters...),
-		predicates: append([]predicate.Challenge{}, cq.predicates...),
-		withColumn: cq.withColumn.Clone(),
+		config:             cq.config,
+		ctx:                cq.ctx.Clone(),
+		order:              append([]challenge.OrderOption{}, cq.order...),
+		inters:             append([]Interceptor{}, cq.inters...),
+		predicates:         append([]predicate.Challenge{}, cq.predicates...),
+		withChallengeGroup: cq.withChallengeGroup.Clone(),
 		// clone intermediate query.
 		sql:  cq.sql.Clone(),
 		path: cq.path,
 	}
 }
 
-// WithColumn tells the query-builder to eager-load the nodes that are connected to
-// the "column" edge. The optional arguments are used to configure the query builder of the edge.
-func (cq *ChallengeQuery) WithColumn(opts ...func(*ChallengeGroupQuery)) *ChallengeQuery {
+// WithChallengeGroup tells the query-builder to eager-load the nodes that are connected to
+// the "challenge_group" edge. The optional arguments are used to configure the query builder of the edge.
+func (cq *ChallengeQuery) WithChallengeGroup(opts ...func(*ChallengeGroupQuery)) *ChallengeQuery {
 	query := (&ChallengeGroupClient{config: cq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	cq.withColumn = query
+	cq.withChallengeGroup = query
 	return cq
 }
 
@@ -372,7 +372,7 @@ func (cq *ChallengeQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Ch
 		nodes       = []*Challenge{}
 		_spec       = cq.querySpec()
 		loadedTypes = [1]bool{
-			cq.withColumn != nil,
+			cq.withChallengeGroup != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -393,17 +393,17 @@ func (cq *ChallengeQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Ch
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
-	if query := cq.withColumn; query != nil {
-		if err := cq.loadColumn(ctx, query, nodes,
-			func(n *Challenge) { n.Edges.Column = []*ChallengeGroup{} },
-			func(n *Challenge, e *ChallengeGroup) { n.Edges.Column = append(n.Edges.Column, e) }); err != nil {
+	if query := cq.withChallengeGroup; query != nil {
+		if err := cq.loadChallengeGroup(ctx, query, nodes,
+			func(n *Challenge) { n.Edges.ChallengeGroup = []*ChallengeGroup{} },
+			func(n *Challenge, e *ChallengeGroup) { n.Edges.ChallengeGroup = append(n.Edges.ChallengeGroup, e) }); err != nil {
 			return nil, err
 		}
 	}
 	return nodes, nil
 }
 
-func (cq *ChallengeQuery) loadColumn(ctx context.Context, query *ChallengeGroupQuery, nodes []*Challenge, init func(*Challenge), assign func(*Challenge, *ChallengeGroup)) error {
+func (cq *ChallengeQuery) loadChallengeGroup(ctx context.Context, query *ChallengeGroupQuery, nodes []*Challenge, init func(*Challenge), assign func(*Challenge, *ChallengeGroup)) error {
 	edgeIDs := make([]driver.Value, len(nodes))
 	byID := make(map[int]*Challenge)
 	nids := make(map[int]map[*Challenge]struct{})
@@ -415,11 +415,11 @@ func (cq *ChallengeQuery) loadColumn(ctx context.Context, query *ChallengeGroupQ
 		}
 	}
 	query.Where(func(s *sql.Selector) {
-		joinT := sql.Table(challenge.ColumnTable)
-		s.Join(joinT).On(s.C(challengegroup.FieldID), joinT.C(challenge.ColumnPrimaryKey[0]))
-		s.Where(sql.InValues(joinT.C(challenge.ColumnPrimaryKey[1]), edgeIDs...))
+		joinT := sql.Table(challenge.ChallengeGroupTable)
+		s.Join(joinT).On(s.C(challengegroup.FieldID), joinT.C(challenge.ChallengeGroupPrimaryKey[0]))
+		s.Where(sql.InValues(joinT.C(challenge.ChallengeGroupPrimaryKey[1]), edgeIDs...))
 		columns := s.SelectedColumns()
-		s.Select(joinT.C(challenge.ColumnPrimaryKey[1]))
+		s.Select(joinT.C(challenge.ChallengeGroupPrimaryKey[1]))
 		s.AppendSelect(columns...)
 		s.SetDistinct(false)
 	})
@@ -456,7 +456,7 @@ func (cq *ChallengeQuery) loadColumn(ctx context.Context, query *ChallengeGroupQ
 	for _, n := range neighbors {
 		nodes, ok := nids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected "column" node returned %v`, n.ID)
+			return fmt.Errorf(`unexpected "challenge_group" node returned %v`, n.ID)
 		}
 		for kn := range nodes {
 			assign(kn, n)

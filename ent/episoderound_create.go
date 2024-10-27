@@ -27,19 +27,19 @@ func (erc *EpisodeRoundCreate) SetRound(e episoderound.Round) *EpisodeRoundCreat
 	return erc
 }
 
-// AddColumnIDs adds the "columns" edge to the ChallengeGroup entity by IDs.
-func (erc *EpisodeRoundCreate) AddColumnIDs(ids ...int) *EpisodeRoundCreate {
-	erc.mutation.AddColumnIDs(ids...)
+// AddCategoryIDs adds the "categories" edge to the ChallengeGroup entity by IDs.
+func (erc *EpisodeRoundCreate) AddCategoryIDs(ids ...int) *EpisodeRoundCreate {
+	erc.mutation.AddCategoryIDs(ids...)
 	return erc
 }
 
-// AddColumns adds the "columns" edges to the ChallengeGroup entity.
-func (erc *EpisodeRoundCreate) AddColumns(c ...*ChallengeGroup) *EpisodeRoundCreate {
+// AddCategories adds the "categories" edges to the ChallengeGroup entity.
+func (erc *EpisodeRoundCreate) AddCategories(c ...*ChallengeGroup) *EpisodeRoundCreate {
 	ids := make([]int, len(c))
 	for i := range c {
 		ids[i] = c[i].ID
 	}
-	return erc.AddColumnIDs(ids...)
+	return erc.AddCategoryIDs(ids...)
 }
 
 // AddEpisodeIDs adds the "episode" edge to the Episode entity by IDs.
@@ -129,12 +129,12 @@ func (erc *EpisodeRoundCreate) createSpec() (*EpisodeRound, *sqlgraph.CreateSpec
 		_spec.SetField(episoderound.FieldRound, field.TypeEnum, value)
 		_node.Round = value
 	}
-	if nodes := erc.mutation.ColumnsIDs(); len(nodes) > 0 {
+	if nodes := erc.mutation.CategoriesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: false,
-			Table:   episoderound.ColumnsTable,
-			Columns: episoderound.ColumnsPrimaryKey,
+			Table:   episoderound.CategoriesTable,
+			Columns: episoderound.CategoriesPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(challengegroup.FieldID, field.TypeInt),

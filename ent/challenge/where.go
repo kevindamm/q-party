@@ -308,21 +308,21 @@ func ValueLTE(v int) predicate.Challenge {
 	return predicate.Challenge(sql.FieldLTE(FieldValue, v))
 }
 
-// HasColumn applies the HasEdge predicate on the "column" edge.
-func HasColumn() predicate.Challenge {
+// HasChallengeGroup applies the HasEdge predicate on the "challenge_group" edge.
+func HasChallengeGroup() predicate.Challenge {
 	return predicate.Challenge(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, true, ColumnTable, ColumnPrimaryKey...),
+			sqlgraph.Edge(sqlgraph.M2M, true, ChallengeGroupTable, ChallengeGroupPrimaryKey...),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
 }
 
-// HasColumnWith applies the HasEdge predicate on the "column" edge with a given conditions (other predicates).
-func HasColumnWith(preds ...predicate.ChallengeGroup) predicate.Challenge {
+// HasChallengeGroupWith applies the HasEdge predicate on the "challenge_group" edge with a given conditions (other predicates).
+func HasChallengeGroupWith(preds ...predicate.ChallengeGroup) predicate.Challenge {
 	return predicate.Challenge(func(s *sql.Selector) {
-		step := newColumnStep()
+		step := newChallengeGroupStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

@@ -12,26 +12,26 @@ const (
 	Label = "challenge_group"
 	// FieldID holds the string denoting the id field in the database.
 	FieldID = "id"
-	// EdgeCategory holds the string denoting the category edge name in mutations.
-	EdgeCategory = "category"
 	// EdgeChallenges holds the string denoting the challenges edge name in mutations.
 	EdgeChallenges = "challenges"
+	// EdgeCategory holds the string denoting the category edge name in mutations.
+	EdgeCategory = "category"
 	// EdgeEpisodeRound holds the string denoting the episode_round edge name in mutations.
 	EdgeEpisodeRound = "episode_round"
 	// Table holds the table name of the challengegroup in the database.
 	Table = "challenge_groups"
-	// CategoryTable is the table that holds the category relation/edge. The primary key declared below.
-	CategoryTable = "category_challenges"
-	// CategoryInverseTable is the table name for the Category entity.
-	// It exists in this package in order to avoid circular dependency with the "category" package.
-	CategoryInverseTable = "categories"
 	// ChallengesTable is the table that holds the challenges relation/edge. The primary key declared below.
 	ChallengesTable = "challenge_group_challenges"
 	// ChallengesInverseTable is the table name for the Challenge entity.
 	// It exists in this package in order to avoid circular dependency with the "challenge" package.
 	ChallengesInverseTable = "challenges"
+	// CategoryTable is the table that holds the category relation/edge. The primary key declared below.
+	CategoryTable = "category_challenge_groups"
+	// CategoryInverseTable is the table name for the Category entity.
+	// It exists in this package in order to avoid circular dependency with the "category" package.
+	CategoryInverseTable = "categories"
 	// EpisodeRoundTable is the table that holds the episode_round relation/edge. The primary key declared below.
-	EpisodeRoundTable = "episode_round_columns"
+	EpisodeRoundTable = "episode_round_categories"
 	// EpisodeRoundInverseTable is the table name for the EpisodeRound entity.
 	// It exists in this package in order to avoid circular dependency with the "episoderound" package.
 	EpisodeRoundInverseTable = "episode_rounds"
@@ -43,12 +43,12 @@ var Columns = []string{
 }
 
 var (
-	// CategoryPrimaryKey and CategoryColumn2 are the table columns denoting the
-	// primary key for the category relation (M2M).
-	CategoryPrimaryKey = []string{"category_id", "challenge_group_id"}
 	// ChallengesPrimaryKey and ChallengesColumn2 are the table columns denoting the
 	// primary key for the challenges relation (M2M).
 	ChallengesPrimaryKey = []string{"challenge_group_id", "challenge_id"}
+	// CategoryPrimaryKey and CategoryColumn2 are the table columns denoting the
+	// primary key for the category relation (M2M).
+	CategoryPrimaryKey = []string{"category_id", "challenge_group_id"}
 	// EpisodeRoundPrimaryKey and EpisodeRoundColumn2 are the table columns denoting the
 	// primary key for the episode_round relation (M2M).
 	EpisodeRoundPrimaryKey = []string{"episode_round_id", "challenge_group_id"}
@@ -72,20 +72,6 @@ func ByID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldID, opts...).ToFunc()
 }
 
-// ByCategoryCount orders the results by category count.
-func ByCategoryCount(opts ...sql.OrderTermOption) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborsCount(s, newCategoryStep(), opts...)
-	}
-}
-
-// ByCategory orders the results by category terms.
-func ByCategory(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newCategoryStep(), append([]sql.OrderTerm{term}, terms...)...)
-	}
-}
-
 // ByChallengesCount orders the results by challenges count.
 func ByChallengesCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -97,6 +83,20 @@ func ByChallengesCount(opts ...sql.OrderTermOption) OrderOption {
 func ByChallenges(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	return func(s *sql.Selector) {
 		sqlgraph.OrderByNeighborTerms(s, newChallengesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByCategoryCount orders the results by category count.
+func ByCategoryCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newCategoryStep(), opts...)
+	}
+}
+
+// ByCategory orders the results by category terms.
+func ByCategory(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newCategoryStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
 
@@ -113,18 +113,18 @@ func ByEpisodeRound(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newEpisodeRoundStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
-func newCategoryStep() *sqlgraph.Step {
-	return sqlgraph.NewStep(
-		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(CategoryInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.M2M, true, CategoryTable, CategoryPrimaryKey...),
-	)
-}
 func newChallengesStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(ChallengesInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2M, false, ChallengesTable, ChallengesPrimaryKey...),
+	)
+}
+func newCategoryStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(CategoryInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2M, true, CategoryTable, CategoryPrimaryKey...),
 	)
 }
 func newEpisodeRoundStep() *sqlgraph.Step {

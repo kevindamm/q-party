@@ -28,7 +28,7 @@ func (Challenge) Fields() []ent.Field {
 // Edges of the Challenge.
 func (Challenge) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.From("column", ChallengeGroup.Type).
+		edge.From("challenge_group", ChallengeGroup.Type).
 			Ref("challenges"),
 	}
 }

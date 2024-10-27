@@ -21,12 +21,12 @@ import (
 // EpisodeRoundQuery is the builder for querying EpisodeRound entities.
 type EpisodeRoundQuery struct {
 	config
-	ctx         *QueryContext
-	order       []episoderound.OrderOption
-	inters      []Interceptor
-	predicates  []predicate.EpisodeRound
-	withColumns *ChallengeGroupQuery
-	withEpisode *EpisodeQuery
+	ctx            *QueryContext
+	order          []episoderound.OrderOption
+	inters         []Interceptor
+	predicates     []predicate.EpisodeRound
+	withCategories *ChallengeGroupQuery
+	withEpisode    *EpisodeQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -63,8 +63,8 @@ func (erq *EpisodeRoundQuery) Order(o ...episoderound.OrderOption) *EpisodeRound
 	return erq
 }
 
-// QueryColumns chains the current query on the "columns" edge.
-func (erq *EpisodeRoundQuery) QueryColumns() *ChallengeGroupQuery {
+// QueryCategories chains the current query on the "categories" edge.
+func (erq *EpisodeRoundQuery) QueryCategories() *ChallengeGroupQuery {
 	query := (&ChallengeGroupClient{config: erq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := erq.prepareQuery(ctx); err != nil {
@@ -77,7 +77,7 @@ func (erq *EpisodeRoundQuery) QueryColumns() *ChallengeGroupQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(episoderound.Table, episoderound.FieldID, selector),
 			sqlgraph.To(challengegroup.Table, challengegroup.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, false, episoderound.ColumnsTable, episoderound.ColumnsPrimaryKey...),
+			sqlgraph.Edge(sqlgraph.M2M, false, episoderound.CategoriesTable, episoderound.CategoriesPrimaryKey...),
 		)
 		fromU = sqlgraph.SetNeighbors(erq.driver.Dialect(), step)
 		return fromU, nil
@@ -294,27 +294,27 @@ func (erq *EpisodeRoundQuery) Clone() *EpisodeRoundQuery {
 		return nil
 	}
 	return &EpisodeRoundQuery{
-		config:      erq.config,
-		ctx:         erq.ctx.Clone(),
-		order:       append([]episoderound.OrderOption{}, erq.order...),
-		inters:      append([]Interceptor{}, erq.inters...),
-		predicates:  append([]predicate.EpisodeRound{}, erq.predicates...),
-		withColumns: erq.withColumns.Clone(),
-		withEpisode: erq.withEpisode.Clone(),
+		config:         erq.config,
+		ctx:            erq.ctx.Clone(),
+		order:          append([]episoderound.OrderOption{}, erq.order...),
+		inters:         append([]Interceptor{}, erq.inters...),
+		predicates:     append([]predicate.EpisodeRound{}, erq.predicates...),
+		withCategories: erq.withCategories.Clone(),
+		withEpisode:    erq.withEpisode.Clone(),
 		// clone intermediate query.
 		sql:  erq.sql.Clone(),
 		path: erq.path,
 	}
 }
 
-// WithColumns tells the query-builder to eager-load the nodes that are connected to
-// the "columns" edge. The optional arguments are used to configure the query builder of the edge.
-func (erq *EpisodeRoundQuery) WithColumns(opts ...func(*ChallengeGroupQuery)) *EpisodeRoundQuery {
+// WithCategories tells the query-builder to eager-load the nodes that are connected to
+// the "categories" edge. The optional arguments are used to configure the query builder of the edge.
+func (erq *EpisodeRoundQuery) WithCategories(opts ...func(*ChallengeGroupQuery)) *EpisodeRoundQuery {
 	query := (&ChallengeGroupClient{config: erq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	erq.withColumns = query
+	erq.withCategories = query
 	return erq
 }
 
@@ -408,7 +408,7 @@ func (erq *EpisodeRoundQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([
 		nodes       = []*EpisodeRound{}
 		_spec       = erq.querySpec()
 		loadedTypes = [2]bool{
-			erq.withColumns != nil,
+			erq.withCategories != nil,
 			erq.withEpisode != nil,
 		}
 	)
@@ -430,10 +430,10 @@ func (erq *EpisodeRoundQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
-	if query := erq.withColumns; query != nil {
-		if err := erq.loadColumns(ctx, query, nodes,
-			func(n *EpisodeRound) { n.Edges.Columns = []*ChallengeGroup{} },
-			func(n *EpisodeRound, e *ChallengeGroup) { n.Edges.Columns = append(n.Edges.Columns, e) }); err != nil {
+	if query := erq.withCategories; query != nil {
+		if err := erq.loadCategories(ctx, query, nodes,
+			func(n *EpisodeRound) { n.Edges.Categories = []*ChallengeGroup{} },
+			func(n *EpisodeRound, e *ChallengeGroup) { n.Edges.Categories = append(n.Edges.Categories, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -447,7 +447,7 @@ func (erq *EpisodeRoundQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([
 	return nodes, nil
 }
 
-func (erq *EpisodeRoundQuery) loadColumns(ctx context.Context, query *ChallengeGroupQuery, nodes []*EpisodeRound, init func(*EpisodeRound), assign func(*EpisodeRound, *ChallengeGroup)) error {
+func (erq *EpisodeRoundQuery) loadCategories(ctx context.Context, query *ChallengeGroupQuery, nodes []*EpisodeRound, init func(*EpisodeRound), assign func(*EpisodeRound, *ChallengeGroup)) error {
 	edgeIDs := make([]driver.Value, len(nodes))
 	byID := make(map[int]*EpisodeRound)
 	nids := make(map[int]map[*EpisodeRound]struct{})
@@ -459,11 +459,11 @@ func (erq *EpisodeRoundQuery) loadColumns(ctx context.Context, query *ChallengeG
 		}
 	}
 	query.Where(func(s *sql.Selector) {
-		joinT := sql.Table(episoderound.ColumnsTable)
-		s.Join(joinT).On(s.C(challengegroup.FieldID), joinT.C(episoderound.ColumnsPrimaryKey[1]))
-		s.Where(sql.InValues(joinT.C(episoderound.ColumnsPrimaryKey[0]), edgeIDs...))
+		joinT := sql.Table(episoderound.CategoriesTable)
+		s.Join(joinT).On(s.C(challengegroup.FieldID), joinT.C(episoderound.CategoriesPrimaryKey[1]))
+		s.Where(sql.InValues(joinT.C(episoderound.CategoriesPrimaryKey[0]), edgeIDs...))
 		columns := s.SelectedColumns()
-		s.Select(joinT.C(episoderound.ColumnsPrimaryKey[0]))
+		s.Select(joinT.C(episoderound.CategoriesPrimaryKey[0]))
 		s.AppendSelect(columns...)
 		s.SetDistinct(false)
 	})
@@ -500,7 +500,7 @@ func (erq *EpisodeRoundQuery) loadColumns(ctx context.Context, query *ChallengeG
 	for _, n := range neighbors {
 		nodes, ok := nids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected "columns" node returned %v`, n.ID)
+			return fmt.Errorf(`unexpected "categories" node returned %v`, n.ID)
 		}
 		for kn := range nodes {
 			assign(kn, n)

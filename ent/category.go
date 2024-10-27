@@ -26,20 +26,20 @@ type Category struct {
 
 // CategoryEdges holds the relations/edges for other nodes in the graph.
 type CategoryEdges struct {
-	// Challenges holds the value of the challenges edge.
-	Challenges []*ChallengeGroup `json:"challenges,omitempty"`
+	// ChallengeGroups holds the value of the challenge_groups edge.
+	ChallengeGroups []*ChallengeGroup `json:"challenge_groups,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [1]bool
 }
 
-// ChallengesOrErr returns the Challenges value or an error if the edge
+// ChallengeGroupsOrErr returns the ChallengeGroups value or an error if the edge
 // was not loaded in eager-loading.
-func (e CategoryEdges) ChallengesOrErr() ([]*ChallengeGroup, error) {
+func (e CategoryEdges) ChallengeGroupsOrErr() ([]*ChallengeGroup, error) {
 	if e.loadedTypes[0] {
-		return e.Challenges, nil
+		return e.ChallengeGroups, nil
 	}
-	return nil, &NotLoadedError{edge: "challenges"}
+	return nil, &NotLoadedError{edge: "challenge_groups"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -91,9 +91,9 @@ func (c *Category) Value(name string) (ent.Value, error) {
 	return c.selectValues.Get(name)
 }
 
-// QueryChallenges queries the "challenges" edge of the Category entity.
-func (c *Category) QueryChallenges() *ChallengeGroupQuery {
-	return NewCategoryClient(c.config).QueryChallenges(c)
+// QueryChallengeGroups queries the "challenge_groups" edge of the Category entity.
+func (c *Category) QueryChallengeGroups() *ChallengeGroupQuery {
+	return NewCategoryClient(c.config).QueryChallengeGroups(c)
 }
 
 // Update returns a builder for updating this Category.

@@ -123,21 +123,21 @@ func NameContainsFold(v string) predicate.Category {
 	return predicate.Category(sql.FieldContainsFold(FieldName, v))
 }
 
-// HasChallenges applies the HasEdge predicate on the "challenges" edge.
-func HasChallenges() predicate.Category {
+// HasChallengeGroups applies the HasEdge predicate on the "challenge_groups" edge.
+func HasChallengeGroups() predicate.Category {
 	return predicate.Category(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, false, ChallengesTable, ChallengesPrimaryKey...),
+			sqlgraph.Edge(sqlgraph.M2M, false, ChallengeGroupsTable, ChallengeGroupsPrimaryKey...),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
 }
 
-// HasChallengesWith applies the HasEdge predicate on the "challenges" edge with a given conditions (other predicates).
-func HasChallengesWith(preds ...predicate.ChallengeGroup) predicate.Category {
+// HasChallengeGroupsWith applies the HasEdge predicate on the "challenge_groups" edge with a given conditions (other predicates).
+func HasChallengeGroupsWith(preds ...predicate.ChallengeGroup) predicate.Category {
 	return predicate.Category(func(s *sql.Selector) {
-		step := newChallengesStep()
+		step := newChallengeGroupsStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

@@ -22,6 +22,6 @@ func (Category) Fields() []ent.Field {
 // Edges of the Category.
 func (Category) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.To("challenges", ChallengeGroup.Type),
+		edge.To("challenge_groups", ChallengeGroup.Type),
 	}
 }

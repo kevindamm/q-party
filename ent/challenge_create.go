@@ -44,19 +44,19 @@ func (cc *ChallengeCreate) SetValue(i int) *ChallengeCreate {
 	return cc
 }
 
-// AddColumnIDs adds the "column" edge to the ChallengeGroup entity by IDs.
-func (cc *ChallengeCreate) AddColumnIDs(ids ...int) *ChallengeCreate {
-	cc.mutation.AddColumnIDs(ids...)
+// AddChallengeGroupIDs adds the "challenge_group" edge to the ChallengeGroup entity by IDs.
+func (cc *ChallengeCreate) AddChallengeGroupIDs(ids ...int) *ChallengeCreate {
+	cc.mutation.AddChallengeGroupIDs(ids...)
 	return cc
 }
 
-// AddColumn adds the "column" edges to the ChallengeGroup entity.
-func (cc *ChallengeCreate) AddColumn(c ...*ChallengeGroup) *ChallengeCreate {
+// AddChallengeGroup adds the "challenge_group" edges to the ChallengeGroup entity.
+func (cc *ChallengeCreate) AddChallengeGroup(c ...*ChallengeGroup) *ChallengeCreate {
 	ids := make([]int, len(c))
 	for i := range c {
 		ids[i] = c[i].ID
 	}
-	return cc.AddColumnIDs(ids...)
+	return cc.AddChallengeGroupIDs(ids...)
 }
 
 // Mutation returns the ChallengeMutation object of the builder.
@@ -147,12 +147,12 @@ func (cc *ChallengeCreate) createSpec() (*Challenge, *sqlgraph.CreateSpec) {
 		_spec.SetField(challenge.FieldValue, field.TypeInt, value)
 		_node.Value = value
 	}
-	if nodes := cc.mutation.ColumnIDs(); len(nodes) > 0 {
+	if nodes := cc.mutation.ChallengeGroupIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: true,
-			Table:   challenge.ColumnTable,
-			Columns: challenge.ColumnPrimaryKey,
+			Table:   challenge.ChallengeGroupTable,
+			Columns: challenge.ChallengeGroupPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(challengegroup.FieldID, field.TypeInt),

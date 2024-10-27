@@ -20,11 +20,11 @@ import (
 // CategoryQuery is the builder for querying Category entities.
 type CategoryQuery struct {
 	config
-	ctx            *QueryContext
-	order          []category.OrderOption
-	inters         []Interceptor
-	predicates     []predicate.Category
-	withChallenges *ChallengeGroupQuery
+	ctx                 *QueryContext
+	order               []category.OrderOption
+	inters              []Interceptor
+	predicates          []predicate.Category
+	withChallengeGroups *ChallengeGroupQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -61,8 +61,8 @@ func (cq *CategoryQuery) Order(o ...category.OrderOption) *CategoryQuery {
 	return cq
 }
 
-// QueryChallenges chains the current query on the "challenges" edge.
-func (cq *CategoryQuery) QueryChallenges() *ChallengeGroupQuery {
+// QueryChallengeGroups chains the current query on the "challenge_groups" edge.
+func (cq *CategoryQuery) QueryChallengeGroups() *ChallengeGroupQuery {
 	query := (&ChallengeGroupClient{config: cq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := cq.prepareQuery(ctx); err != nil {
@@ -75,7 +75,7 @@ func (cq *CategoryQuery) QueryChallenges() *ChallengeGroupQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(category.Table, category.FieldID, selector),
 			sqlgraph.To(challengegroup.Table, challengegroup.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, false, category.ChallengesTable, category.ChallengesPrimaryKey...),
+			sqlgraph.Edge(sqlgraph.M2M, false, category.ChallengeGroupsTable, category.ChallengeGroupsPrimaryKey...),
 		)
 		fromU = sqlgraph.SetNeighbors(cq.driver.Dialect(), step)
 		return fromU, nil
@@ -270,26 +270,26 @@ func (cq *CategoryQuery) Clone() *CategoryQuery {
 		return nil
 	}
 	return &CategoryQuery{
-		config:         cq.config,
-		ctx:            cq.ctx.Clone(),
-		order:          append([]category.OrderOption{}, cq.order...),
-		inters:         append([]Interceptor{}, cq.inters...),
-		predicates:     append([]predicate.Category{}, cq.predicates...),
-		withChallenges: cq.withChallenges.Clone(),
+		config:              cq.config,
+		ctx:                 cq.ctx.Clone(),
+		order:               append([]category.OrderOption{}, cq.order...),
+		inters:              append([]Interceptor{}, cq.inters...),
+		predicates:          append([]predicate.Category{}, cq.predicates...),
+		withChallengeGroups: cq.withChallengeGroups.Clone(),
 		// clone intermediate query.
 		sql:  cq.sql.Clone(),
 		path: cq.path,
 	}
 }
 
-// WithChallenges tells the query-builder to eager-load the nodes that are connected to
-// the "challenges" edge. The optional arguments are used to configure the query builder of the edge.
-func (cq *CategoryQuery) WithChallenges(opts ...func(*ChallengeGroupQuery)) *CategoryQuery {
+// WithChallengeGroups tells the query-builder to eager-load the nodes that are connected to
+// the "challenge_groups" edge. The optional arguments are used to configure the query builder of the edge.
+func (cq *CategoryQuery) WithChallengeGroups(opts ...func(*ChallengeGroupQuery)) *CategoryQuery {
 	query := (&ChallengeGroupClient{config: cq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	cq.withChallenges = query
+	cq.withChallengeGroups = query
 	return cq
 }
 
@@ -372,7 +372,7 @@ func (cq *CategoryQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Cat
 		nodes       = []*Category{}
 		_spec       = cq.querySpec()
 		loadedTypes = [1]bool{
-			cq.withChallenges != nil,
+			cq.withChallengeGroups != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -393,17 +393,17 @@ func (cq *CategoryQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Cat
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
-	if query := cq.withChallenges; query != nil {
-		if err := cq.loadChallenges(ctx, query, nodes,
-			func(n *Category) { n.Edges.Challenges = []*ChallengeGroup{} },
-			func(n *Category, e *ChallengeGroup) { n.Edges.Challenges = append(n.Edges.Challenges, e) }); err != nil {
+	if query := cq.withChallengeGroups; query != nil {
+		if err := cq.loadChallengeGroups(ctx, query, nodes,
+			func(n *Category) { n.Edges.ChallengeGroups = []*ChallengeGroup{} },
+			func(n *Category, e *ChallengeGroup) { n.Edges.ChallengeGroups = append(n.Edges.ChallengeGroups, e) }); err != nil {
 			return nil, err
 		}
 	}
 	return nodes, nil
 }
 
-func (cq *CategoryQuery) loadChallenges(ctx context.Context, query *ChallengeGroupQuery, nodes []*Category, init func(*Category), assign func(*Category, *ChallengeGroup)) error {
+func (cq *CategoryQuery) loadChallengeGroups(ctx context.Context, query *ChallengeGroupQuery, nodes []*Category, init func(*Category), assign func(*Category, *ChallengeGroup)) error {
 	edgeIDs := make([]driver.Value, len(nodes))
 	byID := make(map[int]*Category)
 	nids := make(map[int]map[*Category]struct{})
@@ -415,11 +415,11 @@ func (cq *CategoryQuery) loadChallenges(ctx context.Context, query *ChallengeGro
 		}
 	}
 	query.Where(func(s *sql.Selector) {
-		joinT := sql.Table(category.ChallengesTable)
-		s.Join(joinT).On(s.C(challengegroup.FieldID), joinT.C(category.ChallengesPrimaryKey[1]))
-		s.Where(sql.InValues(joinT.C(category.ChallengesPrimaryKey[0]), edgeIDs...))
+		joinT := sql.Table(category.ChallengeGroupsTable)
+		s.Join(joinT).On(s.C(challengegroup.FieldID), joinT.C(category.ChallengeGroupsPrimaryKey[1]))
+		s.Where(sql.InValues(joinT.C(category.ChallengeGroupsPrimaryKey[0]), edgeIDs...))
 		columns := s.SelectedColumns()
-		s.Select(joinT.C(category.ChallengesPrimaryKey[0]))
+		s.Select(joinT.C(category.ChallengeGroupsPrimaryKey[0]))
 		s.AppendSelect(columns...)
 		s.SetDistinct(false)
 	})
@@ -456,7 +456,7 @@ func (cq *CategoryQuery) loadChallenges(ctx context.Context, query *ChallengeGro
 	for _, n := range neighbors {
 		nodes, ok := nids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected "challenges" node returned %v`, n.ID)
+			return fmt.Errorf(`unexpected "challenge_groups" node returned %v`, n.ID)
 		}
 		for kn := range nodes {
 			assign(kn, n)

@@ -26,8 +26,8 @@ type ChallengeGroupQuery struct {
 	order            []challengegroup.OrderOption
 	inters           []Interceptor
 	predicates       []predicate.ChallengeGroup
-	withCategory     *CategoryQuery
 	withChallenges   *ChallengeQuery
+	withCategory     *CategoryQuery
 	withEpisodeRound *EpisodeRoundQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -65,28 +65,6 @@ func (cgq *ChallengeGroupQuery) Order(o ...challengegroup.OrderOption) *Challeng
 	return cgq
 }
 
-// QueryCategory chains the current query on the "category" edge.
-func (cgq *ChallengeGroupQuery) QueryCategory() *CategoryQuery {
-	query := (&CategoryClient{config: cgq.config}).Query()
-	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := cgq.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		selector := cgq.sqlQuery(ctx)
-		if err := selector.Err(); err != nil {
-			return nil, err
-		}
-		step := sqlgraph.NewStep(
-			sqlgraph.From(challengegroup.Table, challengegroup.FieldID, selector),
-			sqlgraph.To(category.Table, category.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, true, challengegroup.CategoryTable, challengegroup.CategoryPrimaryKey...),
-		)
-		fromU = sqlgraph.SetNeighbors(cgq.driver.Dialect(), step)
-		return fromU, nil
-	}
-	return query
-}
-
 // QueryChallenges chains the current query on the "challenges" edge.
 func (cgq *ChallengeGroupQuery) QueryChallenges() *ChallengeQuery {
 	query := (&ChallengeClient{config: cgq.config}).Query()
@@ -102,6 +80,28 @@ func (cgq *ChallengeGroupQuery) QueryChallenges() *ChallengeQuery {
 			sqlgraph.From(challengegroup.Table, challengegroup.FieldID, selector),
 			sqlgraph.To(challenge.Table, challenge.FieldID),
 			sqlgraph.Edge(sqlgraph.M2M, false, challengegroup.ChallengesTable, challengegroup.ChallengesPrimaryKey...),
+		)
+		fromU = sqlgraph.SetNeighbors(cgq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryCategory chains the current query on the "category" edge.
+func (cgq *ChallengeGroupQuery) QueryCategory() *CategoryQuery {
+	query := (&CategoryClient{config: cgq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := cgq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := cgq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(challengegroup.Table, challengegroup.FieldID, selector),
+			sqlgraph.To(category.Table, category.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, challengegroup.CategoryTable, challengegroup.CategoryPrimaryKey...),
 		)
 		fromU = sqlgraph.SetNeighbors(cgq.driver.Dialect(), step)
 		return fromU, nil
@@ -323,24 +323,13 @@ func (cgq *ChallengeGroupQuery) Clone() *ChallengeGroupQuery {
 		order:            append([]challengegroup.OrderOption{}, cgq.order...),
 		inters:           append([]Interceptor{}, cgq.inters...),
 		predicates:       append([]predicate.ChallengeGroup{}, cgq.predicates...),
-		withCategory:     cgq.withCategory.Clone(),
 		withChallenges:   cgq.withChallenges.Clone(),
+		withCategory:     cgq.withCategory.Clone(),
 		withEpisodeRound: cgq.withEpisodeRound.Clone(),
 		// clone intermediate query.
 		sql:  cgq.sql.Clone(),
 		path: cgq.path,
 	}
-}
-
-// WithCategory tells the query-builder to eager-load the nodes that are connected to
-// the "category" edge. The optional arguments are used to configure the query builder of the edge.
-func (cgq *ChallengeGroupQuery) WithCategory(opts ...func(*CategoryQuery)) *ChallengeGroupQuery {
-	query := (&CategoryClient{config: cgq.config}).Query()
-	for _, opt := range opts {
-		opt(query)
-	}
-	cgq.withCategory = query
-	return cgq
 }
 
 // WithChallenges tells the query-builder to eager-load the nodes that are connected to
@@ -351,6 +340,17 @@ func (cgq *ChallengeGroupQuery) WithChallenges(opts ...func(*ChallengeQuery)) *C
 		opt(query)
 	}
 	cgq.withChallenges = query
+	return cgq
+}
+
+// WithCategory tells the query-builder to eager-load the nodes that are connected to
+// the "category" edge. The optional arguments are used to configure the query builder of the edge.
+func (cgq *ChallengeGroupQuery) WithCategory(opts ...func(*CategoryQuery)) *ChallengeGroupQuery {
+	query := (&CategoryClient{config: cgq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	cgq.withCategory = query
 	return cgq
 }
 
@@ -422,8 +422,8 @@ func (cgq *ChallengeGroupQuery) sqlAll(ctx context.Context, hooks ...queryHook) 
 		nodes       = []*ChallengeGroup{}
 		_spec       = cgq.querySpec()
 		loadedTypes = [3]bool{
-			cgq.withCategory != nil,
 			cgq.withChallenges != nil,
+			cgq.withCategory != nil,
 			cgq.withEpisodeRound != nil,
 		}
 	)
@@ -445,17 +445,17 @@ func (cgq *ChallengeGroupQuery) sqlAll(ctx context.Context, hooks ...queryHook) 
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
-	if query := cgq.withCategory; query != nil {
-		if err := cgq.loadCategory(ctx, query, nodes,
-			func(n *ChallengeGroup) { n.Edges.Category = []*Category{} },
-			func(n *ChallengeGroup, e *Category) { n.Edges.Category = append(n.Edges.Category, e) }); err != nil {
-			return nil, err
-		}
-	}
 	if query := cgq.withChallenges; query != nil {
 		if err := cgq.loadChallenges(ctx, query, nodes,
 			func(n *ChallengeGroup) { n.Edges.Challenges = []*Challenge{} },
 			func(n *ChallengeGroup, e *Challenge) { n.Edges.Challenges = append(n.Edges.Challenges, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := cgq.withCategory; query != nil {
+		if err := cgq.loadCategory(ctx, query, nodes,
+			func(n *ChallengeGroup) { n.Edges.Category = []*Category{} },
+			func(n *ChallengeGroup, e *Category) { n.Edges.Category = append(n.Edges.Category, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -469,67 +469,6 @@ func (cgq *ChallengeGroupQuery) sqlAll(ctx context.Context, hooks ...queryHook) 
 	return nodes, nil
 }
 
-func (cgq *ChallengeGroupQuery) loadCategory(ctx context.Context, query *CategoryQuery, nodes []*ChallengeGroup, init func(*ChallengeGroup), assign func(*ChallengeGroup, *Category)) error {
-	edgeIDs := make([]driver.Value, len(nodes))
-	byID := make(map[int]*ChallengeGroup)
-	nids := make(map[int]map[*ChallengeGroup]struct{})
-	for i, node := range nodes {
-		edgeIDs[i] = node.ID
-		byID[node.ID] = node
-		if init != nil {
-			init(node)
-		}
-	}
-	query.Where(func(s *sql.Selector) {
-		joinT := sql.Table(challengegroup.CategoryTable)
-		s.Join(joinT).On(s.C(category.FieldID), joinT.C(challengegroup.CategoryPrimaryKey[0]))
-		s.Where(sql.InValues(joinT.C(challengegroup.CategoryPrimaryKey[1]), edgeIDs...))
-		columns := s.SelectedColumns()
-		s.Select(joinT.C(challengegroup.CategoryPrimaryKey[1]))
-		s.AppendSelect(columns...)
-		s.SetDistinct(false)
-	})
-	if err := query.prepareQuery(ctx); err != nil {
-		return err
-	}
-	qr := QuerierFunc(func(ctx context.Context, q Query) (Value, error) {
-		return query.sqlAll(ctx, func(_ context.Context, spec *sqlgraph.QuerySpec) {
-			assign := spec.Assign
-			values := spec.ScanValues
-			spec.ScanValues = func(columns []string) ([]any, error) {
-				values, err := values(columns[1:])
-				if err != nil {
-					return nil, err
-				}
-				return append([]any{new(sql.NullInt64)}, values...), nil
-			}
-			spec.Assign = func(columns []string, values []any) error {
-				outValue := int(values[0].(*sql.NullInt64).Int64)
-				inValue := int(values[1].(*sql.NullInt64).Int64)
-				if nids[inValue] == nil {
-					nids[inValue] = map[*ChallengeGroup]struct{}{byID[outValue]: {}}
-					return assign(columns[1:], values[1:])
-				}
-				nids[inValue][byID[outValue]] = struct{}{}
-				return nil
-			}
-		})
-	})
-	neighbors, err := withInterceptors[[]*Category](ctx, query, qr, query.inters)
-	if err != nil {
-		return err
-	}
-	for _, n := range neighbors {
-		nodes, ok := nids[n.ID]
-		if !ok {
-			return fmt.Errorf(`unexpected "category" node returned %v`, n.ID)
-		}
-		for kn := range nodes {
-			assign(kn, n)
-		}
-	}
-	return nil
-}
 func (cgq *ChallengeGroupQuery) loadChallenges(ctx context.Context, query *ChallengeQuery, nodes []*ChallengeGroup, init func(*ChallengeGroup), assign func(*ChallengeGroup, *Challenge)) error {
 	edgeIDs := make([]driver.Value, len(nodes))
 	byID := make(map[int]*ChallengeGroup)
@@ -584,6 +523,67 @@ func (cgq *ChallengeGroupQuery) loadChallenges(ctx context.Context, query *Chall
 		nodes, ok := nids[n.ID]
 		if !ok {
 			return fmt.Errorf(`unexpected "challenges" node returned %v`, n.ID)
+		}
+		for kn := range nodes {
+			assign(kn, n)
+		}
+	}
+	return nil
+}
+func (cgq *ChallengeGroupQuery) loadCategory(ctx context.Context, query *CategoryQuery, nodes []*ChallengeGroup, init func(*ChallengeGroup), assign func(*ChallengeGroup, *Category)) error {
+	edgeIDs := make([]driver.Value, len(nodes))
+	byID := make(map[int]*ChallengeGroup)
+	nids := make(map[int]map[*ChallengeGroup]struct{})
+	for i, node := range nodes {
+		edgeIDs[i] = node.ID
+		byID[node.ID] = node
+		if init != nil {
+			init(node)
+		}
+	}
+	query.Where(func(s *sql.Selector) {
+		joinT := sql.Table(challengegroup.CategoryTable)
+		s.Join(joinT).On(s.C(category.FieldID), joinT.C(challengegroup.CategoryPrimaryKey[0]))
+		s.Where(sql.InValues(joinT.C(challengegroup.CategoryPrimaryKey[1]), edgeIDs...))
+		columns := s.SelectedColumns()
+		s.Select(joinT.C(challengegroup.CategoryPrimaryKey[1]))
+		s.AppendSelect(columns...)
+		s.SetDistinct(false)
+	})
+	if err := query.prepareQuery(ctx); err != nil {
+		return err
+	}
+	qr := QuerierFunc(func(ctx context.Context, q Query) (Value, error) {
+		return query.sqlAll(ctx, func(_ context.Context, spec *sqlgraph.QuerySpec) {
+			assign := spec.Assign
+			values := spec.ScanValues
+			spec.ScanValues = func(columns []string) ([]any, error) {
+				values, err := values(columns[1:])
+				if err != nil {
+					return nil, err
+				}
+				return append([]any{new(sql.NullInt64)}, values...), nil
+			}
+			spec.Assign = func(columns []string, values []any) error {
+				outValue := int(values[0].(*sql.NullInt64).Int64)
+				inValue := int(values[1].(*sql.NullInt64).Int64)
+				if nids[inValue] == nil {
+					nids[inValue] = map[*ChallengeGroup]struct{}{byID[outValue]: {}}
+					return assign(columns[1:], values[1:])
+				}
+				nids[inValue][byID[outValue]] = struct{}{}
+				return nil
+			}
+		})
+	})
+	neighbors, err := withInterceptors[[]*Category](ctx, query, qr, query.inters)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected "category" node returned %v`, n.ID)
 		}
 		for kn := range nodes {
 			assign(kn, n)

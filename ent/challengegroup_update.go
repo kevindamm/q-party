@@ -30,21 +30,6 @@ func (cgu *ChallengeGroupUpdate) Where(ps ...predicate.ChallengeGroup) *Challeng
 	return cgu
 }
 
-// AddCategoryIDs adds the "category" edge to the Category entity by IDs.
-func (cgu *ChallengeGroupUpdate) AddCategoryIDs(ids ...int) *ChallengeGroupUpdate {
-	cgu.mutation.AddCategoryIDs(ids...)
-	return cgu
-}
-
-// AddCategory adds the "category" edges to the Category entity.
-func (cgu *ChallengeGroupUpdate) AddCategory(c ...*Category) *ChallengeGroupUpdate {
-	ids := make([]int, len(c))
-	for i := range c {
-		ids[i] = c[i].ID
-	}
-	return cgu.AddCategoryIDs(ids...)
-}
-
 // AddChallengeIDs adds the "challenges" edge to the Challenge entity by IDs.
 func (cgu *ChallengeGroupUpdate) AddChallengeIDs(ids ...int) *ChallengeGroupUpdate {
 	cgu.mutation.AddChallengeIDs(ids...)
@@ -58,6 +43,21 @@ func (cgu *ChallengeGroupUpdate) AddChallenges(c ...*Challenge) *ChallengeGroupU
 		ids[i] = c[i].ID
 	}
 	return cgu.AddChallengeIDs(ids...)
+}
+
+// AddCategoryIDs adds the "category" edge to the Category entity by IDs.
+func (cgu *ChallengeGroupUpdate) AddCategoryIDs(ids ...int) *ChallengeGroupUpdate {
+	cgu.mutation.AddCategoryIDs(ids...)
+	return cgu
+}
+
+// AddCategory adds the "category" edges to the Category entity.
+func (cgu *ChallengeGroupUpdate) AddCategory(c ...*Category) *ChallengeGroupUpdate {
+	ids := make([]int, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
+	}
+	return cgu.AddCategoryIDs(ids...)
 }
 
 // AddEpisodeRoundIDs adds the "episode_round" edge to the EpisodeRound entity by IDs.
@@ -80,27 +80,6 @@ func (cgu *ChallengeGroupUpdate) Mutation() *ChallengeGroupMutation {
 	return cgu.mutation
 }
 
-// ClearCategory clears all "category" edges to the Category entity.
-func (cgu *ChallengeGroupUpdate) ClearCategory() *ChallengeGroupUpdate {
-	cgu.mutation.ClearCategory()
-	return cgu
-}
-
-// RemoveCategoryIDs removes the "category" edge to Category entities by IDs.
-func (cgu *ChallengeGroupUpdate) RemoveCategoryIDs(ids ...int) *ChallengeGroupUpdate {
-	cgu.mutation.RemoveCategoryIDs(ids...)
-	return cgu
-}
-
-// RemoveCategory removes "category" edges to Category entities.
-func (cgu *ChallengeGroupUpdate) RemoveCategory(c ...*Category) *ChallengeGroupUpdate {
-	ids := make([]int, len(c))
-	for i := range c {
-		ids[i] = c[i].ID
-	}
-	return cgu.RemoveCategoryIDs(ids...)
-}
-
 // ClearChallenges clears all "challenges" edges to the Challenge entity.
 func (cgu *ChallengeGroupUpdate) ClearChallenges() *ChallengeGroupUpdate {
 	cgu.mutation.ClearChallenges()
@@ -120,6 +99,27 @@ func (cgu *ChallengeGroupUpdate) RemoveChallenges(c ...*Challenge) *ChallengeGro
 		ids[i] = c[i].ID
 	}
 	return cgu.RemoveChallengeIDs(ids...)
+}
+
+// ClearCategory clears all "category" edges to the Category entity.
+func (cgu *ChallengeGroupUpdate) ClearCategory() *ChallengeGroupUpdate {
+	cgu.mutation.ClearCategory()
+	return cgu
+}
+
+// RemoveCategoryIDs removes the "category" edge to Category entities by IDs.
+func (cgu *ChallengeGroupUpdate) RemoveCategoryIDs(ids ...int) *ChallengeGroupUpdate {
+	cgu.mutation.RemoveCategoryIDs(ids...)
+	return cgu
+}
+
+// RemoveCategory removes "category" edges to Category entities.
+func (cgu *ChallengeGroupUpdate) RemoveCategory(c ...*Category) *ChallengeGroupUpdate {
+	ids := make([]int, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
+	}
+	return cgu.RemoveCategoryIDs(ids...)
 }
 
 // ClearEpisodeRound clears all "episode_round" edges to the EpisodeRound entity.
@@ -179,51 +179,6 @@ func (cgu *ChallengeGroupUpdate) sqlSave(ctx context.Context) (n int, err error)
 			}
 		}
 	}
-	if cgu.mutation.CategoryCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
-			Inverse: true,
-			Table:   challengegroup.CategoryTable,
-			Columns: challengegroup.CategoryPrimaryKey,
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(category.FieldID, field.TypeInt),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := cgu.mutation.RemovedCategoryIDs(); len(nodes) > 0 && !cgu.mutation.CategoryCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
-			Inverse: true,
-			Table:   challengegroup.CategoryTable,
-			Columns: challengegroup.CategoryPrimaryKey,
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(category.FieldID, field.TypeInt),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := cgu.mutation.CategoryIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
-			Inverse: true,
-			Table:   challengegroup.CategoryTable,
-			Columns: challengegroup.CategoryPrimaryKey,
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(category.FieldID, field.TypeInt),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
 	if cgu.mutation.ChallengesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
@@ -262,6 +217,51 @@ func (cgu *ChallengeGroupUpdate) sqlSave(ctx context.Context) (n int, err error)
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(challenge.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if cgu.mutation.CategoryCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   challengegroup.CategoryTable,
+			Columns: challengegroup.CategoryPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(category.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := cgu.mutation.RemovedCategoryIDs(); len(nodes) > 0 && !cgu.mutation.CategoryCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   challengegroup.CategoryTable,
+			Columns: challengegroup.CategoryPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(category.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := cgu.mutation.CategoryIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   challengegroup.CategoryTable,
+			Columns: challengegroup.CategoryPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(category.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -334,21 +334,6 @@ type ChallengeGroupUpdateOne struct {
 	mutation *ChallengeGroupMutation
 }
 
-// AddCategoryIDs adds the "category" edge to the Category entity by IDs.
-func (cguo *ChallengeGroupUpdateOne) AddCategoryIDs(ids ...int) *ChallengeGroupUpdateOne {
-	cguo.mutation.AddCategoryIDs(ids...)
-	return cguo
-}
-
-// AddCategory adds the "category" edges to the Category entity.
-func (cguo *ChallengeGroupUpdateOne) AddCategory(c ...*Category) *ChallengeGroupUpdateOne {
-	ids := make([]int, len(c))
-	for i := range c {
-		ids[i] = c[i].ID
-	}
-	return cguo.AddCategoryIDs(ids...)
-}
-
 // AddChallengeIDs adds the "challenges" edge to the Challenge entity by IDs.
 func (cguo *ChallengeGroupUpdateOne) AddChallengeIDs(ids ...int) *ChallengeGroupUpdateOne {
 	cguo.mutation.AddChallengeIDs(ids...)
@@ -362,6 +347,21 @@ func (cguo *ChallengeGroupUpdateOne) AddChallenges(c ...*Challenge) *ChallengeGr
 		ids[i] = c[i].ID
 	}
 	return cguo.AddChallengeIDs(ids...)
+}
+
+// AddCategoryIDs adds the "category" edge to the Category entity by IDs.
+func (cguo *ChallengeGroupUpdateOne) AddCategoryIDs(ids ...int) *ChallengeGroupUpdateOne {
+	cguo.mutation.AddCategoryIDs(ids...)
+	return cguo
+}
+
+// AddCategory adds the "category" edges to the Category entity.
+func (cguo *ChallengeGroupUpdateOne) AddCategory(c ...*Category) *ChallengeGroupUpdateOne {
+	ids := make([]int, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
+	}
+	return cguo.AddCategoryIDs(ids...)
 }
 
 // AddEpisodeRoundIDs adds the "episode_round" edge to the EpisodeRound entity by IDs.
@@ -384,27 +384,6 @@ func (cguo *ChallengeGroupUpdateOne) Mutation() *ChallengeGroupMutation {
 	return cguo.mutation
 }
 
-// ClearCategory clears all "category" edges to the Category entity.
-func (cguo *ChallengeGroupUpdateOne) ClearCategory() *ChallengeGroupUpdateOne {
-	cguo.mutation.ClearCategory()
-	return cguo
-}
-
-// RemoveCategoryIDs removes the "category" edge to Category entities by IDs.
-func (cguo *ChallengeGroupUpdateOne) RemoveCategoryIDs(ids ...int) *ChallengeGroupUpdateOne {
-	cguo.mutation.RemoveCategoryIDs(ids...)
-	return cguo
-}
-
-// RemoveCategory removes "category" edges to Category entities.
-func (cguo *ChallengeGroupUpdateOne) RemoveCategory(c ...*Category) *ChallengeGroupUpdateOne {
-	ids := make([]int, len(c))
-	for i := range c {
-		ids[i] = c[i].ID
-	}
-	return cguo.RemoveCategoryIDs(ids...)
-}
-
 // ClearChallenges clears all "challenges" edges to the Challenge entity.
 func (cguo *ChallengeGroupUpdateOne) ClearChallenges() *ChallengeGroupUpdateOne {
 	cguo.mutation.ClearChallenges()
@@ -424,6 +403,27 @@ func (cguo *ChallengeGroupUpdateOne) RemoveChallenges(c ...*Challenge) *Challeng
 		ids[i] = c[i].ID
 	}
 	return cguo.RemoveChallengeIDs(ids...)
+}
+
+// ClearCategory clears all "category" edges to the Category entity.
+func (cguo *ChallengeGroupUpdateOne) ClearCategory() *ChallengeGroupUpdateOne {
+	cguo.mutation.ClearCategory()
+	return cguo
+}
+
+// RemoveCategoryIDs removes the "category" edge to Category entities by IDs.
+func (cguo *ChallengeGroupUpdateOne) RemoveCategoryIDs(ids ...int) *ChallengeGroupUpdateOne {
+	cguo.mutation.RemoveCategoryIDs(ids...)
+	return cguo
+}
+
+// RemoveCategory removes "category" edges to Category entities.
+func (cguo *ChallengeGroupUpdateOne) RemoveCategory(c ...*Category) *ChallengeGroupUpdateOne {
+	ids := make([]int, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
+	}
+	return cguo.RemoveCategoryIDs(ids...)
 }
 
 // ClearEpisodeRound clears all "episode_round" edges to the EpisodeRound entity.
@@ -513,51 +513,6 @@ func (cguo *ChallengeGroupUpdateOne) sqlSave(ctx context.Context) (_node *Challe
 			}
 		}
 	}
-	if cguo.mutation.CategoryCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
-			Inverse: true,
-			Table:   challengegroup.CategoryTable,
-			Columns: challengegroup.CategoryPrimaryKey,
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(category.FieldID, field.TypeInt),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := cguo.mutation.RemovedCategoryIDs(); len(nodes) > 0 && !cguo.mutation.CategoryCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
-			Inverse: true,
-			Table:   challengegroup.CategoryTable,
-			Columns: challengegroup.CategoryPrimaryKey,
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(category.FieldID, field.TypeInt),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := cguo.mutation.CategoryIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
-			Inverse: true,
-			Table:   challengegroup.CategoryTable,
-			Columns: challengegroup.CategoryPrimaryKey,
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(category.FieldID, field.TypeInt),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
 	if cguo.mutation.ChallengesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
@@ -596,6 +551,51 @@ func (cguo *ChallengeGroupUpdateOne) sqlSave(ctx context.Context) (_node *Challe
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(challenge.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if cguo.mutation.CategoryCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   challengegroup.CategoryTable,
+			Columns: challengegroup.CategoryPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(category.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := cguo.mutation.RemovedCategoryIDs(); len(nodes) > 0 && !cguo.mutation.CategoryCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   challengegroup.CategoryTable,
+			Columns: challengegroup.CategoryPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(category.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := cguo.mutation.CategoryIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   challengegroup.CategoryTable,
+			Columns: challengegroup.CategoryPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(category.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

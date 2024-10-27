@@ -26,8 +26,8 @@ type EpisodeRound struct {
 
 // EpisodeRoundEdges holds the relations/edges for other nodes in the graph.
 type EpisodeRoundEdges struct {
-	// Columns holds the value of the columns edge.
-	Columns []*ChallengeGroup `json:"columns,omitempty"`
+	// Categories holds the value of the categories edge.
+	Categories []*ChallengeGroup `json:"categories,omitempty"`
 	// Episode holds the value of the episode edge.
 	Episode []*Episode `json:"episode,omitempty"`
 	// loadedTypes holds the information for reporting if a
@@ -35,13 +35,13 @@ type EpisodeRoundEdges struct {
 	loadedTypes [2]bool
 }
 
-// ColumnsOrErr returns the Columns value or an error if the edge
+// CategoriesOrErr returns the Categories value or an error if the edge
 // was not loaded in eager-loading.
-func (e EpisodeRoundEdges) ColumnsOrErr() ([]*ChallengeGroup, error) {
+func (e EpisodeRoundEdges) CategoriesOrErr() ([]*ChallengeGroup, error) {
 	if e.loadedTypes[0] {
-		return e.Columns, nil
+		return e.Categories, nil
 	}
-	return nil, &NotLoadedError{edge: "columns"}
+	return nil, &NotLoadedError{edge: "categories"}
 }
 
 // EpisodeOrErr returns the Episode value or an error if the edge
@@ -102,9 +102,9 @@ func (er *EpisodeRound) Value(name string) (ent.Value, error) {
 	return er.selectValues.Get(name)
 }
 
-// QueryColumns queries the "columns" edge of the EpisodeRound entity.
-func (er *EpisodeRound) QueryColumns() *ChallengeGroupQuery {
-	return NewEpisodeRoundClient(er.config).QueryColumns(er)
+// QueryCategories queries the "categories" edge of the EpisodeRound entity.
+func (er *EpisodeRound) QueryCategories() *ChallengeGroupQuery {
+	return NewEpisodeRoundClient(er.config).QueryCategories(er)
 }
 
 // QueryEpisode queries the "episode" edge of the EpisodeRound entity.

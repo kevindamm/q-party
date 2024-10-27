@@ -14,15 +14,15 @@ const (
 	FieldID = "id"
 	// FieldName holds the string denoting the name field in the database.
 	FieldName = "name"
-	// EdgeChallenges holds the string denoting the challenges edge name in mutations.
-	EdgeChallenges = "challenges"
+	// EdgeChallengeGroups holds the string denoting the challenge_groups edge name in mutations.
+	EdgeChallengeGroups = "challenge_groups"
 	// Table holds the table name of the category in the database.
 	Table = "categories"
-	// ChallengesTable is the table that holds the challenges relation/edge. The primary key declared below.
-	ChallengesTable = "category_challenges"
-	// ChallengesInverseTable is the table name for the ChallengeGroup entity.
+	// ChallengeGroupsTable is the table that holds the challenge_groups relation/edge. The primary key declared below.
+	ChallengeGroupsTable = "category_challenge_groups"
+	// ChallengeGroupsInverseTable is the table name for the ChallengeGroup entity.
 	// It exists in this package in order to avoid circular dependency with the "challengegroup" package.
-	ChallengesInverseTable = "challenge_groups"
+	ChallengeGroupsInverseTable = "challenge_groups"
 )
 
 // Columns holds all SQL columns for category fields.
@@ -32,9 +32,9 @@ var Columns = []string{
 }
 
 var (
-	// ChallengesPrimaryKey and ChallengesColumn2 are the table columns denoting the
-	// primary key for the challenges relation (M2M).
-	ChallengesPrimaryKey = []string{"category_id", "challenge_group_id"}
+	// ChallengeGroupsPrimaryKey and ChallengeGroupsColumn2 are the table columns denoting the
+	// primary key for the challenge_groups relation (M2M).
+	ChallengeGroupsPrimaryKey = []string{"category_id", "challenge_group_id"}
 )
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -60,23 +60,23 @@ func ByName(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldName, opts...).ToFunc()
 }
 
-// ByChallengesCount orders the results by challenges count.
-func ByChallengesCount(opts ...sql.OrderTermOption) OrderOption {
+// ByChallengeGroupsCount orders the results by challenge_groups count.
+func ByChallengeGroupsCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborsCount(s, newChallengesStep(), opts...)
+		sqlgraph.OrderByNeighborsCount(s, newChallengeGroupsStep(), opts...)
 	}
 }
 
-// ByChallenges orders the results by challenges terms.
-func ByChallenges(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+// ByChallengeGroups orders the results by challenge_groups terms.
+func ByChallengeGroups(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newChallengesStep(), append([]sql.OrderTerm{term}, terms...)...)
+		sqlgraph.OrderByNeighborTerms(s, newChallengeGroupsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
-func newChallengesStep() *sqlgraph.Step {
+func newChallengeGroupsStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(ChallengesInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.M2M, false, ChallengesTable, ChallengesPrimaryKey...),
+		sqlgraph.To(ChallengeGroupsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2M, false, ChallengeGroupsTable, ChallengeGroupsPrimaryKey...),
 	)
 }

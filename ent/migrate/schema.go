@@ -43,49 +43,26 @@ var (
 		Columns:    ChallengeGroupsColumns,
 		PrimaryKey: []*schema.Column{ChallengeGroupsColumns[0]},
 	}
-	// EpisodesColumns holds the columns for the "episodes" table.
-	EpisodesColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeInt, Increment: true},
-		{Name: "aired", Type: field.TypeTime},
-		{Name: "difficulty", Type: field.TypeEnum, Enums: []string{"UNKNOWN", "Kids", "College", "Standard", "Champions"}},
-	}
-	// EpisodesTable holds the schema information for the "episodes" table.
-	EpisodesTable = &schema.Table{
-		Name:       "episodes",
-		Columns:    EpisodesColumns,
-		PrimaryKey: []*schema.Column{EpisodesColumns[0]},
-	}
-	// EpisodeRoundsColumns holds the columns for the "episode_rounds" table.
-	EpisodeRoundsColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeInt, Increment: true},
-		{Name: "round", Type: field.TypeEnum, Enums: []string{"UNKNOWN", "Single", "Double", "Final", "Tiebreaker"}},
-	}
-	// EpisodeRoundsTable holds the schema information for the "episode_rounds" table.
-	EpisodeRoundsTable = &schema.Table{
-		Name:       "episode_rounds",
-		Columns:    EpisodeRoundsColumns,
-		PrimaryKey: []*schema.Column{EpisodeRoundsColumns[0]},
-	}
-	// CategoryChallengesColumns holds the columns for the "category_challenges" table.
-	CategoryChallengesColumns = []*schema.Column{
+	// CategoryChallengeGroupsColumns holds the columns for the "category_challenge_groups" table.
+	CategoryChallengeGroupsColumns = []*schema.Column{
 		{Name: "category_id", Type: field.TypeInt},
 		{Name: "challenge_group_id", Type: field.TypeInt},
 	}
-	// CategoryChallengesTable holds the schema information for the "category_challenges" table.
-	CategoryChallengesTable = &schema.Table{
-		Name:       "category_challenges",
-		Columns:    CategoryChallengesColumns,
-		PrimaryKey: []*schema.Column{CategoryChallengesColumns[0], CategoryChallengesColumns[1]},
+	// CategoryChallengeGroupsTable holds the schema information for the "category_challenge_groups" table.
+	CategoryChallengeGroupsTable = &schema.Table{
+		Name:       "category_challenge_groups",
+		Columns:    CategoryChallengeGroupsColumns,
+		PrimaryKey: []*schema.Column{CategoryChallengeGroupsColumns[0], CategoryChallengeGroupsColumns[1]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "category_challenges_category_id",
-				Columns:    []*schema.Column{CategoryChallengesColumns[0]},
+				Symbol:     "category_challenge_groups_category_id",
+				Columns:    []*schema.Column{CategoryChallengeGroupsColumns[0]},
 				RefColumns: []*schema.Column{CategoriesColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
-				Symbol:     "category_challenges_challenge_group_id",
-				Columns:    []*schema.Column{CategoryChallengesColumns[1]},
+				Symbol:     "category_challenge_groups_challenge_group_id",
+				Columns:    []*schema.Column{CategoryChallengeGroupsColumns[1]},
 				RefColumns: []*schema.Column{ChallengeGroupsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
@@ -116,6 +93,18 @@ var (
 			},
 		},
 	}
+	// EpisodesColumns holds the columns for the "episodes" table.
+	EpisodesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "aired", Type: field.TypeTime},
+		{Name: "difficulty", Type: field.TypeEnum, Enums: []string{"UNKNOWN", "Kids", "College", "Standard", "Champions"}},
+	}
+	// EpisodesTable holds the schema information for the "episodes" table.
+	EpisodesTable = &schema.Table{
+		Name:       "episodes",
+		Columns:    EpisodesColumns,
+		PrimaryKey: []*schema.Column{EpisodesColumns[0]},
+	}
 	// EpisodeRoundsColumns holds the columns for the "episode_rounds" table.
 	EpisodeRoundsColumns = []*schema.Column{
 		{Name: "episode_id", Type: field.TypeInt},
@@ -141,26 +130,26 @@ var (
 			},
 		},
 	}
-	// EpisodeRoundColumnsColumns holds the columns for the "episode_round_columns" table.
-	EpisodeRoundColumnsColumns = []*schema.Column{
+	// EpisodeRoundCategoriesColumns holds the columns for the "episode_round_categories" table.
+	EpisodeRoundCategoriesColumns = []*schema.Column{
 		{Name: "episode_round_id", Type: field.TypeInt},
 		{Name: "challenge_group_id", Type: field.TypeInt},
 	}
-	// EpisodeRoundColumnsTable holds the schema information for the "episode_round_columns" table.
-	EpisodeRoundColumnsTable = &schema.Table{
-		Name:       "episode_round_columns",
-		Columns:    EpisodeRoundColumnsColumns,
-		PrimaryKey: []*schema.Column{EpisodeRoundColumnsColumns[0], EpisodeRoundColumnsColumns[1]},
+	// EpisodeRoundCategoriesTable holds the schema information for the "episode_round_categories" table.
+	EpisodeRoundCategoriesTable = &schema.Table{
+		Name:       "episode_round_categories",
+		Columns:    EpisodeRoundCategoriesColumns,
+		PrimaryKey: []*schema.Column{EpisodeRoundCategoriesColumns[0], EpisodeRoundCategoriesColumns[1]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "episode_round_columns_episode_round_id",
-				Columns:    []*schema.Column{EpisodeRoundColumnsColumns[0]},
+				Symbol:     "episode_round_categories_episode_round_id",
+				Columns:    []*schema.Column{EpisodeRoundCategoriesColumns[0]},
 				RefColumns: []*schema.Column{EpisodeRoundsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
-				Symbol:     "episode_round_columns_challenge_group_id",
-				Columns:    []*schema.Column{EpisodeRoundColumnsColumns[1]},
+				Symbol:     "episode_round_categories_challenge_group_id",
+				Columns:    []*schema.Column{EpisodeRoundCategoriesColumns[1]},
 				RefColumns: []*schema.Column{ChallengeGroupsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
@@ -171,22 +160,21 @@ var (
 		CategoriesTable,
 		ChallengesTable,
 		ChallengeGroupsTable,
+		CategoryChallengeGroupsTable,
+		ChallengeGroupChallengesTable,
 		EpisodesTable,
 		EpisodeRoundsTable,
-		CategoryChallengesTable,
-		ChallengeGroupChallengesTable,
-		EpisodeRoundsTable,
-		EpisodeRoundColumnsTable,
+		EpisodeRoundCategoriesTable,
 	}
 )
 
 func init() {
-	CategoryChallengesTable.ForeignKeys[0].RefTable = CategoriesTable
-	CategoryChallengesTable.ForeignKeys[1].RefTable = ChallengeGroupsTable
+	CategoryChallengeGroupsTable.ForeignKeys[0].RefTable = CategoriesTable
+	CategoryChallengeGroupsTable.ForeignKeys[1].RefTable = ChallengeGroupsTable
 	ChallengeGroupChallengesTable.ForeignKeys[0].RefTable = ChallengeGroupsTable
 	ChallengeGroupChallengesTable.ForeignKeys[1].RefTable = ChallengesTable
 	EpisodeRoundsTable.ForeignKeys[0].RefTable = EpisodesTable
 	EpisodeRoundsTable.ForeignKeys[1].RefTable = EpisodeRoundsTable
-	EpisodeRoundColumnsTable.ForeignKeys[0].RefTable = EpisodeRoundsTable
-	EpisodeRoundColumnsTable.ForeignKeys[1].RefTable = ChallengeGroupsTable
+	EpisodeRoundCategoriesTable.ForeignKeys[0].RefTable = EpisodeRoundsTable
+	EpisodeRoundCategoriesTable.ForeignKeys[1].RefTable = ChallengeGroupsTable
 }

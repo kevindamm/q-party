@@ -345,15 +345,15 @@ func (c *CategoryClient) GetX(ctx context.Context, id int) *Category {
 	return obj
 }
 
-// QueryChallenges queries the challenges edge of a Category.
-func (c *CategoryClient) QueryChallenges(ca *Category) *ChallengeGroupQuery {
+// QueryChallengeGroups queries the challenge_groups edge of a Category.
+func (c *CategoryClient) QueryChallengeGroups(ca *Category) *ChallengeGroupQuery {
 	query := (&ChallengeGroupClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := ca.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(category.Table, category.FieldID, id),
 			sqlgraph.To(challengegroup.Table, challengegroup.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, false, category.ChallengesTable, category.ChallengesPrimaryKey...),
+			sqlgraph.Edge(sqlgraph.M2M, false, category.ChallengeGroupsTable, category.ChallengeGroupsPrimaryKey...),
 		)
 		fromV = sqlgraph.Neighbors(ca.driver.Dialect(), step)
 		return fromV, nil
@@ -494,15 +494,15 @@ func (c *ChallengeClient) GetX(ctx context.Context, id int) *Challenge {
 	return obj
 }
 
-// QueryColumn queries the column edge of a Challenge.
-func (c *ChallengeClient) QueryColumn(ch *Challenge) *ChallengeGroupQuery {
+// QueryChallengeGroup queries the challenge_group edge of a Challenge.
+func (c *ChallengeClient) QueryChallengeGroup(ch *Challenge) *ChallengeGroupQuery {
 	query := (&ChallengeGroupClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := ch.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(challenge.Table, challenge.FieldID, id),
 			sqlgraph.To(challengegroup.Table, challengegroup.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, true, challenge.ColumnTable, challenge.ColumnPrimaryKey...),
+			sqlgraph.Edge(sqlgraph.M2M, true, challenge.ChallengeGroupTable, challenge.ChallengeGroupPrimaryKey...),
 		)
 		fromV = sqlgraph.Neighbors(ch.driver.Dialect(), step)
 		return fromV, nil
@@ -643,22 +643,6 @@ func (c *ChallengeGroupClient) GetX(ctx context.Context, id int) *ChallengeGroup
 	return obj
 }
 
-// QueryCategory queries the category edge of a ChallengeGroup.
-func (c *ChallengeGroupClient) QueryCategory(cg *ChallengeGroup) *CategoryQuery {
-	query := (&CategoryClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := cg.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(challengegroup.Table, challengegroup.FieldID, id),
-			sqlgraph.To(category.Table, category.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, true, challengegroup.CategoryTable, challengegroup.CategoryPrimaryKey...),
-		)
-		fromV = sqlgraph.Neighbors(cg.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
 // QueryChallenges queries the challenges edge of a ChallengeGroup.
 func (c *ChallengeGroupClient) QueryChallenges(cg *ChallengeGroup) *ChallengeQuery {
 	query := (&ChallengeClient{config: c.config}).Query()
@@ -668,6 +652,22 @@ func (c *ChallengeGroupClient) QueryChallenges(cg *ChallengeGroup) *ChallengeQue
 			sqlgraph.From(challengegroup.Table, challengegroup.FieldID, id),
 			sqlgraph.To(challenge.Table, challenge.FieldID),
 			sqlgraph.Edge(sqlgraph.M2M, false, challengegroup.ChallengesTable, challengegroup.ChallengesPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(cg.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryCategory queries the category edge of a ChallengeGroup.
+func (c *ChallengeGroupClient) QueryCategory(cg *ChallengeGroup) *CategoryQuery {
+	query := (&CategoryClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := cg.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(challengegroup.Table, challengegroup.FieldID, id),
+			sqlgraph.To(category.Table, category.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, challengegroup.CategoryTable, challengegroup.CategoryPrimaryKey...),
 		)
 		fromV = sqlgraph.Neighbors(cg.driver.Dialect(), step)
 		return fromV, nil
@@ -973,15 +973,15 @@ func (c *EpisodeRoundClient) GetX(ctx context.Context, id int) *EpisodeRound {
 	return obj
 }
 
-// QueryColumns queries the columns edge of a EpisodeRound.
-func (c *EpisodeRoundClient) QueryColumns(er *EpisodeRound) *ChallengeGroupQuery {
+// QueryCategories queries the categories edge of a EpisodeRound.
+func (c *EpisodeRoundClient) QueryCategories(er *EpisodeRound) *ChallengeGroupQuery {
 	query := (&ChallengeGroupClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := er.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(episoderound.Table, episoderound.FieldID, id),
 			sqlgraph.To(challengegroup.Table, challengegroup.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, false, episoderound.ColumnsTable, episoderound.ColumnsPrimaryKey...),
+			sqlgraph.Edge(sqlgraph.M2M, false, episoderound.CategoriesTable, episoderound.CategoriesPrimaryKey...),
 		)
 		fromV = sqlgraph.Neighbors(er.driver.Dialect(), step)
 		return fromV, nil

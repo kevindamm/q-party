@@ -32,20 +32,20 @@ type Challenge struct {
 
 // ChallengeEdges holds the relations/edges for other nodes in the graph.
 type ChallengeEdges struct {
-	// Column holds the value of the column edge.
-	Column []*ChallengeGroup `json:"column,omitempty"`
+	// ChallengeGroup holds the value of the challenge_group edge.
+	ChallengeGroup []*ChallengeGroup `json:"challenge_group,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [1]bool
 }
 
-// ColumnOrErr returns the Column value or an error if the edge
+// ChallengeGroupOrErr returns the ChallengeGroup value or an error if the edge
 // was not loaded in eager-loading.
-func (e ChallengeEdges) ColumnOrErr() ([]*ChallengeGroup, error) {
+func (e ChallengeEdges) ChallengeGroupOrErr() ([]*ChallengeGroup, error) {
 	if e.loadedTypes[0] {
-		return e.Column, nil
+		return e.ChallengeGroup, nil
 	}
-	return nil, &NotLoadedError{edge: "column"}
+	return nil, &NotLoadedError{edge: "challenge_group"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -115,9 +115,9 @@ func (c *Challenge) GetValue(name string) (ent.Value, error) {
 	return c.selectValues.Get(name)
 }
 
-// QueryColumn queries the "column" edge of the Challenge entity.
-func (c *Challenge) QueryColumn() *ChallengeGroupQuery {
-	return NewChallengeClient(c.config).QueryColumn(c)
+// QueryChallengeGroup queries the "challenge_group" edge of the Challenge entity.
+func (c *Challenge) QueryChallengeGroup() *ChallengeGroupQuery {
+	return NewChallengeClient(c.config).QueryChallengeGroup(c)
 }
 
 // Update returns a builder for updating this Challenge.

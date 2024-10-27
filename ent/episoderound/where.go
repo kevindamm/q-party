@@ -73,21 +73,21 @@ func RoundNotIn(vs ...Round) predicate.EpisodeRound {
 	return predicate.EpisodeRound(sql.FieldNotIn(FieldRound, vs...))
 }
 
-// HasColumns applies the HasEdge predicate on the "columns" edge.
-func HasColumns() predicate.EpisodeRound {
+// HasCategories applies the HasEdge predicate on the "categories" edge.
+func HasCategories() predicate.EpisodeRound {
 	return predicate.EpisodeRound(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, false, ColumnsTable, ColumnsPrimaryKey...),
+			sqlgraph.Edge(sqlgraph.M2M, false, CategoriesTable, CategoriesPrimaryKey...),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
 }
 
-// HasColumnsWith applies the HasEdge predicate on the "columns" edge with a given conditions (other predicates).
-func HasColumnsWith(preds ...predicate.ChallengeGroup) predicate.EpisodeRound {
+// HasCategoriesWith applies the HasEdge predicate on the "categories" edge with a given conditions (other predicates).
+func HasCategoriesWith(preds ...predicate.ChallengeGroup) predicate.EpisodeRound {
 	return predicate.EpisodeRound(func(s *sql.Selector) {
-		step := newColumnsStep()
+		step := newCategoriesStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

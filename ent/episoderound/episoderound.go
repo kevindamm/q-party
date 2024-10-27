@@ -16,17 +16,17 @@ const (
 	FieldID = "id"
 	// FieldRound holds the string denoting the round field in the database.
 	FieldRound = "round"
-	// EdgeColumns holds the string denoting the columns edge name in mutations.
-	EdgeColumns = "columns"
+	// EdgeCategories holds the string denoting the categories edge name in mutations.
+	EdgeCategories = "categories"
 	// EdgeEpisode holds the string denoting the episode edge name in mutations.
 	EdgeEpisode = "episode"
 	// Table holds the table name of the episoderound in the database.
 	Table = "episode_rounds"
-	// ColumnsTable is the table that holds the columns relation/edge. The primary key declared below.
-	ColumnsTable = "episode_round_columns"
-	// ColumnsInverseTable is the table name for the ChallengeGroup entity.
+	// CategoriesTable is the table that holds the categories relation/edge. The primary key declared below.
+	CategoriesTable = "episode_round_categories"
+	// CategoriesInverseTable is the table name for the ChallengeGroup entity.
 	// It exists in this package in order to avoid circular dependency with the "challengegroup" package.
-	ColumnsInverseTable = "challenge_groups"
+	CategoriesInverseTable = "challenge_groups"
 	// EpisodeTable is the table that holds the episode relation/edge. The primary key declared below.
 	EpisodeTable = "episode_rounds"
 	// EpisodeInverseTable is the table name for the Episode entity.
@@ -41,9 +41,9 @@ var Columns = []string{
 }
 
 var (
-	// ColumnsPrimaryKey and ColumnsColumn2 are the table columns denoting the
-	// primary key for the columns relation (M2M).
-	ColumnsPrimaryKey = []string{"episode_round_id", "challenge_group_id"}
+	// CategoriesPrimaryKey and CategoriesColumn2 are the table columns denoting the
+	// primary key for the categories relation (M2M).
+	CategoriesPrimaryKey = []string{"episode_round_id", "challenge_group_id"}
 	// EpisodePrimaryKey and EpisodeColumn2 are the table columns denoting the
 	// primary key for the episode relation (M2M).
 	EpisodePrimaryKey = []string{"episode_id", "episode_round_id"}
@@ -98,17 +98,17 @@ func ByRound(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldRound, opts...).ToFunc()
 }
 
-// ByColumnsCount orders the results by columns count.
-func ByColumnsCount(opts ...sql.OrderTermOption) OrderOption {
+// ByCategoriesCount orders the results by categories count.
+func ByCategoriesCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborsCount(s, newColumnsStep(), opts...)
+		sqlgraph.OrderByNeighborsCount(s, newCategoriesStep(), opts...)
 	}
 }
 
-// ByColumns orders the results by columns terms.
-func ByColumns(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+// ByCategories orders the results by categories terms.
+func ByCategories(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newColumnsStep(), append([]sql.OrderTerm{term}, terms...)...)
+		sqlgraph.OrderByNeighborTerms(s, newCategoriesStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
 
@@ -125,11 +125,11 @@ func ByEpisode(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newEpisodeStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
-func newColumnsStep() *sqlgraph.Step {
+func newCategoriesStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(ColumnsInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.M2M, false, ColumnsTable, ColumnsPrimaryKey...),
+		sqlgraph.To(CategoriesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2M, false, CategoriesTable, CategoriesPrimaryKey...),
 	)
 }
 func newEpisodeStep() *sqlgraph.Step {

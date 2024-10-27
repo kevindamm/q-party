@@ -43,19 +43,19 @@ func (eru *EpisodeRoundUpdate) SetNillableRound(e *episoderound.Round) *EpisodeR
 	return eru
 }
 
-// AddColumnIDs adds the "columns" edge to the ChallengeGroup entity by IDs.
-func (eru *EpisodeRoundUpdate) AddColumnIDs(ids ...int) *EpisodeRoundUpdate {
-	eru.mutation.AddColumnIDs(ids...)
+// AddCategoryIDs adds the "categories" edge to the ChallengeGroup entity by IDs.
+func (eru *EpisodeRoundUpdate) AddCategoryIDs(ids ...int) *EpisodeRoundUpdate {
+	eru.mutation.AddCategoryIDs(ids...)
 	return eru
 }
 
-// AddColumns adds the "columns" edges to the ChallengeGroup entity.
-func (eru *EpisodeRoundUpdate) AddColumns(c ...*ChallengeGroup) *EpisodeRoundUpdate {
+// AddCategories adds the "categories" edges to the ChallengeGroup entity.
+func (eru *EpisodeRoundUpdate) AddCategories(c ...*ChallengeGroup) *EpisodeRoundUpdate {
 	ids := make([]int, len(c))
 	for i := range c {
 		ids[i] = c[i].ID
 	}
-	return eru.AddColumnIDs(ids...)
+	return eru.AddCategoryIDs(ids...)
 }
 
 // AddEpisodeIDs adds the "episode" edge to the Episode entity by IDs.
@@ -78,25 +78,25 @@ func (eru *EpisodeRoundUpdate) Mutation() *EpisodeRoundMutation {
 	return eru.mutation
 }
 
-// ClearColumns clears all "columns" edges to the ChallengeGroup entity.
-func (eru *EpisodeRoundUpdate) ClearColumns() *EpisodeRoundUpdate {
-	eru.mutation.ClearColumns()
+// ClearCategories clears all "categories" edges to the ChallengeGroup entity.
+func (eru *EpisodeRoundUpdate) ClearCategories() *EpisodeRoundUpdate {
+	eru.mutation.ClearCategories()
 	return eru
 }
 
-// RemoveColumnIDs removes the "columns" edge to ChallengeGroup entities by IDs.
-func (eru *EpisodeRoundUpdate) RemoveColumnIDs(ids ...int) *EpisodeRoundUpdate {
-	eru.mutation.RemoveColumnIDs(ids...)
+// RemoveCategoryIDs removes the "categories" edge to ChallengeGroup entities by IDs.
+func (eru *EpisodeRoundUpdate) RemoveCategoryIDs(ids ...int) *EpisodeRoundUpdate {
+	eru.mutation.RemoveCategoryIDs(ids...)
 	return eru
 }
 
-// RemoveColumns removes "columns" edges to ChallengeGroup entities.
-func (eru *EpisodeRoundUpdate) RemoveColumns(c ...*ChallengeGroup) *EpisodeRoundUpdate {
+// RemoveCategories removes "categories" edges to ChallengeGroup entities.
+func (eru *EpisodeRoundUpdate) RemoveCategories(c ...*ChallengeGroup) *EpisodeRoundUpdate {
 	ids := make([]int, len(c))
 	for i := range c {
 		ids[i] = c[i].ID
 	}
-	return eru.RemoveColumnIDs(ids...)
+	return eru.RemoveCategoryIDs(ids...)
 }
 
 // ClearEpisode clears all "episode" edges to the Episode entity.
@@ -172,12 +172,12 @@ func (eru *EpisodeRoundUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := eru.mutation.Round(); ok {
 		_spec.SetField(episoderound.FieldRound, field.TypeEnum, value)
 	}
-	if eru.mutation.ColumnsCleared() {
+	if eru.mutation.CategoriesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: false,
-			Table:   episoderound.ColumnsTable,
-			Columns: episoderound.ColumnsPrimaryKey,
+			Table:   episoderound.CategoriesTable,
+			Columns: episoderound.CategoriesPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(challengegroup.FieldID, field.TypeInt),
@@ -185,12 +185,12 @@ func (eru *EpisodeRoundUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := eru.mutation.RemovedColumnsIDs(); len(nodes) > 0 && !eru.mutation.ColumnsCleared() {
+	if nodes := eru.mutation.RemovedCategoriesIDs(); len(nodes) > 0 && !eru.mutation.CategoriesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: false,
-			Table:   episoderound.ColumnsTable,
-			Columns: episoderound.ColumnsPrimaryKey,
+			Table:   episoderound.CategoriesTable,
+			Columns: episoderound.CategoriesPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(challengegroup.FieldID, field.TypeInt),
@@ -201,12 +201,12 @@ func (eru *EpisodeRoundUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := eru.mutation.ColumnsIDs(); len(nodes) > 0 {
+	if nodes := eru.mutation.CategoriesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: false,
-			Table:   episoderound.ColumnsTable,
-			Columns: episoderound.ColumnsPrimaryKey,
+			Table:   episoderound.CategoriesTable,
+			Columns: episoderound.CategoriesPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(challengegroup.FieldID, field.TypeInt),
@@ -296,19 +296,19 @@ func (eruo *EpisodeRoundUpdateOne) SetNillableRound(e *episoderound.Round) *Epis
 	return eruo
 }
 
-// AddColumnIDs adds the "columns" edge to the ChallengeGroup entity by IDs.
-func (eruo *EpisodeRoundUpdateOne) AddColumnIDs(ids ...int) *EpisodeRoundUpdateOne {
-	eruo.mutation.AddColumnIDs(ids...)
+// AddCategoryIDs adds the "categories" edge to the ChallengeGroup entity by IDs.
+func (eruo *EpisodeRoundUpdateOne) AddCategoryIDs(ids ...int) *EpisodeRoundUpdateOne {
+	eruo.mutation.AddCategoryIDs(ids...)
 	return eruo
 }
 
-// AddColumns adds the "columns" edges to the ChallengeGroup entity.
-func (eruo *EpisodeRoundUpdateOne) AddColumns(c ...*ChallengeGroup) *EpisodeRoundUpdateOne {
+// AddCategories adds the "categories" edges to the ChallengeGroup entity.
+func (eruo *EpisodeRoundUpdateOne) AddCategories(c ...*ChallengeGroup) *EpisodeRoundUpdateOne {
 	ids := make([]int, len(c))
 	for i := range c {
 		ids[i] = c[i].ID
 	}
-	return eruo.AddColumnIDs(ids...)
+	return eruo.AddCategoryIDs(ids...)
 }
 
 // AddEpisodeIDs adds the "episode" edge to the Episode entity by IDs.
@@ -331,25 +331,25 @@ func (eruo *EpisodeRoundUpdateOne) Mutation() *EpisodeRoundMutation {
 	return eruo.mutation
 }
 
-// ClearColumns clears all "columns" edges to the ChallengeGroup entity.
-func (eruo *EpisodeRoundUpdateOne) ClearColumns() *EpisodeRoundUpdateOne {
-	eruo.mutation.ClearColumns()
+// ClearCategories clears all "categories" edges to the ChallengeGroup entity.
+func (eruo *EpisodeRoundUpdateOne) ClearCategories() *EpisodeRoundUpdateOne {
+	eruo.mutation.ClearCategories()
 	return eruo
 }
 
-// RemoveColumnIDs removes the "columns" edge to ChallengeGroup entities by IDs.
-func (eruo *EpisodeRoundUpdateOne) RemoveColumnIDs(ids ...int) *EpisodeRoundUpdateOne {
-	eruo.mutation.RemoveColumnIDs(ids...)
+// RemoveCategoryIDs removes the "categories" edge to ChallengeGroup entities by IDs.
+func (eruo *EpisodeRoundUpdateOne) RemoveCategoryIDs(ids ...int) *EpisodeRoundUpdateOne {
+	eruo.mutation.RemoveCategoryIDs(ids...)
 	return eruo
 }
 
-// RemoveColumns removes "columns" edges to ChallengeGroup entities.
-func (eruo *EpisodeRoundUpdateOne) RemoveColumns(c ...*ChallengeGroup) *EpisodeRoundUpdateOne {
+// RemoveCategories removes "categories" edges to ChallengeGroup entities.
+func (eruo *EpisodeRoundUpdateOne) RemoveCategories(c ...*ChallengeGroup) *EpisodeRoundUpdateOne {
 	ids := make([]int, len(c))
 	for i := range c {
 		ids[i] = c[i].ID
 	}
-	return eruo.RemoveColumnIDs(ids...)
+	return eruo.RemoveCategoryIDs(ids...)
 }
 
 // ClearEpisode clears all "episode" edges to the Episode entity.
@@ -455,12 +455,12 @@ func (eruo *EpisodeRoundUpdateOne) sqlSave(ctx context.Context) (_node *EpisodeR
 	if value, ok := eruo.mutation.Round(); ok {
 		_spec.SetField(episoderound.FieldRound, field.TypeEnum, value)
 	}
-	if eruo.mutation.ColumnsCleared() {
+	if eruo.mutation.CategoriesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: false,
-			Table:   episoderound.ColumnsTable,
-			Columns: episoderound.ColumnsPrimaryKey,
+			Table:   episoderound.CategoriesTable,
+			Columns: episoderound.CategoriesPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(challengegroup.FieldID, field.TypeInt),
@@ -468,12 +468,12 @@ func (eruo *EpisodeRoundUpdateOne) sqlSave(ctx context.Context) (_node *EpisodeR
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := eruo.mutation.RemovedColumnsIDs(); len(nodes) > 0 && !eruo.mutation.ColumnsCleared() {
+	if nodes := eruo.mutation.RemovedCategoriesIDs(); len(nodes) > 0 && !eruo.mutation.CategoriesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: false,
-			Table:   episoderound.ColumnsTable,
-			Columns: episoderound.ColumnsPrimaryKey,
+			Table:   episoderound.CategoriesTable,
+			Columns: episoderound.CategoriesPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(challengegroup.FieldID, field.TypeInt),
@@ -484,12 +484,12 @@ func (eruo *EpisodeRoundUpdateOne) sqlSave(ctx context.Context) (_node *EpisodeR
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := eruo.mutation.ColumnsIDs(); len(nodes) > 0 {
+	if nodes := eruo.mutation.CategoriesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: false,
-			Table:   episoderound.ColumnsTable,
-			Columns: episoderound.ColumnsPrimaryKey,
+			Table:   episoderound.CategoriesTable,
+			Columns: episoderound.CategoriesPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(challengegroup.FieldID, field.TypeInt),

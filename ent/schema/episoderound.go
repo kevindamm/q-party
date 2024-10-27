@@ -27,7 +27,8 @@ func (EpisodeRound) Fields() []ent.Field {
 // Edges of the EpisodeRound.
 func (EpisodeRound) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.To("columns", ChallengeGroup.Type),
+		edge.To("categories", ChallengeGroup.Type),
+
 		edge.From("episode", Episode.Type).
 			Ref("rounds"),
 	}

@@ -38,17 +38,17 @@ const (
 // CategoryMutation represents an operation that mutates the Category nodes in the graph.
 type CategoryMutation struct {
 	config
-	op                Op
-	typ               string
-	id                *int
-	name              *string
-	clearedFields     map[string]struct{}
-	challenges        map[int]struct{}
-	removedchallenges map[int]struct{}
-	clearedchallenges bool
-	done              bool
-	oldValue          func(context.Context) (*Category, error)
-	predicates        []predicate.Category
+	op                      Op
+	typ                     string
+	id                      *int
+	name                    *string
+	clearedFields           map[string]struct{}
+	challenge_groups        map[int]struct{}
+	removedchallenge_groups map[int]struct{}
+	clearedchallenge_groups bool
+	done                    bool
+	oldValue                func(context.Context) (*Category, error)
+	predicates              []predicate.Category
 }
 
 var _ ent.Mutation = (*CategoryMutation)(nil)
@@ -185,58 +185,58 @@ func (m *CategoryMutation) ResetName() {
 	m.name = nil
 }
 
-// AddChallengeIDs adds the "challenges" edge to the ChallengeGroup entity by ids.
-func (m *CategoryMutation) AddChallengeIDs(ids ...int) {
-	if m.challenges == nil {
-		m.challenges = make(map[int]struct{})
+// AddChallengeGroupIDs adds the "challenge_groups" edge to the ChallengeGroup entity by ids.
+func (m *CategoryMutation) AddChallengeGroupIDs(ids ...int) {
+	if m.challenge_groups == nil {
+		m.challenge_groups = make(map[int]struct{})
 	}
 	for i := range ids {
-		m.challenges[ids[i]] = struct{}{}
+		m.challenge_groups[ids[i]] = struct{}{}
 	}
 }
 
-// ClearChallenges clears the "challenges" edge to the ChallengeGroup entity.
-func (m *CategoryMutation) ClearChallenges() {
-	m.clearedchallenges = true
+// ClearChallengeGroups clears the "challenge_groups" edge to the ChallengeGroup entity.
+func (m *CategoryMutation) ClearChallengeGroups() {
+	m.clearedchallenge_groups = true
 }
 
-// ChallengesCleared reports if the "challenges" edge to the ChallengeGroup entity was cleared.
-func (m *CategoryMutation) ChallengesCleared() bool {
-	return m.clearedchallenges
+// ChallengeGroupsCleared reports if the "challenge_groups" edge to the ChallengeGroup entity was cleared.
+func (m *CategoryMutation) ChallengeGroupsCleared() bool {
+	return m.clearedchallenge_groups
 }
 
-// RemoveChallengeIDs removes the "challenges" edge to the ChallengeGroup entity by IDs.
-func (m *CategoryMutation) RemoveChallengeIDs(ids ...int) {
-	if m.removedchallenges == nil {
-		m.removedchallenges = make(map[int]struct{})
+// RemoveChallengeGroupIDs removes the "challenge_groups" edge to the ChallengeGroup entity by IDs.
+func (m *CategoryMutation) RemoveChallengeGroupIDs(ids ...int) {
+	if m.removedchallenge_groups == nil {
+		m.removedchallenge_groups = make(map[int]struct{})
 	}
 	for i := range ids {
-		delete(m.challenges, ids[i])
-		m.removedchallenges[ids[i]] = struct{}{}
+		delete(m.challenge_groups, ids[i])
+		m.removedchallenge_groups[ids[i]] = struct{}{}
 	}
 }
 
-// RemovedChallenges returns the removed IDs of the "challenges" edge to the ChallengeGroup entity.
-func (m *CategoryMutation) RemovedChallengesIDs() (ids []int) {
-	for id := range m.removedchallenges {
+// RemovedChallengeGroups returns the removed IDs of the "challenge_groups" edge to the ChallengeGroup entity.
+func (m *CategoryMutation) RemovedChallengeGroupsIDs() (ids []int) {
+	for id := range m.removedchallenge_groups {
 		ids = append(ids, id)
 	}
 	return
 }
 
-// ChallengesIDs returns the "challenges" edge IDs in the mutation.
-func (m *CategoryMutation) ChallengesIDs() (ids []int) {
-	for id := range m.challenges {
+// ChallengeGroupsIDs returns the "challenge_groups" edge IDs in the mutation.
+func (m *CategoryMutation) ChallengeGroupsIDs() (ids []int) {
+	for id := range m.challenge_groups {
 		ids = append(ids, id)
 	}
 	return
 }
 
-// ResetChallenges resets all changes to the "challenges" edge.
-func (m *CategoryMutation) ResetChallenges() {
-	m.challenges = nil
-	m.clearedchallenges = false
-	m.removedchallenges = nil
+// ResetChallengeGroups resets all changes to the "challenge_groups" edge.
+func (m *CategoryMutation) ResetChallengeGroups() {
+	m.challenge_groups = nil
+	m.clearedchallenge_groups = false
+	m.removedchallenge_groups = nil
 }
 
 // Where appends a list predicates to the CategoryMutation builder.
@@ -373,8 +373,8 @@ func (m *CategoryMutation) ResetField(name string) error {
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *CategoryMutation) AddedEdges() []string {
 	edges := make([]string, 0, 1)
-	if m.challenges != nil {
-		edges = append(edges, category.EdgeChallenges)
+	if m.challenge_groups != nil {
+		edges = append(edges, category.EdgeChallengeGroups)
 	}
 	return edges
 }
@@ -383,9 +383,9 @@ func (m *CategoryMutation) AddedEdges() []string {
 // name in this mutation.
 func (m *CategoryMutation) AddedIDs(name string) []ent.Value {
 	switch name {
-	case category.EdgeChallenges:
-		ids := make([]ent.Value, 0, len(m.challenges))
-		for id := range m.challenges {
+	case category.EdgeChallengeGroups:
+		ids := make([]ent.Value, 0, len(m.challenge_groups))
+		for id := range m.challenge_groups {
 			ids = append(ids, id)
 		}
 		return ids
@@ -396,8 +396,8 @@ func (m *CategoryMutation) AddedIDs(name string) []ent.Value {
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *CategoryMutation) RemovedEdges() []string {
 	edges := make([]string, 0, 1)
-	if m.removedchallenges != nil {
-		edges = append(edges, category.EdgeChallenges)
+	if m.removedchallenge_groups != nil {
+		edges = append(edges, category.EdgeChallengeGroups)
 	}
 	return edges
 }
@@ -406,9 +406,9 @@ func (m *CategoryMutation) RemovedEdges() []string {
 // the given name in this mutation.
 func (m *CategoryMutation) RemovedIDs(name string) []ent.Value {
 	switch name {
-	case category.EdgeChallenges:
-		ids := make([]ent.Value, 0, len(m.removedchallenges))
-		for id := range m.removedchallenges {
+	case category.EdgeChallengeGroups:
+		ids := make([]ent.Value, 0, len(m.removedchallenge_groups))
+		for id := range m.removedchallenge_groups {
 			ids = append(ids, id)
 		}
 		return ids
@@ -419,8 +419,8 @@ func (m *CategoryMutation) RemovedIDs(name string) []ent.Value {
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *CategoryMutation) ClearedEdges() []string {
 	edges := make([]string, 0, 1)
-	if m.clearedchallenges {
-		edges = append(edges, category.EdgeChallenges)
+	if m.clearedchallenge_groups {
+		edges = append(edges, category.EdgeChallengeGroups)
 	}
 	return edges
 }
@@ -429,8 +429,8 @@ func (m *CategoryMutation) ClearedEdges() []string {
 // was cleared in this mutation.
 func (m *CategoryMutation) EdgeCleared(name string) bool {
 	switch name {
-	case category.EdgeChallenges:
-		return m.clearedchallenges
+	case category.EdgeChallengeGroups:
+		return m.clearedchallenge_groups
 	}
 	return false
 }
@@ -447,8 +447,8 @@ func (m *CategoryMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *CategoryMutation) ResetEdge(name string) error {
 	switch name {
-	case category.EdgeChallenges:
-		m.ResetChallenges()
+	case category.EdgeChallengeGroups:
+		m.ResetChallengeGroups()
 		return nil
 	}
 	return fmt.Errorf("unknown Category edge %s", name)
@@ -457,21 +457,21 @@ func (m *CategoryMutation) ResetEdge(name string) error {
 // ChallengeMutation represents an operation that mutates the Challenge nodes in the graph.
 type ChallengeMutation struct {
 	config
-	op            Op
-	typ           string
-	id            *int
-	media         *string
-	prompt        *string
-	response      *string
-	value         *int
-	addvalue      *int
-	clearedFields map[string]struct{}
-	column        map[int]struct{}
-	removedcolumn map[int]struct{}
-	clearedcolumn bool
-	done          bool
-	oldValue      func(context.Context) (*Challenge, error)
-	predicates    []predicate.Challenge
+	op                     Op
+	typ                    string
+	id                     *int
+	media                  *string
+	prompt                 *string
+	response               *string
+	value                  *int
+	addvalue               *int
+	clearedFields          map[string]struct{}
+	challenge_group        map[int]struct{}
+	removedchallenge_group map[int]struct{}
+	clearedchallenge_group bool
+	done                   bool
+	oldValue               func(context.Context) (*Challenge, error)
+	predicates             []predicate.Challenge
 }
 
 var _ ent.Mutation = (*ChallengeMutation)(nil)
@@ -736,58 +736,58 @@ func (m *ChallengeMutation) ResetValue() {
 	m.addvalue = nil
 }
 
-// AddColumnIDs adds the "column" edge to the ChallengeGroup entity by ids.
-func (m *ChallengeMutation) AddColumnIDs(ids ...int) {
-	if m.column == nil {
-		m.column = make(map[int]struct{})
+// AddChallengeGroupIDs adds the "challenge_group" edge to the ChallengeGroup entity by ids.
+func (m *ChallengeMutation) AddChallengeGroupIDs(ids ...int) {
+	if m.challenge_group == nil {
+		m.challenge_group = make(map[int]struct{})
 	}
 	for i := range ids {
-		m.column[ids[i]] = struct{}{}
+		m.challenge_group[ids[i]] = struct{}{}
 	}
 }
 
-// ClearColumn clears the "column" edge to the ChallengeGroup entity.
-func (m *ChallengeMutation) ClearColumn() {
-	m.clearedcolumn = true
+// ClearChallengeGroup clears the "challenge_group" edge to the ChallengeGroup entity.
+func (m *ChallengeMutation) ClearChallengeGroup() {
+	m.clearedchallenge_group = true
 }
 
-// ColumnCleared reports if the "column" edge to the ChallengeGroup entity was cleared.
-func (m *ChallengeMutation) ColumnCleared() bool {
-	return m.clearedcolumn
+// ChallengeGroupCleared reports if the "challenge_group" edge to the ChallengeGroup entity was cleared.
+func (m *ChallengeMutation) ChallengeGroupCleared() bool {
+	return m.clearedchallenge_group
 }
 
-// RemoveColumnIDs removes the "column" edge to the ChallengeGroup entity by IDs.
-func (m *ChallengeMutation) RemoveColumnIDs(ids ...int) {
-	if m.removedcolumn == nil {
-		m.removedcolumn = make(map[int]struct{})
+// RemoveChallengeGroupIDs removes the "challenge_group" edge to the ChallengeGroup entity by IDs.
+func (m *ChallengeMutation) RemoveChallengeGroupIDs(ids ...int) {
+	if m.removedchallenge_group == nil {
+		m.removedchallenge_group = make(map[int]struct{})
 	}
 	for i := range ids {
-		delete(m.column, ids[i])
-		m.removedcolumn[ids[i]] = struct{}{}
+		delete(m.challenge_group, ids[i])
+		m.removedchallenge_group[ids[i]] = struct{}{}
 	}
 }
 
-// RemovedColumn returns the removed IDs of the "column" edge to the ChallengeGroup entity.
-func (m *ChallengeMutation) RemovedColumnIDs() (ids []int) {
-	for id := range m.removedcolumn {
+// RemovedChallengeGroup returns the removed IDs of the "challenge_group" edge to the ChallengeGroup entity.
+func (m *ChallengeMutation) RemovedChallengeGroupIDs() (ids []int) {
+	for id := range m.removedchallenge_group {
 		ids = append(ids, id)
 	}
 	return
 }
 
-// ColumnIDs returns the "column" edge IDs in the mutation.
-func (m *ChallengeMutation) ColumnIDs() (ids []int) {
-	for id := range m.column {
+// ChallengeGroupIDs returns the "challenge_group" edge IDs in the mutation.
+func (m *ChallengeMutation) ChallengeGroupIDs() (ids []int) {
+	for id := range m.challenge_group {
 		ids = append(ids, id)
 	}
 	return
 }
 
-// ResetColumn resets all changes to the "column" edge.
-func (m *ChallengeMutation) ResetColumn() {
-	m.column = nil
-	m.clearedcolumn = false
-	m.removedcolumn = nil
+// ResetChallengeGroup resets all changes to the "challenge_group" edge.
+func (m *ChallengeMutation) ResetChallengeGroup() {
+	m.challenge_group = nil
+	m.clearedchallenge_group = false
+	m.removedchallenge_group = nil
 }
 
 // Where appends a list predicates to the ChallengeMutation builder.
@@ -990,8 +990,8 @@ func (m *ChallengeMutation) ResetField(name string) error {
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *ChallengeMutation) AddedEdges() []string {
 	edges := make([]string, 0, 1)
-	if m.column != nil {
-		edges = append(edges, challenge.EdgeColumn)
+	if m.challenge_group != nil {
+		edges = append(edges, challenge.EdgeChallengeGroup)
 	}
 	return edges
 }
@@ -1000,9 +1000,9 @@ func (m *ChallengeMutation) AddedEdges() []string {
 // name in this mutation.
 func (m *ChallengeMutation) AddedIDs(name string) []ent.Value {
 	switch name {
-	case challenge.EdgeColumn:
-		ids := make([]ent.Value, 0, len(m.column))
-		for id := range m.column {
+	case challenge.EdgeChallengeGroup:
+		ids := make([]ent.Value, 0, len(m.challenge_group))
+		for id := range m.challenge_group {
 			ids = append(ids, id)
 		}
 		return ids
@@ -1013,8 +1013,8 @@ func (m *ChallengeMutation) AddedIDs(name string) []ent.Value {
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *ChallengeMutation) RemovedEdges() []string {
 	edges := make([]string, 0, 1)
-	if m.removedcolumn != nil {
-		edges = append(edges, challenge.EdgeColumn)
+	if m.removedchallenge_group != nil {
+		edges = append(edges, challenge.EdgeChallengeGroup)
 	}
 	return edges
 }
@@ -1023,9 +1023,9 @@ func (m *ChallengeMutation) RemovedEdges() []string {
 // the given name in this mutation.
 func (m *ChallengeMutation) RemovedIDs(name string) []ent.Value {
 	switch name {
-	case challenge.EdgeColumn:
-		ids := make([]ent.Value, 0, len(m.removedcolumn))
-		for id := range m.removedcolumn {
+	case challenge.EdgeChallengeGroup:
+		ids := make([]ent.Value, 0, len(m.removedchallenge_group))
+		for id := range m.removedchallenge_group {
 			ids = append(ids, id)
 		}
 		return ids
@@ -1036,8 +1036,8 @@ func (m *ChallengeMutation) RemovedIDs(name string) []ent.Value {
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *ChallengeMutation) ClearedEdges() []string {
 	edges := make([]string, 0, 1)
-	if m.clearedcolumn {
-		edges = append(edges, challenge.EdgeColumn)
+	if m.clearedchallenge_group {
+		edges = append(edges, challenge.EdgeChallengeGroup)
 	}
 	return edges
 }
@@ -1046,8 +1046,8 @@ func (m *ChallengeMutation) ClearedEdges() []string {
 // was cleared in this mutation.
 func (m *ChallengeMutation) EdgeCleared(name string) bool {
 	switch name {
-	case challenge.EdgeColumn:
-		return m.clearedcolumn
+	case challenge.EdgeChallengeGroup:
+		return m.clearedchallenge_group
 	}
 	return false
 }
@@ -1064,8 +1064,8 @@ func (m *ChallengeMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *ChallengeMutation) ResetEdge(name string) error {
 	switch name {
-	case challenge.EdgeColumn:
-		m.ResetColumn()
+	case challenge.EdgeChallengeGroup:
+		m.ResetChallengeGroup()
 		return nil
 	}
 	return fmt.Errorf("unknown Challenge edge %s", name)
@@ -1078,12 +1078,12 @@ type ChallengeGroupMutation struct {
 	typ                  string
 	id                   *int
 	clearedFields        map[string]struct{}
-	category             map[int]struct{}
-	removedcategory      map[int]struct{}
-	clearedcategory      bool
 	challenges           map[int]struct{}
 	removedchallenges    map[int]struct{}
 	clearedchallenges    bool
+	category             map[int]struct{}
+	removedcategory      map[int]struct{}
+	clearedcategory      bool
 	episode_round        map[int]struct{}
 	removedepisode_round map[int]struct{}
 	clearedepisode_round bool
@@ -1190,60 +1190,6 @@ func (m *ChallengeGroupMutation) IDs(ctx context.Context) ([]int, error) {
 	}
 }
 
-// AddCategoryIDs adds the "category" edge to the Category entity by ids.
-func (m *ChallengeGroupMutation) AddCategoryIDs(ids ...int) {
-	if m.category == nil {
-		m.category = make(map[int]struct{})
-	}
-	for i := range ids {
-		m.category[ids[i]] = struct{}{}
-	}
-}
-
-// ClearCategory clears the "category" edge to the Category entity.
-func (m *ChallengeGroupMutation) ClearCategory() {
-	m.clearedcategory = true
-}
-
-// CategoryCleared reports if the "category" edge to the Category entity was cleared.
-func (m *ChallengeGroupMutation) CategoryCleared() bool {
-	return m.clearedcategory
-}
-
-// RemoveCategoryIDs removes the "category" edge to the Category entity by IDs.
-func (m *ChallengeGroupMutation) RemoveCategoryIDs(ids ...int) {
-	if m.removedcategory == nil {
-		m.removedcategory = make(map[int]struct{})
-	}
-	for i := range ids {
-		delete(m.category, ids[i])
-		m.removedcategory[ids[i]] = struct{}{}
-	}
-}
-
-// RemovedCategory returns the removed IDs of the "category" edge to the Category entity.
-func (m *ChallengeGroupMutation) RemovedCategoryIDs() (ids []int) {
-	for id := range m.removedcategory {
-		ids = append(ids, id)
-	}
-	return
-}
-
-// CategoryIDs returns the "category" edge IDs in the mutation.
-func (m *ChallengeGroupMutation) CategoryIDs() (ids []int) {
-	for id := range m.category {
-		ids = append(ids, id)
-	}
-	return
-}
-
-// ResetCategory resets all changes to the "category" edge.
-func (m *ChallengeGroupMutation) ResetCategory() {
-	m.category = nil
-	m.clearedcategory = false
-	m.removedcategory = nil
-}
-
 // AddChallengeIDs adds the "challenges" edge to the Challenge entity by ids.
 func (m *ChallengeGroupMutation) AddChallengeIDs(ids ...int) {
 	if m.challenges == nil {
@@ -1296,6 +1242,60 @@ func (m *ChallengeGroupMutation) ResetChallenges() {
 	m.challenges = nil
 	m.clearedchallenges = false
 	m.removedchallenges = nil
+}
+
+// AddCategoryIDs adds the "category" edge to the Category entity by ids.
+func (m *ChallengeGroupMutation) AddCategoryIDs(ids ...int) {
+	if m.category == nil {
+		m.category = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.category[ids[i]] = struct{}{}
+	}
+}
+
+// ClearCategory clears the "category" edge to the Category entity.
+func (m *ChallengeGroupMutation) ClearCategory() {
+	m.clearedcategory = true
+}
+
+// CategoryCleared reports if the "category" edge to the Category entity was cleared.
+func (m *ChallengeGroupMutation) CategoryCleared() bool {
+	return m.clearedcategory
+}
+
+// RemoveCategoryIDs removes the "category" edge to the Category entity by IDs.
+func (m *ChallengeGroupMutation) RemoveCategoryIDs(ids ...int) {
+	if m.removedcategory == nil {
+		m.removedcategory = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.category, ids[i])
+		m.removedcategory[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedCategory returns the removed IDs of the "category" edge to the Category entity.
+func (m *ChallengeGroupMutation) RemovedCategoryIDs() (ids []int) {
+	for id := range m.removedcategory {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// CategoryIDs returns the "category" edge IDs in the mutation.
+func (m *ChallengeGroupMutation) CategoryIDs() (ids []int) {
+	for id := range m.category {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetCategory resets all changes to the "category" edge.
+func (m *ChallengeGroupMutation) ResetCategory() {
+	m.category = nil
+	m.clearedcategory = false
+	m.removedcategory = nil
 }
 
 // AddEpisodeRoundIDs adds the "episode_round" edge to the EpisodeRound entity by ids.
@@ -1461,11 +1461,11 @@ func (m *ChallengeGroupMutation) ResetField(name string) error {
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *ChallengeGroupMutation) AddedEdges() []string {
 	edges := make([]string, 0, 3)
-	if m.category != nil {
-		edges = append(edges, challengegroup.EdgeCategory)
-	}
 	if m.challenges != nil {
 		edges = append(edges, challengegroup.EdgeChallenges)
+	}
+	if m.category != nil {
+		edges = append(edges, challengegroup.EdgeCategory)
 	}
 	if m.episode_round != nil {
 		edges = append(edges, challengegroup.EdgeEpisodeRound)
@@ -1477,15 +1477,15 @@ func (m *ChallengeGroupMutation) AddedEdges() []string {
 // name in this mutation.
 func (m *ChallengeGroupMutation) AddedIDs(name string) []ent.Value {
 	switch name {
-	case challengegroup.EdgeCategory:
-		ids := make([]ent.Value, 0, len(m.category))
-		for id := range m.category {
-			ids = append(ids, id)
-		}
-		return ids
 	case challengegroup.EdgeChallenges:
 		ids := make([]ent.Value, 0, len(m.challenges))
 		for id := range m.challenges {
+			ids = append(ids, id)
+		}
+		return ids
+	case challengegroup.EdgeCategory:
+		ids := make([]ent.Value, 0, len(m.category))
+		for id := range m.category {
 			ids = append(ids, id)
 		}
 		return ids
@@ -1502,11 +1502,11 @@ func (m *ChallengeGroupMutation) AddedIDs(name string) []ent.Value {
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *ChallengeGroupMutation) RemovedEdges() []string {
 	edges := make([]string, 0, 3)
-	if m.removedcategory != nil {
-		edges = append(edges, challengegroup.EdgeCategory)
-	}
 	if m.removedchallenges != nil {
 		edges = append(edges, challengegroup.EdgeChallenges)
+	}
+	if m.removedcategory != nil {
+		edges = append(edges, challengegroup.EdgeCategory)
 	}
 	if m.removedepisode_round != nil {
 		edges = append(edges, challengegroup.EdgeEpisodeRound)
@@ -1518,15 +1518,15 @@ func (m *ChallengeGroupMutation) RemovedEdges() []string {
 // the given name in this mutation.
 func (m *ChallengeGroupMutation) RemovedIDs(name string) []ent.Value {
 	switch name {
-	case challengegroup.EdgeCategory:
-		ids := make([]ent.Value, 0, len(m.removedcategory))
-		for id := range m.removedcategory {
-			ids = append(ids, id)
-		}
-		return ids
 	case challengegroup.EdgeChallenges:
 		ids := make([]ent.Value, 0, len(m.removedchallenges))
 		for id := range m.removedchallenges {
+			ids = append(ids, id)
+		}
+		return ids
+	case challengegroup.EdgeCategory:
+		ids := make([]ent.Value, 0, len(m.removedcategory))
+		for id := range m.removedcategory {
 			ids = append(ids, id)
 		}
 		return ids
@@ -1543,11 +1543,11 @@ func (m *ChallengeGroupMutation) RemovedIDs(name string) []ent.Value {
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *ChallengeGroupMutation) ClearedEdges() []string {
 	edges := make([]string, 0, 3)
-	if m.clearedcategory {
-		edges = append(edges, challengegroup.EdgeCategory)
-	}
 	if m.clearedchallenges {
 		edges = append(edges, challengegroup.EdgeChallenges)
+	}
+	if m.clearedcategory {
+		edges = append(edges, challengegroup.EdgeCategory)
 	}
 	if m.clearedepisode_round {
 		edges = append(edges, challengegroup.EdgeEpisodeRound)
@@ -1559,10 +1559,10 @@ func (m *ChallengeGroupMutation) ClearedEdges() []string {
 // was cleared in this mutation.
 func (m *ChallengeGroupMutation) EdgeCleared(name string) bool {
 	switch name {
-	case challengegroup.EdgeCategory:
-		return m.clearedcategory
 	case challengegroup.EdgeChallenges:
 		return m.clearedchallenges
+	case challengegroup.EdgeCategory:
+		return m.clearedcategory
 	case challengegroup.EdgeEpisodeRound:
 		return m.clearedepisode_round
 	}
@@ -1581,11 +1581,11 @@ func (m *ChallengeGroupMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *ChallengeGroupMutation) ResetEdge(name string) error {
 	switch name {
-	case challengegroup.EdgeCategory:
-		m.ResetCategory()
-		return nil
 	case challengegroup.EdgeChallenges:
 		m.ResetChallenges()
+		return nil
+	case challengegroup.EdgeCategory:
+		m.ResetCategory()
 		return nil
 	case challengegroup.EdgeEpisodeRound:
 		m.ResetEpisodeRound()
@@ -2070,20 +2070,20 @@ func (m *EpisodeMutation) ResetEdge(name string) error {
 // EpisodeRoundMutation represents an operation that mutates the EpisodeRound nodes in the graph.
 type EpisodeRoundMutation struct {
 	config
-	op             Op
-	typ            string
-	id             *int
-	round          *episoderound.Round
-	clearedFields  map[string]struct{}
-	columns        map[int]struct{}
-	removedcolumns map[int]struct{}
-	clearedcolumns bool
-	episode        map[int]struct{}
-	removedepisode map[int]struct{}
-	clearedepisode bool
-	done           bool
-	oldValue       func(context.Context) (*EpisodeRound, error)
-	predicates     []predicate.EpisodeRound
+	op                Op
+	typ               string
+	id                *int
+	round             *episoderound.Round
+	clearedFields     map[string]struct{}
+	categories        map[int]struct{}
+	removedcategories map[int]struct{}
+	clearedcategories bool
+	episode           map[int]struct{}
+	removedepisode    map[int]struct{}
+	clearedepisode    bool
+	done              bool
+	oldValue          func(context.Context) (*EpisodeRound, error)
+	predicates        []predicate.EpisodeRound
 }
 
 var _ ent.Mutation = (*EpisodeRoundMutation)(nil)
@@ -2220,58 +2220,58 @@ func (m *EpisodeRoundMutation) ResetRound() {
 	m.round = nil
 }
 
-// AddColumnIDs adds the "columns" edge to the ChallengeGroup entity by ids.
-func (m *EpisodeRoundMutation) AddColumnIDs(ids ...int) {
-	if m.columns == nil {
-		m.columns = make(map[int]struct{})
+// AddCategoryIDs adds the "categories" edge to the ChallengeGroup entity by ids.
+func (m *EpisodeRoundMutation) AddCategoryIDs(ids ...int) {
+	if m.categories == nil {
+		m.categories = make(map[int]struct{})
 	}
 	for i := range ids {
-		m.columns[ids[i]] = struct{}{}
+		m.categories[ids[i]] = struct{}{}
 	}
 }
 
-// ClearColumns clears the "columns" edge to the ChallengeGroup entity.
-func (m *EpisodeRoundMutation) ClearColumns() {
-	m.clearedcolumns = true
+// ClearCategories clears the "categories" edge to the ChallengeGroup entity.
+func (m *EpisodeRoundMutation) ClearCategories() {
+	m.clearedcategories = true
 }
 
-// ColumnsCleared reports if the "columns" edge to the ChallengeGroup entity was cleared.
-func (m *EpisodeRoundMutation) ColumnsCleared() bool {
-	return m.clearedcolumns
+// CategoriesCleared reports if the "categories" edge to the ChallengeGroup entity was cleared.
+func (m *EpisodeRoundMutation) CategoriesCleared() bool {
+	return m.clearedcategories
 }
 
-// RemoveColumnIDs removes the "columns" edge to the ChallengeGroup entity by IDs.
-func (m *EpisodeRoundMutation) RemoveColumnIDs(ids ...int) {
-	if m.removedcolumns == nil {
-		m.removedcolumns = make(map[int]struct{})
+// RemoveCategoryIDs removes the "categories" edge to the ChallengeGroup entity by IDs.
+func (m *EpisodeRoundMutation) RemoveCategoryIDs(ids ...int) {
+	if m.removedcategories == nil {
+		m.removedcategories = make(map[int]struct{})
 	}
 	for i := range ids {
-		delete(m.columns, ids[i])
-		m.removedcolumns[ids[i]] = struct{}{}
+		delete(m.categories, ids[i])
+		m.removedcategories[ids[i]] = struct{}{}
 	}
 }
 
-// RemovedColumns returns the removed IDs of the "columns" edge to the ChallengeGroup entity.
-func (m *EpisodeRoundMutation) RemovedColumnsIDs() (ids []int) {
-	for id := range m.removedcolumns {
+// RemovedCategories returns the removed IDs of the "categories" edge to the ChallengeGroup entity.
+func (m *EpisodeRoundMutation) RemovedCategoriesIDs() (ids []int) {
+	for id := range m.removedcategories {
 		ids = append(ids, id)
 	}
 	return
 }
 
-// ColumnsIDs returns the "columns" edge IDs in the mutation.
-func (m *EpisodeRoundMutation) ColumnsIDs() (ids []int) {
-	for id := range m.columns {
+// CategoriesIDs returns the "categories" edge IDs in the mutation.
+func (m *EpisodeRoundMutation) CategoriesIDs() (ids []int) {
+	for id := range m.categories {
 		ids = append(ids, id)
 	}
 	return
 }
 
-// ResetColumns resets all changes to the "columns" edge.
-func (m *EpisodeRoundMutation) ResetColumns() {
-	m.columns = nil
-	m.clearedcolumns = false
-	m.removedcolumns = nil
+// ResetCategories resets all changes to the "categories" edge.
+func (m *EpisodeRoundMutation) ResetCategories() {
+	m.categories = nil
+	m.clearedcategories = false
+	m.removedcategories = nil
 }
 
 // AddEpisodeIDs adds the "episode" edge to the Episode entity by ids.
@@ -2462,8 +2462,8 @@ func (m *EpisodeRoundMutation) ResetField(name string) error {
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *EpisodeRoundMutation) AddedEdges() []string {
 	edges := make([]string, 0, 2)
-	if m.columns != nil {
-		edges = append(edges, episoderound.EdgeColumns)
+	if m.categories != nil {
+		edges = append(edges, episoderound.EdgeCategories)
 	}
 	if m.episode != nil {
 		edges = append(edges, episoderound.EdgeEpisode)
@@ -2475,9 +2475,9 @@ func (m *EpisodeRoundMutation) AddedEdges() []string {
 // name in this mutation.
 func (m *EpisodeRoundMutation) AddedIDs(name string) []ent.Value {
 	switch name {
-	case episoderound.EdgeColumns:
-		ids := make([]ent.Value, 0, len(m.columns))
-		for id := range m.columns {
+	case episoderound.EdgeCategories:
+		ids := make([]ent.Value, 0, len(m.categories))
+		for id := range m.categories {
 			ids = append(ids, id)
 		}
 		return ids
@@ -2494,8 +2494,8 @@ func (m *EpisodeRoundMutation) AddedIDs(name string) []ent.Value {
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *EpisodeRoundMutation) RemovedEdges() []string {
 	edges := make([]string, 0, 2)
-	if m.removedcolumns != nil {
-		edges = append(edges, episoderound.EdgeColumns)
+	if m.removedcategories != nil {
+		edges = append(edges, episoderound.EdgeCategories)
 	}
 	if m.removedepisode != nil {
 		edges = append(edges, episoderound.EdgeEpisode)
@@ -2507,9 +2507,9 @@ func (m *EpisodeRoundMutation) RemovedEdges() []string {
 // the given name in this mutation.
 func (m *EpisodeRoundMutation) RemovedIDs(name string) []ent.Value {
 	switch name {
-	case episoderound.EdgeColumns:
-		ids := make([]ent.Value, 0, len(m.removedcolumns))
-		for id := range m.removedcolumns {
+	case episoderound.EdgeCategories:
+		ids := make([]ent.Value, 0, len(m.removedcategories))
+		for id := range m.removedcategories {
 			ids = append(ids, id)
 		}
 		return ids
@@ -2526,8 +2526,8 @@ func (m *EpisodeRoundMutation) RemovedIDs(name string) []ent.Value {
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *EpisodeRoundMutation) ClearedEdges() []string {
 	edges := make([]string, 0, 2)
-	if m.clearedcolumns {
-		edges = append(edges, episoderound.EdgeColumns)
+	if m.clearedcategories {
+		edges = append(edges, episoderound.EdgeCategories)
 	}
 	if m.clearedepisode {
 		edges = append(edges, episoderound.EdgeEpisode)
@@ -2539,8 +2539,8 @@ func (m *EpisodeRoundMutation) ClearedEdges() []string {
 // was cleared in this mutation.
 func (m *EpisodeRoundMutation) EdgeCleared(name string) bool {
 	switch name {
-	case episoderound.EdgeColumns:
-		return m.clearedcolumns
+	case episoderound.EdgeCategories:
+		return m.clearedcategories
 	case episoderound.EdgeEpisode:
 		return m.clearedepisode
 	}
@@ -2559,8 +2559,8 @@ func (m *EpisodeRoundMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *EpisodeRoundMutation) ResetEdge(name string) error {
 	switch name {
-	case episoderound.EdgeColumns:
-		m.ResetColumns()
+	case episoderound.EdgeCategories:
+		m.ResetCategories()
 		return nil
 	case episoderound.EdgeEpisode:
 		m.ResetEpisode()
