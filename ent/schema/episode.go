@@ -14,6 +14,7 @@ type Episode struct {
 // Fields of the Episode.
 func (Episode) Fields() []ent.Field {
 	return []ent.Field{
+		field.Int("episode").Unique(),
 		field.Time("aired"),
 
 		field.Enum("difficulty").
@@ -23,6 +24,12 @@ func (Episode) Fields() []ent.Field {
 				"College",
 				"Standard",
 				"Champions"),
+
+		field.Bytes("content_hash").Nillable(),
+		field.Time("fetched").Nillable().
+			Comment("when this episode was fetched from j-archive, nil if not yet fetched"),
+		field.Time("converted").Nillable().
+			Comment("when this episode was parsed and encoded to JSON, nil if not yet converted"),
 	}
 }
 
