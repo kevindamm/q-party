@@ -2,7 +2,10 @@ module github.com/kevindamm/q-party
 
 go 1.23.2
 
-require entgo.io/ent v0.14.1
+require (
+	entgo.io/ent v0.14.1
+	golang.org/x/net v0.30.0
+)
 
 require (
 	ariga.io/atlas v0.19.1-0.20240203083654-5948b60a8e43 // indirect
@@ -15,5 +18,5 @@ require (
 	github.com/mitchellh/go-wordwrap v0.0.0-20150314170334-ad45545899c7 // indirect
 	github.com/zclconf/go-cty v1.8.0 // indirect
 	golang.org/x/mod v0.20.0 // indirect
-	golang.org/x/text v0.13.0 // indirect
+	golang.org/x/text v0.19.0 // indirect
 )

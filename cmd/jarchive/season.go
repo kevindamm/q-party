@@ -79,7 +79,7 @@ func (season JArchiveSeason) FetchIndex(filepath string) error {
 	return nil
 }
 
-const seasons string = `[
+const all_seasons string = `[
 {"season": "41", "name": "Season 41", "aired": {"from": "2024/09/09", "until": "2025/07/25"}, "count": 37},
 {"season": "cwcpi", "name": "Champions Wildcard play-in games", "aired": {"from": "2024/01/12", "until": "2024/02/02"}, "count": 3},
 {"season": "40", "name": "Season 40", "aired": {"from": "2023/09/11", "until": "2024/07/26"}, "count": 230},

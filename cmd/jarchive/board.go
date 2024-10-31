@@ -18,39 +18,30 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-// github:kevindamm/q-party/cmd/jarchive/main.go
+// github:kevindamm/q-party/cmd/jarchive/board.go
 
 package main
 
-import (
-	"flag"
-	"fmt"
-	"log"
-	"os"
-	"path"
-)
+type JArchiveBoard struct {
+	Columns []CategoryChallenges
+	Special []BoardPosition
+}
 
-func main() {
-	out_path := flag.String("out", "./.data",
-		"path where converted and created games are written")
-	flag.Parse()
-
-	if len(os.Args) < 3 {
-		log.Fatalf("%s (fetch|convert) <episode_id> [-out=<path>]", os.Args[0])
+func (board JArchiveBoard) SpecialChallenges() []JArchiveChallenge {
+	challenges := make([]JArchiveChallenge, len(board.Special))
+	for i, position := range board.Special {
+		challenges[i] = board.Columns[position.Column].Challenges[position.Index]
 	}
+	return challenges
+}
 
-	switch os.Args[1] {
-	case "fetch":
-		episode_id := os.Args[2]
-		episodes_path := path.Join(*out_path, "episodes")
-		filename := fmt.Sprintf("%s.html", episode_id)
-		err := FetchEpisode(episode_id, path.Join(episodes_path, filename))
-		if err != nil {
-			log.Fatal(err)
-		}
+type BoardPosition struct {
+	Column int
+	Index  int
+}
 
-	case "convert":
-		ConvertAllEpisodes(os.Args[2], *out_path)
-
-	}
+type CategoryChallenges struct {
+	CategoryName string
+	Comments     string
+	Challenges   []JArchiveChallenge
 }

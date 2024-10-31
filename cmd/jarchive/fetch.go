@@ -29,6 +29,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"strconv"
 	"time"
 )
 
@@ -46,33 +47,48 @@ func FetchAllSeasons(all_seasons []JArchiveSeason, out_path string) error {
 			if err != nil {
 				return err
 			}
-		} // TODO only fetch episodes when fetching the index file.
+		}
 
 		episode_ids, err := season.FindEpisodeIDs(season_path)
 		if err != nil {
 			return err
 		}
 		for _, episode_id := range episode_ids {
-			url := fmt.Sprintf("https://j-archive.com/showgame.php?game_id=%s", season.Season)
 			filepath = path.Join(episodes_path, fmt.Sprintf("%s.html", episode_id))
-			log.Print("Fetching ", url, "  -> ", filepath)
-
-			response, err := http.Get(url)
+			if _, err = os.Stat(filepath); err != os.ErrNotExist {
+				continue
+			}
+			err = FetchEpisode(episode_id, filepath)
 			if err != nil {
 				return err
 			}
-			defer response.Body.Close()
-			data, err := io.ReadAll(response.Body)
-			if err != nil {
-				return err
-			}
-			err = os.WriteFile(filepath, data, 0644)
-			if err != nil {
-				return err
-			}
-			time.Sleep(5 * time.Second)
 		}
 	}
 
+	return nil
+}
+
+func FetchEpisode(episode string, filepath string) error {
+	episode_id, err := strconv.Atoi(episode)
+	if err != nil {
+		return fmt.Errorf("failed to convert episode id '%s'\n%s", episode, err)
+	}
+	url := episode_url(episode_id)
+	log.Print("Fetching ", url, "  -> ", filepath)
+
+	response, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+	defer response.Body.Close()
+	data, err := io.ReadAll(response.Body)
+	if err != nil {
+		return err
+	}
+	err = os.WriteFile(filepath, data, 0644)
+	if err != nil {
+		return err
+	}
+	time.Sleep(5 * time.Second)
 	return nil
 }

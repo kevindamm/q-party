@@ -30,62 +30,55 @@ import (
 	"path"
 )
 
-// The de-normed representation as found in some datasets, e.g. on Kaggle.
-type JArchiveChallenge struct {
-	Category string            `json:"category"`
-	AirDate  `json:"air_date"` // YYYY-MM-DD
-
-	Value    DollarValue  `json:"value"` // '$' (\d+)
-	Question string       `json:"question"`
-	Answer   string       `json:"answer"` // excluding "what is..." preface
-	Round    EpisodeRound `json:"round"`
-}
-
 func ConvertGamesInDir(dir_path string) <-chan *JArchiveEpisode {
-	channel := make(chan *JArchiveEpisode)
+	file, err := os.Open(dir_path)
+	if err != nil {
+		log.Fatal(err)
+	}
 
+	channel := make(chan *JArchiveEpisode)
 	go func() {
-		// for file, _, _ in os.WalkDir(path)
-		//   convert and write to channel
-		channel <- ParseEpisode("...") // parse(filepath)
-		// ...
-		close(channel)
+		defer file.Close()
+		defer close(channel)
+
+		names, err := file.Readdirnames(0)
+		if err != nil {
+			log.Printf("error reading episodes directory: %s\n", err)
+			return
+		}
+
+		for _, name := range names {
+			//reader, err := os.Open(name)
+			if err != nil {
+				log.Print(err)
+				continue
+			}
+			//channel <- ParseEpisode(name, reader)
+			fmt.Println(name)
+		}
 	}()
 
 	return channel
 }
 
-func ConvertAllSeasons(all_seasons []JArchiveSeason, convert_path string, out_path string) error {
-	for _, season := range all_seasons {
-		fmt.Println(season.Season)
-
-		season_path := path.Join(convert_path, season.Season)
-		err := os.MkdirAll(season_path, 0755)
-		if err != nil {
-			return fmt.Errorf("failed to create output path for season '%s' episodes: %s", season_path, err)
-		}
-
-		for jgame := range ConvertGamesInDir(season_path) {
-			filename := fmt.Sprintf("%d.json", jgame.ShowNumber)
-			filepath := path.Join(season_path, filename)
-			outfile, err := os.Create(filepath)
-			if err != nil {
-				log.Fatalf("failed to create file '%s': %s", filepath, err)
-			}
-			jgame_json, err := json.MarshalIndent(jgame, "", "  ")
-			if err != nil {
-				log.Fatalf("failed to write JSON for episode %s/%s: %s",
-					season.Season, filename, err)
-			}
-			outfile.Write(jgame_json)
-		}
+func ConvertAllEpisodes(convert_path string, out_path string) {
+	err := os.MkdirAll(out_path, 0755)
+	if err != nil {
+		log.Fatalf("failed to create directory for converted episodes %s\n%s", out_path, err)
 	}
 
-	return nil
-}
+	for jgame := range ConvertGamesInDir(convert_path) {
+		filename := fmt.Sprintf("%d.json", jgame.ShowNumber)
+		filepath := path.Join(out_path, filename)
+		outfile, err := os.Create(filepath)
+		if err != nil {
+			log.Fatalf("failed to create file '%s': %s", filepath, err)
+		}
 
-func ParseEpisode(file_path string) *JArchiveEpisode {
-	episode := new(JArchiveEpisode)
-
-	return episode
+		jgame_json, err := json.MarshalIndent(jgame, "", "  ")
+		if err != nil {
+			log.Fatalf("failed to encode episode %d", jgame.ShowNumber)
+		}
+		outfile.Write(jgame_json)
+	}
 }
