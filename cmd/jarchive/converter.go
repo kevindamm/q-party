@@ -22,6 +22,14 @@
 
 package main
 
+import (
+	"encoding/json"
+	"fmt"
+	"log"
+	"os"
+	"path"
+)
+
 // The de-normed representation as found in some datasets, e.g. on Kaggle.
 type JArchiveChallenge struct {
 	Category string            `json:"category"`
@@ -45,6 +53,35 @@ func ConvertGamesInDir(dir_path string) <-chan *JArchiveEpisode {
 	}()
 
 	return channel
+}
+
+func ConvertAllSeasons(all_seasons []JArchiveSeason, convert_path string, out_path string) error {
+	for _, season := range all_seasons {
+		fmt.Println(season.Season)
+
+		season_path := path.Join(convert_path, season.Season)
+		err := os.MkdirAll(season_path, 0755)
+		if err != nil {
+			return fmt.Errorf("failed to create output path for season '%s' episodes: %s", season_path, err)
+		}
+
+		for jgame := range ConvertGamesInDir(season_path) {
+			filename := fmt.Sprintf("%d.json", jgame.ShowNumber)
+			filepath := path.Join(season_path, filename)
+			outfile, err := os.Create(filepath)
+			if err != nil {
+				log.Fatalf("failed to create file '%s': %s", filepath, err)
+			}
+			jgame_json, err := json.MarshalIndent(jgame, "", "  ")
+			if err != nil {
+				log.Fatalf("failed to write JSON for episode %s/%s: %s",
+					season.Season, filename, err)
+			}
+			outfile.Write(jgame_json)
+		}
+	}
+
+	return nil
 }
 
 func ParseEpisode(file_path string) *JArchiveEpisode {
