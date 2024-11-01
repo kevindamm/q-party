@@ -28,6 +28,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"strconv"
 )
 
 func main() {
@@ -50,7 +51,32 @@ func main() {
 		}
 
 	case "convert":
-		ConvertAllEpisodes(os.Args[2], *out_path)
+		episode_id, err := strconv.Atoi(os.Args[2])
+		if err != nil {
+			log.Fatalf("expected integer for episode id (got '%s')", os.Args[2])
+		}
+		ep_path := path.Join(*out_path, "episodes", fmt.Sprintf("%d.html", episode_id))
+		reader, err := os.Open(ep_path)
+		if err != nil {
+			log.Fatalf("could not open '%s'\n%s", ep_path, err)
+		}
+		defer reader.Close()
 
+		filename := path.Base(ep_path)
+		if filename[len(filename)-5:] != ".html" {
+			log.Fatalf("expected HTML file, got %s", filename)
+		}
+		filename = filename[:len(filename)-4] + "json"
+		filepath := path.Join(*out_path, "episodes", filename)
+		writer, err := os.Create(filepath)
+		if err != nil {
+			log.Fatalf("could not create json file for episode %s\n%s", filename, err)
+		}
+		defer writer.Close()
+
+		err = ConvertEpisode(filename[:len(filename)-5], reader, writer)
+		if err != nil {
+			log.Fatalf("could not convert episode %s\n%s", filename, err)
+		}
 	}
 }

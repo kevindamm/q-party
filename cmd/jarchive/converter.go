@@ -25,60 +25,62 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"path"
 )
 
-func ConvertGamesInDir(dir_path string) <-chan *JArchiveEpisode {
-	file, err := os.Open(dir_path)
+func ConvertAllEpisodes(seasons_path string, episodes_path string, out_path string) {
+	seasons := make([]JArchiveSeason, 0, 50)
+	err := json.Unmarshal([]byte(all_seasons), &seasons)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to unmarshal season metadata; %s", err)
 	}
 
-	channel := make(chan *JArchiveEpisode)
-	go func() {
-		defer file.Close()
-		defer close(channel)
-
-		names, err := file.Readdirnames(0)
-		if err != nil {
-			log.Printf("error reading episodes directory: %s\n", err)
-			return
-		}
-
-		for _, name := range names {
-			//reader, err := os.Open(name)
-			if err != nil {
-				log.Print(err)
-				continue
-			}
-			//channel <- ParseEpisode(name, reader)
-			fmt.Println(name)
-		}
-	}()
-
-	return channel
-}
-
-func ConvertAllEpisodes(convert_path string, out_path string) {
-	err := os.MkdirAll(out_path, 0755)
+	err = os.MkdirAll(out_path, 0755)
 	if err != nil {
 		log.Fatalf("failed to create directory for converted episodes %s\n%s", out_path, err)
 	}
 
-	for jgame := range ConvertGamesInDir(convert_path) {
-		filename := fmt.Sprintf("%d.json", jgame.ShowNumber)
-		filepath := path.Join(out_path, filename)
-		outfile, err := os.Create(filepath)
+	for _, season := range seasons {
+		episodes, err := season.FindEpisodeIDs(seasons_path)
 		if err != nil {
-			log.Fatalf("failed to create file '%s': %s", filepath, err)
+			log.Fatalf("failed to parse season %s index file", season.Season)
 		}
+		for _, episode := range episodes {
+			ep_path := path.Join(out_path, fmt.Sprintf("%s.html", episode))
+			reader, err := os.Open(ep_path)
+			if err != nil {
+				log.Print("could not open episode ", episode, err)
+				continue
+			}
 
-		jgame_json, err := json.MarshalIndent(jgame, "", "  ")
-		if err != nil {
-			log.Fatalf("failed to encode episode %d", jgame.ShowNumber)
+			filename := fmt.Sprintf("%s.json", episode)
+			filepath := path.Join(out_path, filename)
+			writer, err := os.Create(filepath)
+			if err != nil {
+				log.Print("could not create json file for episode ", episode, err)
+				continue
+			}
+
+			err = ConvertEpisode(episode, reader, writer)
+			if err != nil {
+				log.Print("could not convert episode ", episode, err)
+				continue
+			}
 		}
-		outfile.Write(jgame_json)
 	}
+}
+
+func ConvertEpisode(ep_id string, reader io.Reader, writer io.Writer) error {
+	jgame := ParseEpisode(ep_id, reader)
+
+	jgame_json, err := json.MarshalIndent(jgame, "", "  ")
+	if err != nil {
+		return err
+	}
+	_, err = writer.Write(jgame_json)
+
+	return err
 }
