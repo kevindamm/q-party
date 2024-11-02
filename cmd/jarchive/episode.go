@@ -28,6 +28,7 @@ import (
 	"log"
 	"regexp"
 	"strconv"
+	"strings"
 
 	"golang.org/x/net/html"
 )
@@ -38,10 +39,10 @@ type JArchiveEpisode struct {
 	Aired      AirDate `json:"aired"`
 	Comments   string  `json:"comments"`
 
-	Single     JArchiveBoard          `json:"single"`
-	Double     JArchiveBoard          `json:"double"`
-	Final      JArchiveFinalChallenge `json:"final"`
-	TieBreaker *JArchiveChallenge     `json:"tiebreaker,omitempty"`
+	Single     JArchiveBoard           `json:"single"`
+	Double     JArchiveBoard           `json:"double"`
+	Final      JArchiveFinalChallenge  `json:"final"`
+	TieBreaker *JArchiveFinalChallenge `json:"tiebreaker,omitempty"`
 }
 
 func (episode JArchiveEpisode) Filename() string {
@@ -53,7 +54,7 @@ func (episode JArchiveEpisode) Filename() string {
 }
 
 func episode_url(episode_id int) string {
-	return fmt.Sprintf("https://j-archive.com/showgame.php?game_id=%s", episode_id)
+	return fmt.Sprintf("https://j-archive.com/showgame.php?game_id=%d", episode_id)
 }
 
 func ParseEpisode(ep_id string, html_reader io.Reader) *JArchiveEpisode {
@@ -65,7 +66,13 @@ func ParseEpisode(ep_id string, html_reader io.Reader) *JArchiveEpisode {
 
 	child := doc.FirstChild
 	for child != nil {
-		if isDivWithID(child, "content") {
+		if child.Type == html.DocumentNode ||
+			(child.Type == html.ElementNode && child.Data == "html") ||
+			(child.Type == html.ElementNode && child.Data == "body") {
+			child = child.FirstChild
+			continue
+		}
+		if divWithID(child) == "content" {
 			episode.parseContent(child)
 			break
 		}
@@ -78,41 +85,30 @@ func ParseEpisode(ep_id string, html_reader io.Reader) *JArchiveEpisode {
 func (episode *JArchiveEpisode) parseContent(content *html.Node) {
 	child := content.FirstChild
 	for child != nil {
-		if isDivWithID(child, "game_title") {
+		id := divWithID(child)
+		if id == "" {
+			child = child.NextSibling
+			continue
+		}
+
+		switch id {
+		case "game_title":
 			episode.parseTitle(child)
-		}
-		if isDivWithID(child, "game_comments") {
+		case "game_comments":
 			episode.parseComments(child)
-		}
-		if isDivWithID(child, "contestants") {
+		case "contestants":
 			episode.parseContestants(child)
-		}
-		if isDivWithID(child, "jeopardy_round") {
+		case "jeopardy_round":
 			episode.parseBoard(child, ROUND_SINGLE_JEOPARDY)
-		}
-		if isDivWithID(child, "double_jeopardy_round") {
+		case "double_jeopardy_round":
 			episode.parseBoard(child, ROUND_DOUBLE_JEOPARDY)
-		}
-		if isDivWithID(child, "final_jeopardy_round") {
-			episode.parseFinalChallenge(child)
-			// TODO on a rare occasion there is also a tiebreaker question
+		case "final_jeopardy_round":
+			episode.parseFinalRound(child)
 		}
 
 		child = child.NextSibling
 	}
 
-}
-
-func isDivWithID(node *html.Node, id string) bool {
-	if node.Type != html.ElementNode || node.Data != "div" {
-		return false
-	}
-	for _, attr := range node.Attr {
-		if attr.Key == "id" && attr.Val == id {
-			return true
-		}
-	}
-	return false
 }
 
 var reTitleMatcher = regexp.MustCompile(`.*([Ss]how|pilot|game) #(\d+),? - (.*)`)
@@ -142,18 +138,141 @@ func (episode *JArchiveEpisode) parseComments(game_comments *html.Node) {
 	episode.Comments = game_comments.FirstChild.Data
 }
 
-func (episode *JArchiveEpisode) parseContestants(game_comments *html.Node) {
-	// TODO not necessary but could be nice for tracking a contestant's career
+func (episode *JArchiveEpisode) parseBoard(div *html.Node, round EpisodeRound) {
+	if round == ROUND_SINGLE_JEOPARDY {
+		episode.Single.parseBoard(div)
+	} else {
+		episode.Double.parseBoard(div)
+	}
 }
 
-func (episode *JArchiveEpisode) parseBoard(board *html.Node, round EpisodeRound) {
+func (episode *JArchiveEpisode) parseFinalRound(div *html.Node) {
+	// On a rare occasion there is also a tiebreaker question,
+	// with two instead of one <div class="final_round">
+	rounds := childrenWithClass(div, "table", "final_round")
+	if len(rounds) == 0 {
+		panic("did not find any final_round in this episode")
+	}
 
+	episode.Final.parseChallenge(rounds[0])
+	if len(rounds) == 2 {
+		episode.TieBreaker = new(JArchiveFinalChallenge)
+		episode.TieBreaker.parseChallenge(rounds[1])
+		episode.TieBreaker.Round = ROUND_TIE_BREAKER
+	}
 }
 
-func (episode *JArchiveEpisode) parseFinalChallenge(div *html.Node) {
+// Returns a list of the direct children elements that have the indicated class.
+// If elType is not the empty string, only returns elements of that type.  Only
+// elements are returned; text nodes and other non-element children are ignored.
+func childrenWithClass(node *html.Node, elType string, elClass string) []*html.Node {
+	matching_children := make([]*html.Node, 0)
+	child := node.FirstChild
 
+	for child != nil {
+		if child.Type == html.ElementNode &&
+			(elType == "" || child.Data == elType) {
+			for _, attr := range child.Attr {
+				if attr.Key == "class" {
+					// Handles the situation where an element has multiple classes.
+					for _, aclass := range strings.Split(attr.Val, " ") {
+						if aclass == elClass {
+							matching_children = append(matching_children, child)
+							break
+						}
+					}
+					break
+				}
+			}
+		}
+
+		child = child.NextSibling
+	}
+	return matching_children
 }
 
-func (episode *JArchiveEpisode) parseTiebreaker(div *html.Node) {
+// Searches recursively through descendents (DFS) looking for the next element
+// with the indicated type and class.  If class=="" then any (or no) class will
+// satisfy the search.  It returns the first matching subelement, depth first.
+// If there is no matching element (and class) then nil is returned instead.
+func nextDescendantWithClass(node *html.Node, elType string, elClass string) *html.Node {
+	var found *html.Node = nil
+	var recursiveFind func(*html.Node, string, string)
+	recursiveFind = func(next *html.Node, elType string, elClass string) {
+		child := next.FirstChild
+		for child != nil {
+			if child.Type == html.ElementNode &&
+				(elType == "" || child.Data == elType) {
+				if elClass == "" {
+					found = child
+					return
+				}
+				for _, attr := range child.Attr {
+					if attr.Key == "class" {
+						// Handles the situation where an element has multiple classes.
+						for _, aclass := range strings.Split(attr.Val, " ") {
+							if aclass == elClass {
+								found = child
+								return
+							}
+						}
+						break
+					}
+				}
+			}
+			if child.FirstChild != nil {
+				recursiveFind(child, elType, elClass)
+				if found != nil {
+					return
+				}
+			}
+			child = child.NextSibling
+		}
+	}
+	recursiveFind(node, elType, elClass)
+	return found
+}
 
+// Returns the ID of the node if it is a <div> element,
+// otherwise returns the empty string.
+func divWithID(node *html.Node) string {
+	if node.Type != html.ElementNode || node.Data != "div" {
+		// Not a <div>.
+		return ""
+	}
+	for _, attr := range node.Attr {
+		if attr.Key == "id" {
+			return attr.Val
+		}
+	}
+
+	// Is a <div> but has no ID.
+	return ""
+}
+
+func innerText(node *html.Node) string {
+	text := make([]string, 0)
+	fmt.Printf("%v\n", node)
+
+	var recursiveFind func(*html.Node)
+	recursiveFind = func(node *html.Node) {
+		if node == nil {
+			return
+		}
+		fmt.Println("node data " + node.Data)
+
+		child := node.FirstChild
+		for child != nil {
+			if child.Type == html.TextNode {
+				text = append(text, child.Data)
+			}
+			if child.FirstChild != nil {
+				recursiveFind(child)
+			}
+			child = child.NextSibling
+		}
+	}
+	recursiveFind(node)
+
+	return strings.ReplaceAll(strings.Join(text, " "), "  ", " ")
 }

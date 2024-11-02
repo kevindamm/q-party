@@ -22,6 +22,8 @@
 
 package main
 
+import "golang.org/x/net/html"
+
 type JArchiveBoard struct {
 	Columns []CategoryChallenges
 	Special []BoardPosition
@@ -44,4 +46,13 @@ type CategoryChallenges struct {
 	CategoryName string
 	Comments     string
 	Challenges   []JArchiveChallenge
+}
+
+func (board *JArchiveBoard) parseBoard(div *html.Node) {
+	child := div.FirstChild
+
+	for child != nil {
+
+		child = child.NextSibling
+	}
 }
