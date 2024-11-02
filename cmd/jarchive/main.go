@@ -34,10 +34,17 @@ import (
 func main() {
 	out_path := flag.String("out", "./.data",
 		"path where converted and created games are written")
+	flag.Usage = func() {
+		fmt.Printf("%s command episode# [flags]\n", os.Args[0])
+		fmt.Println("  where")
+		fmt.Println("    command is either 'fetch' or 'convert'")
+		fmt.Println("    episode# is the index ID for the episode")
+		flag.PrintDefaults()
+	}
 	flag.Parse()
 
-	if len(os.Args) < 3 {
-		log.Fatalf("%s (fetch|convert) <episode_id> [-out=<path>]", os.Args[0])
+	if flag.NArg() < 2 {
+		flag.Usage()
 	}
 
 	switch os.Args[1] {
@@ -55,26 +62,23 @@ func main() {
 		if err != nil {
 			log.Fatalf("expected integer for episode id (got '%s')", os.Args[2])
 		}
-		ep_path := path.Join(*out_path, "episodes", fmt.Sprintf("%d.html", episode_id))
-		reader, err := os.Open(ep_path)
+		ep_path := path.Join(*out_path, "episodes")
+		filename := fmt.Sprintf("%d.html", episode_id)
+		reader, err := os.Open(path.Join(ep_path, filename))
 		if err != nil {
 			log.Fatalf("could not open '%s'\n%s", ep_path, err)
 		}
 		defer reader.Close()
 
-		filename := path.Base(ep_path)
-		if filename[len(filename)-5:] != ".html" {
-			log.Fatalf("expected HTML file, got %s", filename)
-		}
-		filename = filename[:len(filename)-4] + "json"
-		filepath := path.Join(*out_path, "episodes", filename)
-		writer, err := os.Create(filepath)
-		if err != nil {
-			log.Fatalf("could not create json file for episode %s\n%s", filename, err)
-		}
-		defer writer.Close()
+		// filename = filename[:len(filename)-4] + "json"
+		// filepath := path.Join(*out_path, "episodes", filename)
+		// writer, err := os.Create(filepath)
+		// if err != nil {
+		// 	log.Fatalf("could not create json file for episode %s\n%s", filename, err)
+		// }
+		// defer writer.Close()
 
-		err = ConvertEpisode(filename[:len(filename)-5], reader, writer)
+		err = ConvertEpisode(filename, reader, os.Stdout)
 		if err != nil {
 			log.Fatalf("could not convert episode %s\n%s", filename, err)
 		}
