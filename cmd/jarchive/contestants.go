@@ -2,17 +2,29 @@ package main
 
 import (
 	"fmt"
-
-	"golang.org/x/net/html"
+	"log"
+	"strconv"
 )
 
 type JArchiveContestant struct {
-	JCID    int    `json:"id,omitempty"`
-	Name    string `json:"name"`
-	Comment string `json:"comment"`
+	JCID `json:"id,omitempty"`
+	Name string `json:"name"`
+	Bio  string `json:"comment"`
 }
 
-func (episode *JArchiveEpisode) parseContestants(div *html.Node) {
-	// not necessary but could be nice for tracking a contestant's career
-	fmt.Println("TODO parse contestants")
+// Unique numeric value for identifying customers in the archive.
+type JCID int
+
+func (id JCID) String() string {
+	return fmt.Sprintf("%d", int(id))
+}
+
+// Parses the numeric value from a string.
+// Fatal error if the value cannot be converted into a number.
+func MustParseJCID(numeric string) JCID {
+	id, err := strconv.Atoi(numeric)
+	if err != nil {
+		log.Fatalf("failed to parse JCID from string '%s'\n%s", numeric, err)
+	}
+	return JCID(id)
 }

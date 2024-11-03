@@ -18,44 +18,28 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-// github:kevindamm/q-party/cmd/jarchive/episode_round.go
+// github:kevindamm/q-party/cmd/jarchive/category.go
 
 package main
 
-// enum representation for
-type EpisodeRound int
+import "golang.org/x/net/html"
 
-const (
-	ROUND_UNKNOWN EpisodeRound = iota
-	ROUND_SINGLE_JEOPARDY
-	ROUND_DOUBLE_JEOPARDY
-	ROUND_FINAL_JEOPARDY
-	ROUND_TIE_BREAKER
-	ROUND_PRINTED_MEDIA
-)
-
-var round_strings = map[EpisodeRound]string{
-	ROUND_UNKNOWN:         "[UNKNOWN]",
-	ROUND_SINGLE_JEOPARDY: "Jeopardy!",
-	ROUND_DOUBLE_JEOPARDY: "Double Jeopardy!",
-	ROUND_FINAL_JEOPARDY:  "Final Jeopardy!",
-	ROUND_TIE_BREAKER:     "Tiebreaker",
-	ROUND_PRINTED_MEDIA:   "[printed media]",
+type CategoryChallenges struct {
+	CategoryName string
+	Commentary   string
+	Challenges   []JArchiveChallenge
 }
 
-func (round EpisodeRound) String() string {
-	printed := round_strings[round]
-	if printed == "" {
-		printed = round_strings[ROUND_UNKNOWN]
+func parseCategoryHeader(cat_td *html.Node, cat *CategoryChallenges) error {
+	table := nextDescendantWithClass(cat_td, "table", "")
+	trs := childrenWithClass(table, "tr", "")
+	if len(trs) != 2 {
+		return nil
 	}
-	return printed
-}
+	cat.CategoryName = innerText(
+		nextDescendantWithClass(trs[0], "td", "category_name"))
+	cat.Commentary = innerText(
+		nextDescendantWithClass(trs[1], "td", "category_comments"))
 
-func ParseString(round string) EpisodeRound {
-	for k, v := range round_strings {
-		if v == round {
-			return k
-		}
-	}
-	return ROUND_UNKNOWN
+	return nil
 }

@@ -25,34 +25,86 @@ package main
 import "golang.org/x/net/html"
 
 type JArchiveBoard struct {
-	Columns []CategoryChallenges
-	Special []BoardPosition
+	Round    EpisodeRound          `json:"round"`
+	Columns  [6]CategoryChallenges `json:"columns"`
+	Wagering []BoardPosition       `json:"wag,omitempty"`
 }
 
-func (board JArchiveBoard) SpecialChallenges() []JArchiveChallenge {
-	challenges := make([]JArchiveChallenge, len(board.Special))
-	for i, position := range board.Special {
+func NewBoard(round EpisodeRound) *JArchiveBoard {
+	if round != ROUND_SINGLE_JEOPARDY && round != ROUND_DOUBLE_JEOPARDY {
+		panic("attempting to create a new board with invalid round " + round.String())
+	}
+
+	single_double := 1
+	if round == ROUND_DOUBLE_JEOPARDY {
+		single_double = 2
+	}
+
+	board := new(JArchiveBoard)
+	board.Round = round
+	board.Wagering = make([]BoardPosition, 0, single_double)
+	return board
+}
+
+func (board JArchiveBoard) WageringChallenges() []JArchiveChallenge {
+	challenges := make([]JArchiveChallenge, len(board.Wagering))
+	for i, position := range board.Wagering {
 		challenges[i] = board.Columns[position.Column].Challenges[position.Index]
 	}
 	return challenges
 }
 
 type BoardPosition struct {
-	Column int
-	Index  int
+	Column int `cue:">=0 & <6"`
+	Index  int `cue:">=0 & <5"`
 }
 
-type CategoryChallenges struct {
-	CategoryName string
-	Comments     string
-	Challenges   []JArchiveChallenge
-}
-
-func (board *JArchiveBoard) parseBoard(div *html.Node) {
-	child := div.FirstChild
-
-	for child != nil {
-
-		child = child.NextSibling
+func (board *JArchiveBoard) parseBoard(root *html.Node) {
+	round_table := nextDescendantWithClass(root, "table", "round")
+	category_tr := nextDescendantWithClass(round_table, "tr", "")
+	category_tds := childrenWithClass(category_tr, "td", "category")
+	for i, td := range category_tds {
+		err := parseCategoryHeader(td, &board.Columns[i])
+		if err != nil {
+			panic("failed to parse category header (name and comments)")
+		}
 	}
+}
+
+// enum representation for
+type EpisodeRound int
+
+const (
+	ROUND_UNKNOWN EpisodeRound = iota
+	ROUND_SINGLE_JEOPARDY
+	ROUND_DOUBLE_JEOPARDY
+	ROUND_FINAL_JEOPARDY
+	ROUND_TIE_BREAKER
+	ROUND_PRINTED_MEDIA
+)
+
+var round_strings = map[EpisodeRound]string{
+	ROUND_UNKNOWN:         "[UNKNOWN]",
+	ROUND_SINGLE_JEOPARDY: "Jeopardy!",
+	ROUND_DOUBLE_JEOPARDY: "Double Jeopardy!",
+	ROUND_FINAL_JEOPARDY:  "Final Jeopardy!",
+	ROUND_TIE_BREAKER:     "Tiebreaker",
+	ROUND_PRINTED_MEDIA:   "[printed media]",
+}
+
+func (round EpisodeRound) String() string {
+	printed := round_strings[round]
+	if printed == "" {
+		printed = round_strings[ROUND_UNKNOWN]
+	}
+	return printed
+}
+
+func ParseString(round string) EpisodeRound {
+	for k, v := range round_strings {
+		if v == round {
+			return k
+		}
+	}
+	return ROUND_UNKNOWN
 }

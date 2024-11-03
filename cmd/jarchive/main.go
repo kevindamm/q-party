@@ -23,21 +23,21 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
 	"os"
 	"path"
-	"strconv"
 )
 
 func main() {
-	out_path := flag.String("out", "./.data",
+	data_path := flag.String("data", "./.data",
 		"path where converted and created games are written")
 	flag.Usage = func() {
 		fmt.Printf("%s command episode# [flags]\n", os.Args[0])
 		fmt.Println("  where")
-		fmt.Println("    command is either 'fetch' or 'convert'")
+		fmt.Println("    command is either 'fetch' or 'season' or 'convert'")
 		fmt.Println("    episode# is the index ID for the episode")
 		flag.PrintDefaults()
 	}
@@ -48,39 +48,69 @@ func main() {
 	}
 
 	switch os.Args[1] {
+
 	case "fetch":
+		episodes_path := path.Join(*data_path, "episodes")
 		episode_id := os.Args[2]
-		episodes_path := path.Join(*out_path, "episodes")
-		filename := fmt.Sprintf("%s.html", episode_id)
-		err := FetchEpisode(episode_id, path.Join(episodes_path, filename))
+		jeid := MustParseJEID(episode_id)
+		filepath := path.Join(episodes_path, fmt.Sprintf("%d.html", jeid))
+
+		err := FetchEpisode(jeid, filepath)
 		if err != nil {
 			log.Fatal(err)
 		}
 
-	case "convert":
-		episode_id, err := strconv.Atoi(os.Args[2])
+	case "season":
+		jsid := JSID(os.Args[2])
+		season := JArchiveSeason{Season: jsid}
+
+		seasons_path := path.Join(*data_path, "seasons")
+		err := os.MkdirAll(seasons_path, 0755)
 		if err != nil {
-			log.Fatalf("expected integer for episode id (got '%s')", os.Args[2])
+			log.Fatalf("failed to make a directory for writing Season metadata")
 		}
-		ep_path := path.Join(*out_path, "episodes")
-		filename := fmt.Sprintf("%d.html", episode_id)
+		filepath := path.Join(seasons_path, fmt.Sprintf("%s.html", jsid))
+
+		reader, err := os.Open(filepath)
+		if err != nil {
+			log.Fatal(err)
+		}
+		err = season.LoadSeasonMetadata(reader)
+		if err != nil {
+			log.Fatalf("failed to load season '%s' metadata\n%s", jsid, err)
+		}
+
+		bytes, err := json.Marshal(season)
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println(string(bytes))
+
+	case "convert":
+		jeid := MustParseJEID(os.Args[2])
+		ep_path := path.Join(*data_path, "episodes")
+		filename := fmt.Sprintf("%d.html", jeid)
+
 		reader, err := os.Open(path.Join(ep_path, filename))
 		if err != nil {
 			log.Fatalf("could not open '%s'\n%s", ep_path, err)
 		}
 		defer reader.Close()
 
-		// filename = filename[:len(filename)-4] + "json"
-		// filepath := path.Join(*out_path, "episodes", filename)
-		// writer, err := os.Create(filepath)
-		// if err != nil {
-		// 	log.Fatalf("could not create json file for episode %s\n%s", filename, err)
-		// }
-		// defer writer.Close()
-
-		err = ConvertEpisode(filename, reader, os.Stdout)
+		filename = filename[:len(filename)-4] + "json"
+		filepath := path.Join(*data_path, "episodes", filename)
+		writer, err := os.Create(filepath)
 		if err != nil {
-			log.Fatalf("could not convert episode %s\n%s", filename, err)
+			log.Fatalf("could not create json file for episode %s\n%s", filename, err)
 		}
+		defer writer.Close()
+
+		err = ConvertEpisode(jeid, reader, os.Stdout)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+	default:
+		flag.Usage()
 	}
 }

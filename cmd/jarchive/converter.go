@@ -31,7 +31,7 @@ import (
 	"path"
 )
 
-func ConvertAllEpisodes(seasons_path string, episodes_path string, out_path string) {
+func ConvertAllEpisodes(seasons_path string, episodes_path string, out_path string) error {
 	seasons := make([]JArchiveSeason, 0, 50)
 	err := json.Unmarshal([]byte(all_seasons), &seasons)
 	if err != nil {
@@ -44,12 +44,18 @@ func ConvertAllEpisodes(seasons_path string, episodes_path string, out_path stri
 	}
 
 	for _, season := range seasons {
-		episodes, err := season.FindEpisodeIDs(seasons_path)
+		file_path := path.Join(seasons_path, fmt.Sprintf("%s.html", season.Season))
+		reader, err := os.Open(file_path)
+		if err != nil {
+			return err
+		}
+		err = season.LoadSeasonMetadata(reader)
 		if err != nil {
 			log.Fatalf("failed to parse season %s index file", season.Season)
 		}
-		for _, episode := range episodes {
-			ep_path := path.Join(out_path, fmt.Sprintf("%s.html", episode))
+
+		for _, episode := range season.Episodes {
+			ep_path := path.Join(episodes_path, fmt.Sprintf("%s.html", episode))
 			reader, err := os.Open(ep_path)
 			if err != nil {
 				log.Print("could not open episode ", episode, err)
@@ -64,17 +70,19 @@ func ConvertAllEpisodes(seasons_path string, episodes_path string, out_path stri
 				continue
 			}
 
-			err = ConvertEpisode(episode, reader, writer)
+			err = ConvertEpisode(episode.JEID, reader, writer)
 			if err != nil {
 				log.Print("could not convert episode ", episode, err)
 				continue
 			}
 		}
 	}
+
+	return nil
 }
 
-func ConvertEpisode(ep_id string, reader io.Reader, writer io.Writer) error {
-	jgame := ParseEpisode(ep_id, reader)
+func ConvertEpisode(jeid JEID, reader io.Reader, writer io.Writer) error {
+	jgame := ParseEpisode(jeid, reader)
 
 	jgame_json, err := json.MarshalIndent(jgame, "", "  ")
 	if err != nil {

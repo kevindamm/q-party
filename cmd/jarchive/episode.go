@@ -24,20 +24,23 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"log"
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"golang.org/x/net/html"
 )
 
 type JArchiveEpisode struct {
+	JEID
 	ShowTitle  string  `json:"show_title"`
 	ShowNumber int     `json:"show_number" cue:">0"`
 	Aired      AirDate `json:"aired"`
 	Comments   string  `json:"comments"`
+
+	Contestants [3]JArchiveContestant `json:"contestants"`
 
 	Single     JArchiveBoard           `json:"single"`
 	Double     JArchiveBoard           `json:"double"`
@@ -55,31 +58,6 @@ func (episode JArchiveEpisode) Filename() string {
 
 func episode_url(episode_id int) string {
 	return fmt.Sprintf("https://j-archive.com/showgame.php?game_id=%d", episode_id)
-}
-
-func ParseEpisode(ep_id string, html_reader io.Reader) *JArchiveEpisode {
-	episode := new(JArchiveEpisode)
-	doc, err := html.Parse(html_reader)
-	if err != nil {
-		log.Fatalf("error parsing HTML of %s\n\n%s", ep_id, err)
-	}
-
-	child := doc.FirstChild
-	for child != nil {
-		if child.Type == html.DocumentNode ||
-			(child.Type == html.ElementNode && child.Data == "html") ||
-			(child.Type == html.ElementNode && child.Data == "body") {
-			child = child.FirstChild
-			continue
-		}
-		if divWithID(child) == "content" {
-			episode.parseContent(child)
-			break
-		}
-		child = child.NextSibling
-	}
-
-	return episode
 }
 
 func (episode *JArchiveEpisode) parseContent(content *html.Node) {
@@ -131,11 +109,7 @@ func (episode *JArchiveEpisode) parseTitle(game_title *html.Node) {
 }
 
 func (episode *JArchiveEpisode) parseComments(game_comments *html.Node) {
-	// Expect the only child element to be a text node.
-	if game_comments.FirstChild.Type != html.TextNode {
-		return
-	}
-	episode.Comments = game_comments.FirstChild.Data
+	episode.Comments = innerText(game_comments)
 }
 
 func (episode *JArchiveEpisode) parseBoard(div *html.Node, round EpisodeRound) {
@@ -162,117 +136,60 @@ func (episode *JArchiveEpisode) parseFinalRound(div *html.Node) {
 	}
 }
 
-// Returns a list of the direct children elements that have the indicated class.
-// If elType is not the empty string, only returns elements of that type.  Only
-// elements are returned; text nodes and other non-element children are ignored.
-func childrenWithClass(node *html.Node, elType string, elClass string) []*html.Node {
-	matching_children := make([]*html.Node, 0)
-	child := node.FirstChild
-
-	for child != nil {
-		if child.Type == html.ElementNode &&
-			(elType == "" || child.Data == elType) {
-			for _, attr := range child.Attr {
-				if attr.Key == "class" {
-					// Handles the situation where an element has multiple classes.
-					for _, aclass := range strings.Split(attr.Val, " ") {
-						if aclass == elClass {
-							matching_children = append(matching_children, child)
-							break
-						}
-					}
-					break
-				}
-			}
+// Parse all three contestants, storing in the episode's metadata.
+func (episode *JArchiveEpisode) parseContestants(root *html.Node) {
+	td_parent := nextDescendantWithClass(root, "p", "contestants").Parent
+	contestants := childrenWithClass(td_parent, "p", "contestants")
+	for i, contestant := range contestants {
+		err := parseContestant(contestant, &episode.Contestants[i])
+		if err != nil {
+			log.Fatal("failed to parse contestant", err)
 		}
-
-		child = child.NextSibling
 	}
-	return matching_children
 }
 
-// Searches recursively through descendents (DFS) looking for the next element
-// with the indicated type and class.  If class=="" then any (or no) class will
-// satisfy the search.  It returns the first matching subelement, depth first.
-// If there is no matching element (and class) then nil is returned instead.
-func nextDescendantWithClass(node *html.Node, elType string, elClass string) *html.Node {
-	var found *html.Node = nil
-	var recursiveFind func(*html.Node, string, string)
-	recursiveFind = func(next *html.Node, elType string, elClass string) {
-		child := next.FirstChild
-		for child != nil {
-			if child.Type == html.ElementNode &&
-				(elType == "" || child.Data == elType) {
-				if elClass == "" {
-					found = child
-					return
-				}
-				for _, attr := range child.Attr {
-					if attr.Key == "class" {
-						// Handles the situation where an element has multiple classes.
-						for _, aclass := range strings.Split(attr.Val, " ") {
-							if aclass == elClass {
-								found = child
-								return
-							}
-						}
-						break
-					}
-				}
+// Parse a single <p class="contestants"> subtree into a [JArchiveContestant].
+func parseContestant(root *html.Node, contestant *JArchiveContestant) error {
+	link := nextDescendantWithClass(root, "a", "")
+	contestant.Name = innerText(link)
+	for _, attr := range link.Attr {
+		if attr.Key == "href" {
+			jcid, err := strconv.Atoi(strings.Split(attr.Val, "=")[1])
+			if err != nil {
+				return err
 			}
-			if child.FirstChild != nil {
-				recursiveFind(child, elType, elClass)
-				if found != nil {
-					return
-				}
-			}
-			child = child.NextSibling
+			contestant.JCID = JCID(jcid)
 		}
 	}
-	recursiveFind(node, elType, elClass)
-	return found
+	textNode := link.NextSibling
+	if textNode.Type == html.TextNode {
+		contestant.Bio = textNode.Data[2:]
+	}
+	return nil
 }
 
-// Returns the ID of the node if it is a <div> element,
-// otherwise returns the empty string.
-func divWithID(node *html.Node) string {
-	if node.Type != html.ElementNode || node.Data != "div" {
-		// Not a <div>.
-		return ""
-	}
-	for _, attr := range node.Attr {
-		if attr.Key == "id" {
-			return attr.Val
-		}
-	}
-
-	// Is a <div> but has no ID.
-	return ""
+type JArchiveEpisodeMetadata struct {
+	JEID  `json:"jeid,omitempty"`
+	Taped AirDate `json:"taped,omitempty"`
+	Aired AirDate `json:"aired,omitempty"`
 }
 
-func innerText(node *html.Node) string {
-	text := make([]string, 0)
-	fmt.Printf("%v\n", node)
+var TimeUnknown = time.Unix(0, 0)
 
-	var recursiveFind func(*html.Node)
-	recursiveFind = func(node *html.Node) {
-		if node == nil {
-			return
-		}
-		fmt.Println("node data " + node.Data)
+// Unique numeric identifier for episodes in the archive.
+// May be different than the sequential show number used in display.
+type JEID int
 
-		child := node.FirstChild
-		for child != nil {
-			if child.Type == html.TextNode {
-				text = append(text, child.Data)
-			}
-			if child.FirstChild != nil {
-				recursiveFind(child)
-			}
-			child = child.NextSibling
-		}
+func (id JEID) String() string {
+	return fmt.Sprintf("%d", int(id))
+}
+
+// Parses the numeric value from a string.
+// Fatal error if the value cannot be converted into a number.
+func MustParseJEID(numeric string) JEID {
+	id, err := strconv.Atoi(numeric)
+	if err != nil {
+		log.Fatalf("failed to parse JEID from string '%s'\n%s", numeric, err)
 	}
-	recursiveFind(node)
-
-	return strings.ReplaceAll(strings.Join(text, " "), "  ", " ")
+	return JEID(id)
 }

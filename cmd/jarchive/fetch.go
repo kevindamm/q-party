@@ -29,19 +29,18 @@ import (
 	"net/http"
 	"os"
 	"path"
-	"strconv"
 	"time"
 )
 
 func FetchAllSeasons(all_seasons []JArchiveSeason, out_path string) error {
-	season_path := path.Join(out_path, "seasons")
+	seasons_path := path.Join(out_path, "seasons")
 	episodes_path := path.Join(out_path, "episodes")
-	os.MkdirAll(season_path, 0755)
+	os.MkdirAll(seasons_path, 0755)
 	os.MkdirAll(episodes_path, 0755)
 
 	for _, season := range all_seasons {
-		fmt.Printf("season: %s (%s)\n", season.Season, season.Name)
-		filepath := path.Join(season_path, fmt.Sprintf("%s.html", season.Season))
+		fmt.Printf("fetching season: %s (%s)\n", season.Season, season.Name)
+		filepath := path.Join(seasons_path, fmt.Sprintf("%s.html", season.Season))
 		if _, err := os.Stat(filepath); err == os.ErrNotExist {
 			err = season.FetchIndex(filepath)
 			if err != nil {
@@ -49,16 +48,22 @@ func FetchAllSeasons(all_seasons []JArchiveSeason, out_path string) error {
 			}
 		}
 
-		episode_ids, err := season.FindEpisodeIDs(season_path)
+		file_path := path.Join(seasons_path, fmt.Sprintf("%s.html", season.Season))
+		reader, err := os.Open(file_path)
 		if err != nil {
 			return err
 		}
-		for _, episode_id := range episode_ids {
-			filepath = path.Join(episodes_path, fmt.Sprintf("%s.html", episode_id))
+		err = season.LoadSeasonMetadata(reader)
+		if err != nil {
+			return err
+		}
+
+		for _, episode := range season.Episodes {
+			filepath = path.Join(episodes_path, fmt.Sprintf("%s.html", episode.JEID))
 			if _, err = os.Stat(filepath); err != os.ErrNotExist {
 				continue
 			}
-			err = FetchEpisode(episode_id, filepath)
+			err = FetchEpisode(episode.JEID, filepath)
 			if err != nil {
 				return err
 			}
@@ -68,12 +73,8 @@ func FetchAllSeasons(all_seasons []JArchiveSeason, out_path string) error {
 	return nil
 }
 
-func FetchEpisode(episode string, filepath string) error {
-	episode_id, err := strconv.Atoi(episode)
-	if err != nil {
-		return fmt.Errorf("failed to convert episode id '%s'\n%s", episode, err)
-	}
-	url := episode_url(episode_id)
+func FetchEpisode(episode JEID, filepath string) error {
+	url := episode_url(int(episode))
 	log.Print("Fetching ", url, "  -> ", filepath)
 
 	response, err := http.Get(url)

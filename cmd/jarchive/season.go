@@ -28,33 +28,40 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"path"
 	"regexp"
+	"strconv"
 	"time"
 )
 
 type JArchiveSeason struct {
-	Season string         `json:"season"`
+	Season JSID           `json:"season"`
 	Name   string         `json:"name"`
 	Aired  AiredDateRange `json:"aired"`
 	Count  int            `json:"count"`
+
+	Episodes []JArchiveEpisodeMetadata `json:"episodes"`
 }
 
-func (season JArchiveSeason) FindEpisodeIDs(season_path string) ([]string, error) {
-	file_path := path.Join(season_path, fmt.Sprintf("%s.html", season.Season))
-	bytes, err := os.ReadFile(file_path)
+func (season *JArchiveSeason) LoadSeasonMetadata(reader io.Reader) error {
+	bytes, err := io.ReadAll(reader)
 	if err != nil {
-		return nil, err
+		return err
 	}
+	//reEpisodeLink := regexp.MustCompile(`"showgame\.php\?game_id=(\d+)".*Taped.(\d{4})-(\d{2})-(\d{2}).*[aA]ired.(\d{4})-(\d{2})-(\d{2})`)
 	reEpisodeLink := regexp.MustCompile(`"showgame\.php\?game_id=(\d+)"`)
-	matches := reEpisodeLink.FindAllSubmatch(bytes, -1)
 
-	episode_ids := make([]string, 0)
+	matches := reEpisodeLink.FindAllSubmatch(bytes, -1)
 	for _, match := range matches {
-		episode_ids = append(episode_ids, string(match[1]))
+		jeid, _ := strconv.Atoi(string(match[1]))
+		//taped := parseTimeYYYYMMDD(match[2], match[3], match[4])
+		//aired := parseTimeYYYYMMDD(match[5], match[6], match[7])
+		taped, aired := AirDate(TimeUnknown), AirDate(TimeUnknown)
+
+		episode := JArchiveEpisodeMetadata{JEID(jeid), taped, aired}
+		season.Episodes = append(season.Episodes, episode)
 	}
 
-	return episode_ids, nil
+	return nil
 }
 
 func (season JArchiveSeason) FetchIndex(filepath string) error {
@@ -77,6 +84,19 @@ func (season JArchiveSeason) FetchIndex(filepath string) error {
 	time.Sleep(5 * time.Second)
 
 	return nil
+}
+
+// Unique (sometimes numeric) identifier for seasons in the archive.
+type JSID string
+
+// Returns a non-zero value if this season is part of regular play,
+// zero otherwise.
+func (id JSID) RegularSeason() int {
+	number, err := strconv.Atoi(string(id))
+	if err != nil {
+		return 0
+	}
+	return number
 }
 
 const all_seasons string = `[
