@@ -29,8 +29,8 @@ import (
 )
 
 type AiredDateRange struct {
-	From AirDate `json:"from"`
-	To   AirDate `json:"until"`
+	From AirDate `json:"from,omitempty"`
+	To   AirDate `json:"until,omitempty"`
 }
 
 type AirDate time.Time
@@ -57,8 +57,15 @@ func (date AirDate) WeekDay() time.Weekday {
 	return time.Time(date).Weekday()
 }
 
+func (date AirDate) MarshalText() ([]byte, error) {
+	return []byte(fmt.Sprintf(
+			"%4d/%02d/%02d",
+			date.Year(), int(date.Month()), date.MonthDay())),
+		nil
+}
+
 func (date *AirDate) UnmarshalText(text []byte) error {
-	if len(text) != len("YYYY/MM/DD") {
+	if len(text) != len("YYYY_MM_DD") {
 		return fmt.Errorf("incorrect format for aired date '%s'", text)
 	}
 

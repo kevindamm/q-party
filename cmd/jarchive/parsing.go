@@ -205,7 +205,7 @@ func innerText(node *html.Node) string {
 	return strings.ReplaceAll(strings.Join(text, " "), "  ", " ")
 }
 
-func parseTimeYYYYMMDD(yyyy, mm, dd []byte) time.Time {
+func parseTimeYYYYMMDD(yyyy, mm, dd []byte) AirDate {
 	year, err := strconv.Atoi(string(yyyy))
 	if err != nil {
 		log.Fatal(yyyy, err)
@@ -218,5 +218,6 @@ func parseTimeYYYYMMDD(yyyy, mm, dd []byte) time.Time {
 	if err != nil {
 		log.Fatal(dd, err)
 	}
-	return time.Date(year, time.Month(month), day, 10, 8, 0, 0, time.UTC)
+	return AirDate(time.Date(
+		year, time.Month(month), day, 10, 8, 0, 0, time.UTC))
 }

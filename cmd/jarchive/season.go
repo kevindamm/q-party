@@ -39,7 +39,7 @@ type JArchiveSeason struct {
 	Aired  AiredDateRange `json:"aired"`
 	Count  int            `json:"count"`
 
-	Episodes []JArchiveEpisodeMetadata `json:"episodes"`
+	Episodes map[JEID]JArchiveEpisodeMetadata `json:"episodes"`
 }
 
 func (season *JArchiveSeason) LoadSeasonMetadata(reader io.Reader) error {
@@ -47,18 +47,31 @@ func (season *JArchiveSeason) LoadSeasonMetadata(reader io.Reader) error {
 	if err != nil {
 		return err
 	}
-	//reEpisodeLink := regexp.MustCompile(`"showgame\.php\?game_id=(\d+)".*Taped.(\d{4})-(\d{2})-(\d{2}).*[aA]ired.(\d{4})-(\d{2})-(\d{2})`)
-	reEpisodeLink := regexp.MustCompile(`"showgame\.php\?game_id=(\d+)"`)
+	reEpisodeLink := regexp.MustCompile(`"showgame\.php\?game_id=(\d+)"(.*)\n`)
+	reTapedDate := regexp.MustCompile(`[tT]aped\s+(\d{4})-(\d{2})-(\d{2})`)
+	reAiredDate := regexp.MustCompile(`[aA]ired.*(\d{4})-(\d{2})-(\d{2})`)
+	reSeasonName := regexp.MustCompile(`<h2 class="season">(.*)</h2>`)
+
+	match := reSeasonName.FindSubmatch(bytes)
+	if len(match) > 0 {
+		season.Name = string(match[1])
+	}
+
+	season.Episodes = make(map[JEID]JArchiveEpisodeMetadata)
 
 	matches := reEpisodeLink.FindAllSubmatch(bytes, -1)
 	for _, match := range matches {
-		jeid, _ := strconv.Atoi(string(match[1]))
-		//taped := parseTimeYYYYMMDD(match[2], match[3], match[4])
-		//aired := parseTimeYYYYMMDD(match[5], match[6], match[7])
-		taped, aired := AirDate(TimeUnknown), AirDate(TimeUnknown)
-
-		episode := JArchiveEpisodeMetadata{JEID(jeid), taped, aired}
-		season.Episodes = append(season.Episodes, episode)
+		episode := JArchiveEpisodeMetadata{}
+		episode.JEID = MustParseJEID(string(match[1]))
+		taped := reTapedDate.FindSubmatch(match[2])
+		if taped != nil {
+			episode.Taped = parseTimeYYYYMMDD(taped[1], taped[2], taped[3])
+		}
+		aired := reAiredDate.FindSubmatch(match[2])
+		if aired != nil {
+			episode.Aired = parseTimeYYYYMMDD(aired[1], aired[2], aired[3])
+		}
+		season.Episodes[episode.JEID] = episode
 	}
 
 	return nil
@@ -147,5 +160,6 @@ const all_seasons string = `[
 {"season": "4", "name": "Season 4", "aired": {"from": "1987/09/07", "until": "1988/07/22"}, "count": 221},
 {"season": "3", "name": "Season 3", "aired": {"from": "1986/09/08", "until": "1987/07/24"}, "count": 214},
 {"season": "2", "name": "Season 2", "aired": {"from": "1985/09/09", "until": "1986/06/06"}, "count": 179},
-{"season": "1", "name": "Season 1", "aired": {"from": "1984/09/10", "until": "1985/06/07"}, "count": 164},
-{"season": "trebekpilots", "name": "Trebek pilots", "aired": {"from": "1983/09/18", "until": "1984/00/00"}, "count": 2}]`
+{"season": "1", "name": "Season 1", "aired": {"from": "1984/09/10", "until": "1985/06/07"}, "count": 164}]`
+
+//{"season": "trebekpilots", "name": "Trebek pilots", "aired": {"from": "1983/09/18", "until": "1984/01/09"}, "count": 2}]`

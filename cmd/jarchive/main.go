@@ -23,7 +23,6 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
@@ -59,32 +58,6 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-
-	case "season":
-		jsid := JSID(os.Args[2])
-		season := JArchiveSeason{Season: jsid}
-
-		seasons_path := path.Join(*data_path, "seasons")
-		err := os.MkdirAll(seasons_path, 0755)
-		if err != nil {
-			log.Fatalf("failed to make a directory for writing Season metadata")
-		}
-		filepath := path.Join(seasons_path, fmt.Sprintf("%s.html", jsid))
-
-		reader, err := os.Open(filepath)
-		if err != nil {
-			log.Fatal(err)
-		}
-		err = season.LoadSeasonMetadata(reader)
-		if err != nil {
-			log.Fatalf("failed to load season '%s' metadata\n%s", jsid, err)
-		}
-
-		bytes, err := json.Marshal(season)
-		if err != nil {
-			log.Fatal(err)
-		}
-		fmt.Println(string(bytes))
 
 	case "convert":
 		jeid := MustParseJEID(os.Args[2])

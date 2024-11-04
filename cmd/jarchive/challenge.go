@@ -12,8 +12,10 @@ type JArchiveChallenge struct {
 	Round      EpisodeRound `json:"round"`
 	Category   string       `json:"category"`           // ALL \"U\"PPERCASE
 	AirDate    *AirDate     `json:"air_date,omitempty"` // YYYY-MM-DD
-	Value      DollarValue  `json:"value,omitempty"`    // /$(\d+)/
 	Commentary string       `json:"comment,omitempty"`
+
+	// String representation has a dollar sign, negated values are wagers.
+	Value DollarValue `json:"value,omitempty"`
 
 	Prompt  string   `json:"prompt"`
 	Correct string   `json:"correct"` // excluding "what is..." preface
