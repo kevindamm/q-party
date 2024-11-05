@@ -34,23 +34,25 @@ func main() {
 	data_path := flag.String("data", "./.data",
 		"path where converted and created games are written")
 	flag.Usage = func() {
-		fmt.Printf("%s command episode# [flags]\n", os.Args[0])
+		fmt.Printf("%s command episode# [flags]\n", path.Base(os.Args[0]))
 		fmt.Println("  where")
-		fmt.Println("    command is either 'fetch' or 'season' or 'convert'")
+		fmt.Println("    command is either 'fetch' or 'convert'")
 		fmt.Println("    episode# is the index ID for the episode")
+		fmt.Println()
 		flag.PrintDefaults()
 	}
 	flag.Parse()
 
 	if flag.NArg() < 2 {
 		flag.Usage()
+		return
 	}
 
-	switch flag.Arg(1) {
+	switch flag.Arg(0) {
 
 	case "fetch":
 		episodes_path := path.Join(*data_path, "episodes")
-		jeid := MustParseJEID(flag.Arg(2))
+		jeid := MustParseJEID(flag.Arg(1))
 		filepath := path.Join(episodes_path, jeid.HTML())
 
 		err := FetchEpisode(jeid, filepath)
@@ -59,19 +61,21 @@ func main() {
 		}
 
 	case "convert":
-		jeid := MustParseJEID(os.Args[2])
+		jeid := MustParseJEID(flag.Arg(1))
 		html_path := path.Join(*data_path, "episodes", jeid.HTML())
 
 		reader, err := os.Open(html_path)
 		if err != nil {
-			log.Fatalf("could not open '%s'\n%s", html_path, err)
+			log.Fatal("could not open episode", html_path,
+				"\n", err)
 		}
 		defer reader.Close()
 
 		json_path := path.Join(*data_path, "episodes", jeid.JSON())
 		writer, err := os.Create(json_path)
 		if err != nil {
-			log.Fatalf("could not create json file for episode %s\n%s", json_path, err)
+			log.Fatal("could not create json file for episode", json_path,
+				"\n", err)
 		}
 		defer writer.Close()
 
