@@ -23,7 +23,6 @@
 package main
 
 import (
-	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -32,24 +31,23 @@ import (
 	"time"
 )
 
-func FetchAllSeasons(all_seasons []JArchiveSeason, out_path string) error {
+func FetchAllSeasons(all_seasons map[JSID]JArchiveSeason, out_path string) error {
 	seasons_path := path.Join(out_path, "seasons")
 	episodes_path := path.Join(out_path, "episodes")
 	os.MkdirAll(seasons_path, 0755)
 	os.MkdirAll(episodes_path, 0755)
 
-	for _, season := range all_seasons {
-		fmt.Printf("fetching season: %s (%s)\n", season.Season, season.Name)
-		filepath := path.Join(seasons_path, fmt.Sprintf("%s.html", season.Season))
+	for jsid, season := range all_seasons {
+		log.Println("fetching season", jsid, season.Name)
+		filepath := path.Join(seasons_path, jsid.HTML())
 		if _, err := os.Stat(filepath); err == os.ErrNotExist {
-			err = season.FetchIndex(filepath)
+			err = season.FetchIndex(jsid, filepath)
 			if err != nil {
 				return err
 			}
 		}
 
-		file_path := path.Join(seasons_path, fmt.Sprintf("%s.html", season.Season))
-		reader, err := os.Open(file_path)
+		reader, err := os.Open(path.Join(seasons_path, jsid.HTML()))
 		if err != nil {
 			return err
 		}
@@ -58,12 +56,13 @@ func FetchAllSeasons(all_seasons []JArchiveSeason, out_path string) error {
 			return err
 		}
 
-		for _, episode := range season.Episodes {
-			filepath = path.Join(episodes_path, fmt.Sprintf("%s.html", episode.JEID))
+		for jeid := range season.Episodes {
+			filepath = path.Join(episodes_path, jeid.HTML())
 			if _, err = os.Stat(filepath); err != os.ErrNotExist {
+				log.Println("episode", jeid.HTML(), "does not exist")
 				continue
 			}
-			err = FetchEpisode(episode.JEID, filepath)
+			err = FetchEpisode(jeid, filepath)
 			if err != nil {
 				return err
 			}
@@ -74,7 +73,7 @@ func FetchAllSeasons(all_seasons []JArchiveSeason, out_path string) error {
 }
 
 func FetchEpisode(episode JEID, filepath string) error {
-	url := episode_url(int(episode))
+	url := episode.URL()
 	log.Print("Fetching ", url, "  -> ", filepath)
 
 	response, err := http.Get(url)

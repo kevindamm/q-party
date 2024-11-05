@@ -55,10 +55,6 @@ func (episode JArchiveEpisode) Filename() string {
 	return filename
 }
 
-func episode_url(episode_id int) string {
-	return fmt.Sprintf("https://j-archive.com/showgame.php?game_id=%d", episode_id)
-}
-
 func (episode *JArchiveEpisode) parseContent(content *html.Node) {
 	child := content.FirstChild
 	for child != nil {
@@ -149,6 +145,18 @@ type JEID int
 
 func (id JEID) String() string {
 	return fmt.Sprintf("%d", int(id))
+}
+
+func (id JEID) HTML() string {
+	return fmt.Sprintf("%d.html", id)
+}
+
+func (id JEID) JSON() string {
+	return fmt.Sprintf("%d.json", id)
+}
+
+func (id JEID) URL() string {
+	return fmt.Sprintf("https://j-archive.com/showgame.php?game_id=%d", id)
 }
 
 // Parses the numeric value from a string.

@@ -46,13 +46,12 @@ func main() {
 		flag.Usage()
 	}
 
-	switch os.Args[1] {
+	switch flag.Arg(1) {
 
 	case "fetch":
 		episodes_path := path.Join(*data_path, "episodes")
-		episode_id := os.Args[2]
-		jeid := MustParseJEID(episode_id)
-		filepath := path.Join(episodes_path, fmt.Sprintf("%d.html", jeid))
+		jeid := MustParseJEID(flag.Arg(2))
+		filepath := path.Join(episodes_path, jeid.HTML())
 
 		err := FetchEpisode(jeid, filepath)
 		if err != nil {
@@ -61,20 +60,18 @@ func main() {
 
 	case "convert":
 		jeid := MustParseJEID(os.Args[2])
-		ep_path := path.Join(*data_path, "episodes")
-		filename := fmt.Sprintf("%d.html", jeid)
+		html_path := path.Join(*data_path, "episodes", jeid.HTML())
 
-		reader, err := os.Open(path.Join(ep_path, filename))
+		reader, err := os.Open(html_path)
 		if err != nil {
-			log.Fatalf("could not open '%s'\n%s", ep_path, err)
+			log.Fatalf("could not open '%s'\n%s", html_path, err)
 		}
 		defer reader.Close()
 
-		filename = filename[:len(filename)-4] + "json"
-		filepath := path.Join(*data_path, "episodes", filename)
-		writer, err := os.Create(filepath)
+		json_path := path.Join(*data_path, "episodes", jeid.JSON())
+		writer, err := os.Create(json_path)
 		if err != nil {
-			log.Fatalf("could not create json file for episode %s\n%s", filename, err)
+			log.Fatalf("could not create json file for episode %s\n%s", json_path, err)
 		}
 		defer writer.Close()
 
