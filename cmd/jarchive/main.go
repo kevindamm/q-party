@@ -25,9 +25,14 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
 	"log"
+	"net/http"
 	"os"
 	"path"
+	"time"
+
+	"github.com/kevindamm/q-party/ent"
 )
 
 func main() {
@@ -51,8 +56,8 @@ func main() {
 	switch flag.Arg(0) {
 
 	case "fetch":
-		episodes_path := path.Join(*data_path, "episodes")
 		jeid := MustParseJEID(flag.Arg(1))
+		episodes_path := create_dir(*data_path, "episodes")
 		filepath := path.Join(episodes_path, jeid.HTML())
 
 		err := FetchEpisode(jeid, filepath)
@@ -61,25 +66,33 @@ func main() {
 		}
 
 	case "convert":
+		seasons := LoadAllSeasons(*data_path)
+
+		/// TODO DELETE
+		var sqlclient ent.Client
+		if flag.Arg(1) == "*" {
+			ConvertAllEpisodes(*data_path, seasons, sqlclient)
+			break
+		}
+		/// TODO DELETE
+
 		jeid := MustParseJEID(flag.Arg(1))
-		html_path := path.Join(*data_path, "episodes", jeid.HTML())
+		var metadata *JArchiveEpisodeMetadata
+		for _, season := range seasons {
+			for id, episode := range season.Episodes {
+				if id == jeid {
+					metadata = &episode
+				}
+			}
+		}
 
-		reader, err := os.Open(html_path)
-		if err != nil {
-			log.Fatal("could not open episode", html_path,
+		filepath := path.Join(*data_path, "episodes", jeid.HTML())
+		if _, err := os.Stat(filepath); err == os.ErrNotExist {
+			log.Fatal("episode", jeid, "HTML does not exist", filepath,
 				"\n", err)
 		}
-		defer reader.Close()
 
-		json_path := path.Join(*data_path, "episodes", jeid.JSON())
-		writer, err := os.Create(json_path)
-		if err != nil {
-			log.Fatal("could not create json file for episode", json_path,
-				"\n", err)
-		}
-		defer writer.Close()
-
-		err = ConvertEpisode(jeid, reader, os.Stdout)
+		err := ConvertEpisode(jeid, *metadata, *data_path, sqlclient)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -87,4 +100,36 @@ func main() {
 	default:
 		flag.Usage()
 	}
+}
+
+// MkdirAll to ensure path exists and return the joined path.
+// No file change if the path already existed.
+func create_dir(at_path, child_path string) string {
+	new_path := path.Join(at_path, child_path)
+	err := os.MkdirAll(new_path, 0755)
+	if err != nil {
+		log.Fatal("failed to create directory", new_path)
+	}
+	return new_path
+}
+
+func FetchEpisode(episode JEID, filepath string) error {
+	url := episode.URL()
+	log.Print("Fetching ", url, "  -> ", filepath)
+
+	response, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+	defer response.Body.Close()
+	data, err := io.ReadAll(response.Body)
+	if err != nil {
+		return err
+	}
+	err = os.WriteFile(filepath, data, 0644)
+	if err != nil {
+		return err
+	}
+	time.Sleep(5 * time.Second)
+	return nil
 }

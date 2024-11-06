@@ -73,13 +73,16 @@ func childrenWithClass(node *html.Node, elType string, elClass string) []*html.N
 	for child != nil {
 		if child.Type == html.ElementNode &&
 			(elType == "" || child.Data == elType) {
-			for _, attr := range child.Attr {
-				if attr.Key == "class" {
-					if hasClass(attr.Val, elClass) {
-						matching_children = append(matching_children, child)
+			if elClass == "" {
+				matching_children = append(matching_children, child)
+			} else {
+				for _, attr := range child.Attr {
+					if attr.Key == "class" {
+						if hasClass(attr.Val, elClass) {
+							matching_children = append(matching_children, child)
+						}
 						break
 					}
-					break
 				}
 			}
 		}
@@ -192,7 +195,7 @@ func innerText(node *html.Node) string {
 		child := node.FirstChild
 		for child != nil {
 			if child.Type == html.TextNode {
-				text = append(text, child.Data)
+				text = append(text, strings.ReplaceAll(child.Data, "\n", " "))
 			}
 			if child.FirstChild != nil {
 				recursiveFind(child)
@@ -201,11 +204,11 @@ func innerText(node *html.Node) string {
 		}
 	}
 	recursiveFind(node)
-
-	return strings.ReplaceAll(strings.Join(text, " "), "  ", " ")
+	flattened := strings.ReplaceAll(strings.Join(text, " "), "  ", " ")
+	return strings.Trim(flattened, " \t\r\n")
 }
 
-func parseTimeYYYYMMDD(yyyy, mm, dd []byte) AirDate {
+func parseTimeYYYYMMDD(yyyy, mm, dd []byte) ShowDate {
 	year, err := strconv.Atoi(string(yyyy))
 	if err != nil {
 		log.Fatal(yyyy, err)
@@ -218,6 +221,6 @@ func parseTimeYYYYMMDD(yyyy, mm, dd []byte) AirDate {
 	if err != nil {
 		log.Fatal(dd, err)
 	}
-	return AirDate(time.Date(
+	return ShowDate(time.Date(
 		year, time.Month(month), day, 10, 8, 0, 0, time.UTC))
 }

@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 
 	"golang.org/x/net/html"
@@ -9,10 +10,10 @@ import (
 
 // The de-normed representation as found in some datasets, e.g. on Kaggle.
 type JArchiveChallenge struct {
-	Round      EpisodeRound `json:"round"`
-	Category   string       `json:"category"`           // ALL \"U\"PPERCASE
-	AirDate    *AirDate     `json:"air_date,omitempty"` // YYYY-MM-DD
-	Commentary string       `json:"comment,omitempty"`
+	ShowDate   `json:"air_date,omitempty"`
+	Round      EpisodeRound     `json:"round"`
+	Category   JArchiveCategory `json:"category"`
+	Commentary string           `json:"comment,omitempty"`
 
 	// String representation has a dollar sign, negated values are wagers.
 	Value DollarValue `json:"value,omitempty"`
@@ -22,10 +23,12 @@ type JArchiveChallenge struct {
 	Accept  []string `json:"accept,omitempty"`
 }
 
+var unknown_challenge = JArchiveChallenge{}
+
 func (challenge JArchiveChallenge) IsEmpty() bool {
-	if challenge.Category != "" || challenge.Commentary != "" ||
-		challenge.Round != ROUND_UNKNOWN || challenge.Value != 0 ||
-		challenge.Prompt != "" || challenge.Correct != "" ||
+	if challenge.Value != 0 ||
+		challenge.Prompt != "" ||
+		challenge.Correct != "" ||
 		len(challenge.Accept) != 0 {
 		return false
 	}
@@ -38,27 +41,38 @@ func (challenge *JArchiveChallenge) parseChallenge(div *html.Node) error {
 	if strings.Trim(innerText(div), " ") == "" {
 		return nil
 	}
-
 	table := nextDescendantWithClass(div, "table", "")
 
 	var err error
-	challenge.Value, err = ParseDollarValue(innerText(
-		nextDescendantWithClass(table, "td", "clue_value")))
-	if err != nil {
-		return errors.New("failed to parse challenge value " + err.Error())
+	value_td := nextDescendantWithClass(table, "td", "clue_value")
+	if value_td != nil {
+		challenge.Value, err = ParseDollarValue(innerText(value_td))
+		if err != nil {
+			return errors.New("failed to parse challenge value " + err.Error())
+		}
+	} else {
+		dd_value_td := nextDescendantWithClass(table, "td", "clue_value_daily_double")
+		if dd_value_td != nil {
+			text := strings.ReplaceAll(innerText(dd_value_td), ",", "")
+			challenge.Value, err = ParseDollarValue(text[4:])
+			if err != nil {
+				return fmt.Errorf("failed to parse daily double value %s\n%s", text, err.Error())
+			}
+			challenge.Value = -challenge.Value
+		}
 	}
 
 	clue := nextDescendantWithClass(table, "td", "clue_text")
-	challenge.Category = innerText(clue)
+	challenge.Prompt = innerText(clue)
 	clue = nextSiblingWithClass(clue, "td", "clue_text")
 	if clue == nil {
 		return errors.New("could not find challenge response")
 	}
-	clue = nextDescendantWithClass(clue, "em", "correct_response")
-	if clue == nil {
+	correct := nextDescendantWithClass(clue, "em", "correct_response")
+	if correct == nil {
 		return errors.New("could not find correct response")
 	}
-	challenge.Correct = innerText(clue)
+	challenge.Correct = innerText(correct)
 	return nil
 }
 
@@ -66,8 +80,8 @@ func (final *JArchiveFinalChallenge) parseChallenge(div *html.Node) error {
 	table := nextDescendantWithClass(div, "table", "")
 
 	final.Round = ROUND_FINAL_JEOPARDY
-	final.Category = innerText(
-		nextDescendantWithClass(table, "td", "category_name"))
+	final.Category = JArchiveCategory(innerText(
+		nextDescendantWithClass(table, "td", "category_name")))
 	final.Commentary = innerText(
 		nextDescendantWithClass(table, "td", "category_comments"))
 

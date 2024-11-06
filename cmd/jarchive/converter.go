@@ -24,7 +24,6 @@ package main
 
 import (
 	"encoding/json"
-	"io"
 	"log"
 	"os"
 	"path"
@@ -32,8 +31,11 @@ import (
 	"github.com/kevindamm/q-party/ent"
 )
 
-func ConvertAllEpisodes(data_path string, sqlclient ent.Client) error {
-	seasons := LoadAllSeasons(data_path)
+func ConvertAllEpisodes(
+	data_path string,
+	seasons map[JSID]JArchiveSeason,
+	sqlclient ent.Client) error {
+
 	episodes_path := path.Join(data_path, "episodes")
 	err := os.MkdirAll(episodes_path, 0755)
 	if err != nil {
@@ -42,24 +44,13 @@ func ConvertAllEpisodes(data_path string, sqlclient ent.Client) error {
 	}
 
 	for jsid, season := range seasons {
-		log.Println("Converting episodes from season", jsid, season.Name)
+		log.Println("Converting episodes from season [", jsid, "],", season.Name)
 		log.Println("~ ~ ~ ~ ~ ~ ~ ~ ~ ~")
-		for jeid, episode := range season.Episodes {
-			reader, err := os.Open(path.Join(episodes_path, jeid.HTML()))
+		for jeid, metadata := range season.Episodes {
+			err = ConvertEpisode(jeid, metadata, data_path, sqlclient)
 			if err != nil {
-				log.Print("could not open episode", episode, err)
-				continue
-			}
-
-			writer, err := os.Create(path.Join(data_path, jeid.JSON()))
-			if err != nil {
-				log.Print("could not create json file for episode", jeid, err)
-				continue
-			}
-
-			err = ConvertEpisode(episode.JEID, reader, writer)
-			if err != nil {
-				log.Print("could not convert episode", episode, err)
+				log.Print("could not convert episode", jeid,
+					"\n", err)
 				continue
 			}
 		}
@@ -68,13 +59,36 @@ func ConvertAllEpisodes(data_path string, sqlclient ent.Client) error {
 	return nil
 }
 
-func ConvertEpisode(jeid JEID, reader io.Reader, writer io.Writer) error {
+func ConvertEpisode(jeid JEID, metadata JArchiveEpisodeMetadata, data_path string, sqlclient ent.Client) error {
+	html_path := path.Join(data_path, "episodes", jeid.HTML())
+	reader, err := os.Open(html_path)
+	if err != nil {
+		return err
+	}
+	defer reader.Close()
+
 	episode := ParseEpisode(jeid, reader)
+	if metadata.Aired != ShowDate(TimeUnknown) {
+		episode.Aired = metadata.Aired
+	}
+	if metadata.Taped != ShowDate(TimeUnknown) {
+		episode.Taped = metadata.Taped
+	}
 	episode_json, err := json.MarshalIndent(episode, "", "  ")
 	if err != nil {
 		return err
 	}
+
+	/// TODO write to database instead of file
+	log.Println("writing episode", jeid)
+	writer, err := os.Create(path.Join(data_path, "episodes", jeid.JSON()))
+	if err != nil {
+		return err
+	}
 	nbytes, err := writer.Write(episode_json)
-	log.Println("writing episode,", nbytes, "bytes written")
+	writer.Close()
+	log.Println(nbytes, "bytes written")
+	///
+
 	return err
 }

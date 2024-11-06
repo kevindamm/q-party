@@ -18,7 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-// github:kevindamm/q-party/cmd/jarchive/air_date.go
+// github:kevindamm/q-party/cmd/jarchive/show_date.go
 
 package main
 
@@ -28,43 +28,45 @@ import (
 	"time"
 )
 
-type AiredDateRange struct {
-	From AirDate `json:"from,omitempty"`
-	To   AirDate `json:"until,omitempty"`
+type ShowDateRange struct {
+	From ShowDate `json:"from,omitempty"`
+	To   ShowDate `json:"until,omitempty"`
 }
 
-type AirDate time.Time
+type ShowDate time.Time
 
-func (date AirDate) String() string {
+var unknown_airing = ShowDate(time.Time{})
+
+func (date ShowDate) String() string {
 	return fmt.Sprintf("%4d/%02d/%02d", date.Year(), date.Month(), date.MonthDay())
 }
 
-func (date AirDate) Year() int {
+func (date ShowDate) Year() int {
 	return time.Time(date).Year()
 }
 
 // Returns 0 if unknown, 1 for January, ..., 12 for December.
-func (date AirDate) Month() time.Month {
+func (date ShowDate) Month() time.Month {
 	return time.Time(date).Month()
 }
 
-func (date AirDate) MonthDay() int {
+func (date ShowDate) MonthDay() int {
 	return time.Time(date).Day()
 }
 
 // Returns 0 for Sunday, 1 for Monday, ..., 6 for Saturday.
-func (date AirDate) WeekDay() time.Weekday {
+func (date ShowDate) WeekDay() time.Weekday {
 	return time.Time(date).Weekday()
 }
 
-func (date AirDate) MarshalText() ([]byte, error) {
+func (date ShowDate) MarshalText() ([]byte, error) {
 	return []byte(fmt.Sprintf(
 			"%4d/%02d/%02d",
 			date.Year(), int(date.Month()), date.MonthDay())),
 		nil
 }
 
-func (date *AirDate) UnmarshalText(text []byte) error {
+func (date *ShowDate) UnmarshalText(text []byte) error {
 	if len(text) != len("YYYY_MM_DD") {
 		return fmt.Errorf("incorrect format for aired date '%s'", text)
 	}
@@ -84,7 +86,7 @@ func (date *AirDate) UnmarshalText(text []byte) error {
 		return err
 	}
 
-	*date = AirDate(time.Date(
+	*date = ShowDate(time.Date(
 		year, time.Month(month), day, 23, 0, 0, 0, time.UTC))
 	return nil
 }

@@ -22,15 +22,20 @@
 
 package main
 
-import "golang.org/x/net/html"
+import (
+	"log"
+
+	"golang.org/x/net/html"
+)
 
 type JArchiveBoard struct {
+	ShowDate `json:"-"`
 	Round    EpisodeRound          `json:"round"`
 	Columns  [6]CategoryChallenges `json:"columns"`
 	Wagering []BoardPosition       `json:"wag,omitempty"`
 }
 
-func NewBoard(round EpisodeRound) *JArchiveBoard {
+func NewBoard(date ShowDate, round EpisodeRound) *JArchiveBoard {
 	if round != ROUND_SINGLE_JEOPARDY && round != ROUND_DOUBLE_JEOPARDY {
 		panic("attempting to create a new board with invalid round " + round.String())
 	}
@@ -63,10 +68,29 @@ func (board *JArchiveBoard) parseBoard(root *html.Node) {
 	round_table := nextDescendantWithClass(root, "table", "round")
 	category_tr := nextDescendantWithClass(round_table, "tr", "")
 	category_tds := childrenWithClass(category_tr, "td", "category")
+	if len(category_tds) != 6 {
+		log.Fatal("expected 6 category entries, found", len(category_tds))
+	}
 	for i, td := range category_tds {
-		err := parseCategoryHeader(td, &board.Columns[i])
+		err := board.Columns[i].parseCategoryHeader(td)
 		if err != nil {
-			panic("failed to parse category header (name and comments)")
+			log.Fatal("failed to parse category header (name and comments)")
+		}
+		board.Columns[i].Round = board.Round
+	}
+
+	for row := range 5 {
+		category_tr = nextSiblingWithClass(category_tr, "tr", "")
+		clue_tds := childrenWithClass(category_tr, "td", "clue")
+		if len(clue_tds) != 6 {
+			log.Fatal("expected 6 clue entries, found", len(clue_tds))
+		}
+		for i, clue_td := range clue_tds {
+			err := board.Columns[i].parseCategoryChallenge(clue_td)
+			if err != nil {
+				log.Fatal("failed to parse clue entry", err)
+			}
+			board.Columns[i].Challenges[row].ShowDate = board.ShowDate
 		}
 	}
 }

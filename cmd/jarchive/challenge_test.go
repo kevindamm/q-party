@@ -8,7 +8,7 @@ import (
 )
 
 func TestParseChallenge(t *testing.T) {
-	html_raw := `<td class="clue">
+	html_raw := `<table><tbody><tr><td class="clue">
 <table>
   <tr>
     <td>
@@ -28,13 +28,13 @@ func TestParseChallenge(t *testing.T) {
     <td id="clue_J_5_2_r" class="clue_text" style="display:none;"><em class="correct_response">art deco</em><br /><br /><table width="100%"><tr><td class="right">Stefanie</td></tr></table></td>
   </tr>
 </table>
-    </td>`
+    </td></tr></tbody></table>`
 
 	challenge := new(JArchiveChallenge)
 	html_reader := strings.NewReader(html_raw)
 	doc, err := html.Parse(html_reader)
 	if err != nil {
-		t.Fatalf("failed to parse (html_reader)\n%s", err)
+		t.Fatal("failed to parse (html_reader)\n", err)
 	}
 	td := nextDescendantWithClass(doc, "td", "clue")
 	challenge.parseChallenge(td)

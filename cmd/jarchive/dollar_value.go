@@ -24,6 +24,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strconv"
 )
@@ -60,14 +61,19 @@ func (value *DollarValue) UnmarshalText(text []byte) error {
 	return err
 }
 
+const ZeroDollars = DollarValue(0)
+
 func ParseDollarValue(text string) (DollarValue, error) {
+	if len(text) == 0 {
+		return ZeroDollars, errors.New("empty string for dollar value")
+	}
 	if text[0] != '$' {
-		return DollarValue(0), fmt.Errorf("invalid DollarValue %s, expected '$'", text)
+		return ZeroDollars, fmt.Errorf("invalid DollarValue %s, expected '$'", text)
 	}
 
 	intVal, err := strconv.Atoi(string(text[1:]))
 	if err != nil {
-		return DollarValue(0), err
+		return ZeroDollars, fmt.Errorf("failed to parse integer %s\n%s", text[1:], err)
 	}
 	return DollarValue(intVal), nil
 }

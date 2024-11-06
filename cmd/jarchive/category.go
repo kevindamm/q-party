@@ -22,24 +22,57 @@
 
 package main
 
-import "golang.org/x/net/html"
+import (
+	"log"
+
+	"golang.org/x/net/html"
+)
+
+type JArchiveCategory string
 
 type CategoryChallenges struct {
-	CategoryName string
-	Commentary   string
-	Challenges   []JArchiveChallenge
+	JArchiveCategory `json:"category"`
+	Round            EpisodeRound        `json:"-"`
+	Commentary       string              `json:"commentary,omitempty"`
+	Challenges       []JArchiveChallenge `json:"challenges"`
 }
 
-func parseCategoryHeader(cat_td *html.Node, cat *CategoryChallenges) error {
+// Proposal for category breakdown based on Trivial Pursuit classic categories.
+type CategoryTheme string
+
+const (
+	ThemeGeography      CategoryTheme = "Geography"
+	ThemeEntertainment  CategoryTheme = "Entertainment"
+	ThemeHistoryRoyalty CategoryTheme = "History & Royalty"
+	ThemeArtLiterature  CategoryTheme = "Art & Literature"
+	ThemeScienceNature  CategoryTheme = "Science & Nature"
+	ThemeSportsLeisure  CategoryTheme = "Sports & Leisure"
+)
+
+func (category *CategoryChallenges) parseCategoryHeader(cat_td *html.Node) error {
 	table := nextDescendantWithClass(cat_td, "table", "")
-	trs := childrenWithClass(table, "tr", "")
+	tbody := nextDescendantWithClass(table, "tbody", "")
+	trs := childrenWithClass(tbody, "tr", "")
 	if len(trs) != 2 {
-		return nil
+		log.Fatal("length of trs expected 2 but have ", len(trs))
 	}
-	cat.CategoryName = innerText(
-		nextDescendantWithClass(trs[0], "td", "category_name"))
-	cat.Commentary = innerText(
+	category.JArchiveCategory = JArchiveCategory(innerText(
+		nextDescendantWithClass(trs[0], "td", "category_name")))
+	category.Commentary = innerText(
 		nextDescendantWithClass(trs[1], "td", "category_comments"))
 
+	return nil
+}
+
+func (category *CategoryChallenges) parseCategoryChallenge(clue_td *html.Node) error {
+	challenge := JArchiveChallenge{}
+	err := challenge.parseChallenge(clue_td)
+	if err != nil {
+		category.Challenges = append(category.Challenges, unknown_challenge)
+		return err
+	}
+	challenge.Category = category.JArchiveCategory
+	challenge.Round = category.Round
+	category.Challenges = append(category.Challenges, challenge)
 	return nil
 }

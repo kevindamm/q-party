@@ -38,9 +38,9 @@ import (
 
 type JArchiveSeason struct {
 	JSID  `json:"season"`
-	Name  string         `json:"name"`
-	Aired AiredDateRange `json:"aired"`
-	Count int            `json:"count"`
+	Name  string        `json:"name"`
+	Aired ShowDateRange `json:"aired"`
+	Count int           `json:"count"`
 
 	Episodes map[JEID]JArchiveEpisodeMetadata `json:"episodes"`
 }

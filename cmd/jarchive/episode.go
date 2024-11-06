@@ -34,25 +34,18 @@ import (
 
 type JArchiveEpisode struct {
 	JEID
-	ShowTitle  string  `json:"show_title"`
-	ShowNumber int     `json:"show_number" cue:">0"`
-	Aired      AirDate `json:"aired"`
-	Comments   string  `json:"comments"`
+	ShowTitle  string   `json:"show_title"`
+	ShowNumber int      `json:"show_number" cue:">0"`
+	Aired      ShowDate `json:"aired,omitempty"`
+	Taped      ShowDate `json:"taped,omitempty"`
+	Comments   string   `json:"comments,omitempty"`
 
 	Contestants [3]JArchiveContestant `json:"contestants"`
 
-	Single     JArchiveBoard           `json:"single"`
-	Double     JArchiveBoard           `json:"double"`
+	Single     *JArchiveBoard          `json:"single"`
+	Double     *JArchiveBoard          `json:"double"`
 	Final      JArchiveFinalChallenge  `json:"final"`
 	TieBreaker *JArchiveFinalChallenge `json:"tiebreaker,omitempty"`
-}
-
-func (episode JArchiveEpisode) Filename() string {
-	filename := fmt.Sprintf("%d.json", episode.ShowNumber)
-	if episode.ShowNumber < 1000 {
-		filename = fmt.Sprintf("%03d.json", episode.ShowNumber)
-	}
-	return filename
 }
 
 func (episode *JArchiveEpisode) parseContent(content *html.Node) {
@@ -72,11 +65,13 @@ func (episode *JArchiveEpisode) parseContent(content *html.Node) {
 		case "contestants":
 			episode.parseContestants(child)
 		case "jeopardy_round":
-			episode.parseBoard(child, ROUND_SINGLE_JEOPARDY)
+			episode.Single = NewBoard(episode.Aired, ROUND_SINGLE_JEOPARDY)
+			episode.Single.parseBoard(child)
 		case "double_jeopardy_round":
-			episode.parseBoard(child, ROUND_DOUBLE_JEOPARDY)
+			episode.Double = NewBoard(episode.Aired, ROUND_DOUBLE_JEOPARDY)
+			episode.Double.parseBoard(child)
 		case "final_jeopardy_round":
-			episode.parseFinalRound(child)
+			episode.parseFinalRound(child) // may include tie-breaker
 		}
 
 		child = child.NextSibling
@@ -107,14 +102,6 @@ func (episode *JArchiveEpisode) parseComments(game_comments *html.Node) {
 	episode.Comments = innerText(game_comments)
 }
 
-func (episode *JArchiveEpisode) parseBoard(div *html.Node, round EpisodeRound) {
-	if round == ROUND_SINGLE_JEOPARDY {
-		episode.Single.parseBoard(div)
-	} else {
-		episode.Double.parseBoard(div)
-	}
-}
-
 func (episode *JArchiveEpisode) parseFinalRound(div *html.Node) {
 	// On a rare occasion there is also a tiebreaker question,
 	// with two instead of one <div class="final_round">
@@ -127,14 +114,15 @@ func (episode *JArchiveEpisode) parseFinalRound(div *html.Node) {
 	if len(rounds) == 2 {
 		episode.TieBreaker = new(JArchiveFinalChallenge)
 		episode.TieBreaker.parseChallenge(rounds[1])
+		episode.TieBreaker.ShowDate = episode.Aired
 		episode.TieBreaker.Round = ROUND_TIE_BREAKER
 	}
 }
 
 type JArchiveEpisodeMetadata struct {
 	JEID  `json:"-"`
-	Taped AirDate `json:"taped"`
-	Aired AirDate `json:"aired"`
+	Taped ShowDate `json:"taped"`
+	Aired ShowDate `json:"aired"`
 }
 
 var TimeUnknown = time.Unix(0, 0)
