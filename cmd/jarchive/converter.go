@@ -68,10 +68,10 @@ func ConvertEpisode(jeid JEID, metadata JArchiveEpisodeMetadata, data_path strin
 	defer reader.Close()
 
 	episode := ParseEpisode(jeid, reader)
-	if metadata.Aired != ShowDate(TimeUnknown) {
+	if metadata.Aired != unknown_airing {
 		episode.Aired = metadata.Aired
 	}
-	if metadata.Taped != ShowDate(TimeUnknown) {
+	if metadata.Taped != unknown_taping {
 		episode.Taped = metadata.Taped
 	}
 	episode_json, err := json.MarshalIndent(episode, "", "  ")

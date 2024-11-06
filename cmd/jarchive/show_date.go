@@ -36,6 +36,7 @@ type ShowDateRange struct {
 type ShowDate time.Time
 
 var unknown_airing = ShowDate(time.Time{})
+var unknown_taping = ShowDate(time.Time{})
 
 func (date ShowDate) String() string {
 	return fmt.Sprintf("%4d/%02d/%02d", date.Year(), date.Month(), date.MonthDay())
