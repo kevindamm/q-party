@@ -28,11 +28,11 @@ package main
 // on, the other types in this module (episode, board, category, challenge).
 
 import (
+	"fmt"
 	"io"
 	"log"
 	"strconv"
 	"strings"
-	"time"
 
 	"golang.org/x/net/html"
 )
@@ -221,6 +221,78 @@ func parseTimeYYYYMMDD(yyyy, mm, dd []byte) ShowDate {
 	if err != nil {
 		log.Fatal(dd, err)
 	}
-	return ShowDate(time.Date(
-		year, time.Month(month), day, 10, 8, 0, 0, time.UTC))
+	return MakeShowDate(year, month, day)
+}
+
+func parseIntoMarkdown(root *html.Node) (string, []Media) {
+	prompt := ""
+	media := make([]Media, 0)
+	var recursiveGather func(*html.Node)
+
+	recursiveGather = func(root *html.Node) {
+		child := root.FirstChild
+		for child != nil {
+			if child.Type == html.TextNode {
+				// Concatenate all immediate children that are text nodes.
+				prompt += child.Data
+			} else if child.Type == html.ElementNode {
+				if child.Data == "a" {
+					href, text := "", ""
+					// Parse link destination.
+					for _, attr := range child.Attr {
+						if attr.Key == "href" {
+							href = attr.Val
+							break
+						}
+					}
+					// Parse link text (<a>...</a> contents).
+					if child.FirstChild != nil && child.FirstChild.Type == html.TextNode {
+						text = child.FirstChild.Data
+					}
+
+					// represent as Media and as markdown within the prompt.
+					media_asset := MakeMedia(href)
+					media = append(media, media_asset)
+					prompt += fmt.Sprintf(" [%s](%s) ", text, media_asset.MediaURL)
+				} else if child.Data == "u" {
+					// Recursively collect the text and media of the prompt.
+					prompt += " _"
+					recursiveGather(child)
+					prompt += "_ "
+				} else if child.Data == "i" {
+					// Recursively collect the text and media of the prompt.
+					prompt += " *"
+					recursiveGather(child)
+					prompt += "* "
+				} else if child.Data == "b" {
+					// Recursively collect the text and media of the prompt.
+					prompt += " **"
+					recursiveGather(child)
+					prompt += "** "
+				} else if child.Data == "br" {
+					// pass, safe to ignore; insert a newline if it's a double-<br/>.
+					if child.NextSibling != nil &&
+						child.NextSibling.Type == html.ElementNode &&
+						child.NextSibling.Data == "br" {
+						child = child.NextSibling
+						prompt = strings.TrimRight(prompt, " ")
+						prompt += "\n\n"
+					} else {
+						prompt += " "
+					}
+				} else {
+					log.Fatalf("unexpected element type (%s) in Prompt", child.Data)
+				}
+			} else {
+				log.Fatalf("unexpected node (%d %s) in Prompt",
+					child.Type, child.Data)
+			}
+			// Visit all immediate children.
+			child = child.NextSibling
+		}
+	}
+	recursiveGather(root)
+
+	prompt = strings.Trim(strings.ReplaceAll(prompt, "  ", " "), "\t \r\n")
+	return prompt, media
 }

@@ -65,14 +65,14 @@ func (category *CategoryChallenges) parseCategoryHeader(cat_td *html.Node) error
 }
 
 func (category *CategoryChallenges) parseCategoryChallenge(clue_td *html.Node) error {
-	challenge := JArchiveChallenge{}
+	challenge := NewChallenge()
 	err := challenge.parseChallenge(clue_td)
 	if err != nil {
-		category.Challenges = append(category.Challenges, unknown_challenge)
+		category.Challenges = append(category.Challenges, *challenge)
 		return err
 	}
 	challenge.Category = category.JArchiveCategory
 	challenge.Round = category.Round
-	category.Challenges = append(category.Challenges, challenge)
+	category.Challenges = append(category.Challenges, *challenge)
 	return nil
 }

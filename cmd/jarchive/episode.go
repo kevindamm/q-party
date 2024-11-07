@@ -27,7 +27,6 @@ import (
 	"log"
 	"regexp"
 	"strconv"
-	"time"
 
 	"golang.org/x/net/html"
 )
@@ -39,13 +38,26 @@ type JArchiveEpisode struct {
 	Aired      ShowDate `json:"aired,omitempty"`
 	Taped      ShowDate `json:"taped,omitempty"`
 	Comments   string   `json:"comments,omitempty"`
+	Media      []Media  `json:"media,omitempty"`
 
 	Contestants [3]JArchiveContestant `json:"contestants"`
 
-	Single     *JArchiveBoard          `json:"single"`
-	Double     *JArchiveBoard          `json:"double"`
-	Final      JArchiveFinalChallenge  `json:"final"`
-	TieBreaker *JArchiveFinalChallenge `json:"tiebreaker,omitempty"`
+	Single     *JArchiveBoard         `json:"single,omitempty"`
+	Double     *JArchiveBoard         `json:"double,omitempty"`
+	Final      JArchiveFinalChallenge `json:"final"`
+	TieBreaker *JArchiveTiebreaker    `json:"tiebreaker,omitempty"`
+}
+
+func NewEpisode(metadata JArchiveEpisodeMetadata) *JArchiveEpisode {
+	episode := new(JArchiveEpisode)
+	episode.JEID = metadata.JEID
+	if metadata.Aired != unknown_airing {
+		episode.Aired = metadata.Aired
+	}
+	if metadata.Taped != unknown_taping {
+		episode.Taped = metadata.Taped
+	}
+	return episode
 }
 
 func (episode *JArchiveEpisode) parseContent(content *html.Node) {
@@ -59,11 +71,11 @@ func (episode *JArchiveEpisode) parseContent(content *html.Node) {
 
 		switch id {
 		case "game_title":
-			episode.parseTitle(child)
+			episode.parseTitle(child) // derived from content, not <head>
 		case "game_comments":
-			episode.parseComments(child)
+			episode.parseComments(child) // minutiae about the episode
 		case "contestants":
-			episode.parseContestants(child)
+			episode.parseContestants(child) // name & bio
 		case "jeopardy_round":
 			episode.Single = NewBoard(episode.Aired, ROUND_SINGLE_JEOPARDY)
 			episode.Single.parseBoard(child)
@@ -99,7 +111,11 @@ func (episode *JArchiveEpisode) parseTitle(game_title *html.Node) {
 }
 
 func (episode *JArchiveEpisode) parseComments(game_comments *html.Node) {
-	episode.Comments = innerText(game_comments)
+	text, media := parseIntoMarkdown(game_comments)
+	episode.Comments = text
+	if len(media) > 0 {
+		episode.Media = media
+	}
 }
 
 func (episode *JArchiveEpisode) parseFinalRound(div *html.Node) {
@@ -112,20 +128,17 @@ func (episode *JArchiveEpisode) parseFinalRound(div *html.Node) {
 
 	episode.Final.parseChallenge(rounds[0])
 	if len(rounds) == 2 {
-		episode.TieBreaker = new(JArchiveFinalChallenge)
+		episode.TieBreaker = new(JArchiveTiebreaker)
 		episode.TieBreaker.parseChallenge(rounds[1])
 		episode.TieBreaker.ShowDate = episode.Aired
-		episode.TieBreaker.Round = ROUND_TIE_BREAKER
 	}
 }
 
 type JArchiveEpisodeMetadata struct {
 	JEID  `json:"-"`
-	Taped ShowDate `json:"taped"`
-	Aired ShowDate `json:"aired"`
+	Taped ShowDate `json:"taped,omitempty"`
+	Aired ShowDate `json:"aired,omitempty"`
 }
-
-var TimeUnknown = time.Unix(0, 0)
 
 // Unique numeric identifier for episodes in the archive.
 // May be different than the sequential show number used in display.

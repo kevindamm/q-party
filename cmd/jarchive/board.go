@@ -32,7 +32,6 @@ type JArchiveBoard struct {
 	ShowDate `json:"-"`
 	Round    EpisodeRound          `json:"round"`
 	Columns  [6]CategoryChallenges `json:"columns"`
-	Wagering []BoardPosition       `json:"wag,omitempty"`
 }
 
 func NewBoard(date ShowDate, round EpisodeRound) *JArchiveBoard {
@@ -40,21 +39,22 @@ func NewBoard(date ShowDate, round EpisodeRound) *JArchiveBoard {
 		panic("attempting to create a new board with invalid round " + round.String())
 	}
 
-	single_double := 1
-	if round == ROUND_DOUBLE_JEOPARDY {
-		single_double = 2
-	}
-
 	board := new(JArchiveBoard)
 	board.Round = round
-	board.Wagering = make([]BoardPosition, 0, single_double)
 	return board
 }
 
 func (board JArchiveBoard) WageringChallenges() []JArchiveChallenge {
-	challenges := make([]JArchiveChallenge, len(board.Wagering))
-	for i, position := range board.Wagering {
-		challenges[i] = board.Columns[position.Column].Challenges[position.Index]
+	if board.Round != 1 && board.Round != 2 {
+		return nil
+	}
+	challenges := make([]JArchiveChallenge, 0)
+	for _, column := range board.Columns {
+		for _, challenge := range column.Challenges {
+			if challenge.Value.IsWager() {
+				challenges = append(challenges, challenge)
+			}
+		}
 	}
 	return challenges
 }
@@ -125,6 +125,9 @@ func (round EpisodeRound) String() string {
 }
 
 func ParseString(round string) EpisodeRound {
+	if round == "" {
+		return ROUND_UNKNOWN
+	}
 	for k, v := range round_strings {
 		if v == round {
 			return k
