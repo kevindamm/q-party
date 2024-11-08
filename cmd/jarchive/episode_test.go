@@ -1558,7 +1558,10 @@ func TestJArchiveEpisode_parseContent(t *testing.T) {
 
 	jeid := JEID(579)
 	aired, taped := MakeShowDate(2005, 10, 25), MakeShowDate(2005, 9, 23)
-	episode := NewEpisode(JArchiveEpisodeMetadata{jeid, taped, aired})
+	episode := new(JArchiveEpisode)
+	episode.JEID = jeid
+	episode.Taped = taped
+	episode.Aired = aired
 	episode.parseContent(content_div)
 
 	if episode.JEID != jeid {

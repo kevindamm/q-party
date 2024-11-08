@@ -47,6 +47,10 @@ func ConvertAllEpisodes(
 		log.Println("Converting episodes from season [", jsid, "],", season.Name)
 		log.Println("~ ~ ~ ~ ~ ~ ~ ~ ~ ~")
 		for jeid, metadata := range season.Episodes {
+			if _, err := os.Stat(path.Join(episodes_path, jeid.HTML())); err == os.ErrNotExist {
+				log.Print("skipping", jeid.HTML(), "... file not found")
+				continue
+			}
 			err = ConvertEpisode(jeid, metadata, data_path, sqlclient)
 			if err != nil {
 				log.Print("could not convert episode", jeid,
@@ -68,10 +72,10 @@ func ConvertEpisode(jeid JEID, metadata JArchiveEpisodeMetadata, data_path strin
 	defer reader.Close()
 
 	episode := ParseEpisode(jeid, reader)
-	if metadata.Aired != unknown_airing {
+	if !metadata.Aired.Equal(unknown_showdate) {
 		episode.Aired = metadata.Aired
 	}
-	if metadata.Taped != unknown_taping {
+	if !metadata.Taped.Equal(unknown_showdate) {
 		episode.Taped = metadata.Taped
 	}
 	episode_json, err := json.MarshalIndent(episode, "", "  ")

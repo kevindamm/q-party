@@ -25,6 +25,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
 	"regexp"
 	"strconv"
 
@@ -32,7 +33,7 @@ import (
 )
 
 type JArchiveEpisode struct {
-	JEID
+	JEID       `json:"-"`
 	ShowTitle  string   `json:"show_title"`
 	ShowNumber int      `json:"show_number" cue:">0"`
 	Aired      ShowDate `json:"aired,omitempty"`
@@ -48,16 +49,19 @@ type JArchiveEpisode struct {
 	TieBreaker *JArchiveTiebreaker    `json:"tiebreaker,omitempty"`
 }
 
-func NewEpisode(metadata JArchiveEpisodeMetadata) *JArchiveEpisode {
-	episode := new(JArchiveEpisode)
-	episode.JEID = metadata.JEID
-	if metadata.Aired != unknown_airing {
-		episode.Aired = metadata.Aired
+func LoadEpisode(html_path string, metadata JArchiveEpisodeMetadata) (*JArchiveEpisode, error) {
+	reader, err := os.Open(html_path)
+	if err != nil {
+		return nil, err
 	}
-	if metadata.Taped != unknown_taping {
+	episode := ParseEpisode(metadata.JEID, reader)
+	if !metadata.Taped.Equal(unknown_showdate) {
 		episode.Taped = metadata.Taped
 	}
-	return episode
+	if !metadata.Aired.Equal(unknown_showdate) {
+		episode.Aired = metadata.Aired
+	}
+	return episode, nil
 }
 
 func (episode *JArchiveEpisode) parseContent(content *html.Node) {

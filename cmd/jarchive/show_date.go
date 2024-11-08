@@ -29,33 +29,38 @@ import (
 )
 
 type ShowDateRange struct {
-	From ShowDate `json:"from,omitempty"`
-	To   ShowDate `json:"until,omitempty"`
+	From string `json:"from,omitempty"`
+	To   string `json:"until,omitempty"`
 }
 
-type ShowDate struct {
-	time.Time
-}
+type ShowDate time.Time
 
 func MakeShowDate(year, month, day int) ShowDate {
-	return ShowDate{time.Date(
-		year, time.Month(month), day, 10, 8, 42, 1, time.UTC)}
+	return ShowDate(time.Date(
+		year, time.Month(month), day, 10, 8, 42, 1, time.UTC))
 }
 
-var unknown_airing = ShowDate{time.Time{}}
-var unknown_taping = ShowDate{time.Time{}}
+var unknown_showdate = ShowDate(time.Time{})
+
+func (date ShowDate) Equal(other ShowDate) bool {
+	return time.Time(date).Equal(time.Time(other))
+}
+
+func (date ShowDate) Year() int         { return time.Time(date).Year() }
+func (date ShowDate) Month() time.Month { return time.Time(date).Month() }
+func (date ShowDate) Day() int          { return time.Time(date).Day() }
 
 func (date ShowDate) String() string {
-	if date.Equal(unknown_airing.Time) {
+	if date.Equal(unknown_showdate) {
 		return ""
 	}
-	return fmt.Sprintf("%04d/%02d/%02d",
+	return fmt.Sprintf("%d/%02d/%02d",
 		date.Year(), date.Month(), date.Day())
 }
 
 func (date ShowDate) MarshalText() ([]byte, error) {
 	return []byte(fmt.Sprintf(
-			"%4d/%02d/%02d",
+			"%d/%02d/%02d",
 			date.Year(), int(date.Month()), date.Day())),
 		nil
 }

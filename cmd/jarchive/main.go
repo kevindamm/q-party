@@ -23,6 +23,7 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
@@ -36,7 +37,7 @@ import (
 )
 
 func main() {
-	data_path := flag.String("data", "./.data",
+	data_path := flag.String("data", "../.data",
 		"path where converted and created games are written")
 	flag.Usage = func() {
 		fmt.Printf("%s command episode# [flags]\n", path.Base(os.Args[0]))
@@ -53,6 +54,65 @@ func main() {
 		return
 	}
 
+	//? type identical to cue:EpisodeMetadata?
+	type EpisodeMetadata struct {
+		JSID       `json:"season"`
+		JEID       `json:"episode"`
+		ShowNumber int `json:"show_number"`
+
+		JArchiveEpisodeMetadata
+	}
+	//? type identical to cue:AllSeasonsMetadata?
+	type AllSeasonsMetadata struct {
+		Version  []uint                   `json:"version"`
+		Seasons  map[JSID]JArchiveSeason  `json:"seasons"`
+		Episodes map[JEID]EpisodeMetadata `json:"episodes"`
+	}
+
+	metadata := AllSeasonsMetadata{
+		Version:  []uint{0, 9},
+		Seasons:  LoadAllSeasons(*data_path),
+		Episodes: make(map[JEID]EpisodeMetadata)}
+
+	log.Print("loaded", len(metadata.Seasons), "seasons")
+	filepath := path.Join(*data_path, "seasons.json")
+	log.Print("writing all seasons to a single file", filepath)
+
+	writer, err := os.Create(filepath)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer writer.Close()
+
+	for jsid, season := range metadata.Seasons {
+		metadata.Seasons[jsid] = season
+		for jeid, jarchive_meta := range season.Episodes {
+			episode, err := LoadEpisode(path.Join(*data_path, jeid.HTML()), jarchive_meta)
+			if err != nil {
+				log.Print("ERROR:", err)
+				continue
+			}
+			ep_meta := EpisodeMetadata{
+				jsid, jeid, episode.ShowNumber, jarchive_meta}
+			metadata.Episodes[jeid] = ep_meta
+		}
+	}
+
+	bytes, err := json.Marshal(metadata)
+	if err != nil {
+		log.Fatal("failed to marshal seasons to JSON bytes")
+	}
+	nbytes, err := writer.Write(bytes)
+	if err != nil {
+		log.Fatal("failed to write", filepath, "\n", err)
+	} else {
+		log.Printf("Wrote seasons.json, %d bytes", nbytes)
+	}
+}
+
+// TODO season util
+
+func LegacyMain(data_path *string) {
 	switch flag.Arg(0) {
 
 	case "fetch":
