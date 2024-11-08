@@ -1,7 +1,7 @@
 package qparty
 
 #ShowDate: {
-  year: int
-  month: int
-  day: int
+  year: int & >1980
+  month: int & >=1 & <=12
+  day: int & >=1 & <=31
 }

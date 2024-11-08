@@ -1,16 +1,23 @@
 package qparty
 
-#EpisodeMetadata: {
-  season: string
-  show_number: int
-  aired: #ShowDate
-  comments: string
-  media: [...#Media]
+// Episode identifier and the show number (based on airing order).
+#EpisodeID: {
+  id!: int
+  show_number?: int
+  ...
+}
 
-  contestants: [int, int, int]
+// Identifiers and statistics for each episode.
+#EpisodeMetadata: #EpisodeID & {
+  season: #SeasonID
+  aired?: #ShowDate
 
-  single_clues: int
-  double_clues: int
-  final_category: string
-  triple_stumpers: int
+  contestant_ids?: [int, int, int]
+  comments?: string
+  media?: [...#Media]
+
+  single_clues?: int
+  double_clues?: int
+  final_category?: string
+  triple_stumpers?: int
 }
