@@ -23,7 +23,7 @@
 package json
 
 type Board struct {
-	ShowNumber `json:"show_number"`
+	ShowNumber `json:"episode"`
 	Round      EpisodeRound `json:"round" cue:"<len(round_names)"`
 
 	Columns []Category  `json:"columns"`
@@ -35,16 +35,17 @@ func (board Board) RoundName() string {
 	return round_names[board.Round]
 }
 
-type Selection struct {
-	Position          `json:",inline"`
-	ChallengeMetadata `json:",inline"`
-}
-
 type Position struct {
 	Column uint `json:"column" cue:"<6"`
 	Index  uint `json:"index" cue:"<5"`
 }
 
+type Selection struct {
+	Position          `json:",inline"`
+	ChallengeMetadata `json:",inline"`
+}
+
+// An enum-like value for the different rounds.
 type EpisodeRound uint
 
 func (round EpisodeRound) String() string {

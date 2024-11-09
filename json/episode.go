@@ -34,11 +34,10 @@ import (
 type EpisodeMetadata struct {
 	ShowNumber `json:"show_number" cue:">0"`
 	SeasonID   `json:"season,omitempty"`
-	ShowTitle  string `json:"show_title"`
+	Aired      ShowDate `json:"aired,omitempty"`
+	Taped      ShowDate `json:"taped,omitempty"`
 
-	Aired ShowDate `json:"aired,omitempty"`
-	Taped ShowDate `json:"taped,omitempty"`
-
+	ShowTitle     string          `json:"show_title"`
 	ContestantIDs [3]ContestantID `json:"contestant_ids,omitempty"`
 }
 
@@ -87,7 +86,7 @@ func MustParseShowNumber(numeric string) ShowNumber {
 	return ShowNumber(id)
 }
 
-func (episode EpisodeMetadata) WriteFile(dir string) error {
+func (episode EpisodeMetadata) WriteJSON(dir string) error {
 	episode_json, err := json.MarshalIndent(episode, "", "  ")
 	if err != nil {
 		return err

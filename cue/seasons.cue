@@ -23,23 +23,19 @@
 package qparty
 
 // Schema for [seasons.json] containing season and episode metadata.
-#AllSeasons: {
-  version?: [...int]
-  seasons: [...#SeasonMetadata]
-  episodes: [...#EpisodeMetadata]
+#SeasonIndex: {
+  version?: [...uint]
+  seasons: [#SeasonID]: #SeasonMetadata
+  episodes: [#ShowNumber]: #EpisodeMetadata
 }
 
-
-#SeasonID: {
-  id!: #JSID
-  name?: string
-  ...
-}
-
-#JSID: string
+// Unique identifier for the season and its episodes.
+#SeasonID: string
 
 // Metadata for a single season, has identity and some statistics.
-#SeasonMetadata: #SeasonID & {
+#SeasonMetadata: {
+  season: #SeasonID
+  name: string
   aired: {
     from: #ShowDate
     until: #ShowDate

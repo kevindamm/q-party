@@ -22,29 +22,30 @@
 
 package qparty
 
-// Episode identifier and the show number (based on airing order).
-#EpisodeID: {
-  id!: #JEID
-  show_number?: int
+// Identifiers and statistics for each episode.
+#EpisodeMetadata: {
+  show_number!: #ShowNumber
+  season?: #SeasonID
+  aired?: #ShowDate
+  taped?: #ShowDate
+
+  show_title: string
+  contestant_ids?: [#ContestantID, #ContestantID, #ContestantID]
+  comments?: string
+  media?: [...#Media]
   ...
 }
 
-#JEID: uint
-
-// Identifiers and statistics for each episode.
-#EpisodeMetadata: #EpisodeID & {
-  season: #SeasonID
-  aired?: #ShowDate
-
-  contestant_ids?: [int, int, int]
-  comments?: string
-  media?: [...#Media]
-
+#EpisodeStats: #EpisodeMetadata & {
   single_count?: int
   double_count?: int
   triple_stumpers?: int
 }
 
+// Unique identifier for an episode.
+#ShowNumber: uint
+
+// Represents a (year, month, day) when a show was aired or taped.
 #ShowDate: {
   year: int & >1980
   month: int & >=1 & <=12

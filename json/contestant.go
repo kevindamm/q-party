@@ -38,11 +38,11 @@ type Contestant struct {
 
 type Appearance struct {
 	ContestantID `json:",inline"`
-	Episode      ShowNumber `json:"episode" cue:">0"`
+	Episode      ShowNumber `json:"episode"`
 }
 
 type Career struct {
 	ContestantID `json:",inline"`
 	Episodes     []ShowNumber `json:"episodes"`
-	Winnings     int          `json:"winnings"`
+	Winnings     DollarValue  `json:"winnings"`
 }

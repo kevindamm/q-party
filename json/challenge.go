@@ -35,10 +35,10 @@ var UnknownChallenge = ChallengeMetadata{0, 0, false}
 // Challenge data (without the answer), for when a board position is selected.
 type Challenge struct {
 	ChallengeMetadata `json:",inline"`
+	Clue              string `json:"clue"`
 
-	Category string  `json:"category,omitempty"`
-	Clue     string  `json:"clue"`
 	Media    []Media `json:"media,omitempty"`
+	Category string  `json:"category,omitempty"`
 	Comments string  `json:"comments,omitempty"`
 }
 

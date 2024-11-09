@@ -23,17 +23,17 @@
 package json
 
 type Media struct {
-	MediaType `json:"mime"`
-	MediaURL  string `json:"url"`
+	MimeType `json:"mime"`
+	MediaURL string `json:"url"`
 }
 
 // This enumeration over available media types is modeled after its equivalent
 // MIME type such as image/jpeg, image/png, audio/mpeg, etc.  The default (its
 // zero value) is an empty string which implicitly represents an unknown media.
-type MediaType string
+type MimeType string
 
 const (
-	MediaImageJPG MediaType = "image/jpeg"
-	MediaAudioMP3 MediaType = "audio/mpeg"
-	MediaVideoMP4 MediaType = "video/mp4"
+	MediaImageJPG MimeType = "image/jpeg"
+	MediaAudioMP3 MimeType = "audio/mpeg"
+	MediaVideoMP4 MimeType = "video/mp4"
 )

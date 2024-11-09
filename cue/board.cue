@@ -23,20 +23,35 @@
 package qparty
 
 // A board state, includes the minimum needed information for starting play.
-#Board: #EpisodeID & {
-  round: int & >=0 & <len(round_names)
-  round_name: round_names[round]
+#Board: {
+  episode: #ShowNumber
+  round: int & >=0 & <len(_round_names)
+  round_name: _round_names[round]
 
   columns: [...#Category]
   missing?: [...#Position]
   history?: [...#Selection]
 }
 
+// A board position is identified by its column and (row) index.
+#Position: {
+  column!: uint & <6
+  index!: uint & <5
+}
+
 // Represents the board position and challenge, without contestant performance.
-#Selection: #Position & #ChallengeID
+#Selection: #Position & #ChallengeMetadata
+
+// A category instance must have a title and
+// may have any number of challenges (typically five).
+#Category: {
+  title!: string
+  commentary?: string
+  challenges: [...#ChallengeMetadata]
+}
 
 // Display strings for the different rounds.
-round_names: [...string] & [
+_round_names: [...string] & [
   "[UNKNOWN]",
 	"Single!",
 	"Double!",
@@ -44,9 +59,3 @@ round_names: [...string] & [
 	"Tiebreaker!!",
 	"[printed media]",
 ]
-
-// A board position is identified by its column and (row) index.
-#Position: {
-  column!: uint & <6
-  index!: uint & <5
-}

@@ -24,20 +24,24 @@ package qparty
 
 // Uniquely identifies a contestant across episodes.
 #ContestantID: {
-  id!: #JCID
+  id!: uint
   name?: string
   ...
 }
-
-#JCID: int & >0
 
 // Additional details about the contestant.
 #Contestant: #ContestantID & {
   name!: string
   bio: string
-
-  episodes?: [...#EpisodeID]
 }
 
 // An appearance is the joining of a contestant and an episode.
-#Appearance: #ContestantID & #EpisodeID
+#Appearance: #ContestantID & {
+  episode: #ShowNumber
+}
+
+// The episodes that a contestant has appeared in and their total winnings.
+#Career: #ContestantID & {
+  episodes: [...#ShowNumber]
+  winnings: #DollarValue
+}

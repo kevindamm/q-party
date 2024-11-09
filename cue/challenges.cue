@@ -24,39 +24,51 @@ package qparty
 
 // A unique identifier for the challenge and (optionally) its ID.
 // If value is undefined it did not have an associated monetary value.
-#ChallengeID: {
-  id!: int & >=0
-  value?: int
+#ChallengeMetadata: {
+  id!: uint & >=0
+  value?: #DollarValue
   is_wager?: bool
   ...
 }
 
 // Sentinel representation for any blank board cell.
-UnknownChallenge: #ChallengeID & { id: 0 }
+UnknownChallenge: #ChallengeMetadata & { id: 0 }
 
 
 // The challenge details, sans the correct answer.
-#Challenge: #ChallengeID & {
-  value!: int
+#Challenge: #ChallengeMetadata & {
+  value!: #DollarValue
   clue!: string
-  media?: [...#Media]
 
+  media?: [...#Media]
   category?: string
   comments?: string
 }
 
+#DollarValue: int
+
+// A link to the media accompaniment for a challenge
+// (or for the commentary of an episode).
+#Media: {
+  mime: string & #MimeType
+  url: string
+}
+
+// The allowed mime types for media assets (plus text/plain;encoding=UTF-8).
+#MimeType: "image/jpeg" | "audio/mpeg" | "video/mp4"
+
 // The host may see the correct answer while the contestants cannot.
-#HostChallenge: #ChallengeID & {
-  correct: string
+#HostChallenge: #Challenge & {
+  correct: string // excluding "what is..." preface
 }
 
 // Before answering, sometimes a player must provide a wager value first.
-#PlayerWager: #ChallengeID & {
-  value!: int
+#PlayerWager: #ChallengeMetadata & {
+  value!: #DollarValue
   comments?: string
 }
 
 // The player's response for a challenge.
-#PlayerResponse: #ChallengeID & {
+#PlayerResponse: #ChallengeMetadata & {
   response?: string
 }
