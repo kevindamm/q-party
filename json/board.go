@@ -23,8 +23,8 @@
 package json
 
 type Board struct {
-	EpisodeID `json:",inline"`
-	Round     uint `json:"round" cue:">=0 & <len(round_names)"`
+	ShowNumber `json:"show_number"`
+	Round      EpisodeRound `json:"round" cue:"<len(round_names)"`
 
 	Columns []Category  `json:"columns"`
 	Missing []Position  `json:"missing,omitempty"`
@@ -35,6 +35,34 @@ func (board Board) RoundName() string {
 	return round_names[board.Round]
 }
 
+type Selection struct {
+	Position          `json:",inline"`
+	ChallengeMetadata `json:",inline"`
+}
+
+type Position struct {
+	Column uint `json:"column" cue:"<6"`
+	Index  uint `json:"index" cue:"<5"`
+}
+
+type EpisodeRound uint
+
+func (round EpisodeRound) String() string {
+	if int(round) >= len(round_names) {
+		return round_names[0]
+	}
+	return round_names[round]
+}
+
+const (
+	ROUND_UNKNOWN EpisodeRound = iota
+	ROUND_SINGLE
+	ROUND_DOUBLE
+	ROUND_FINAL
+	ROUND_TIEBREAKER
+	PRINTED_MEDIA
+)
+
 var round_names = [6]string{
 	"[UNKNOWN]",
 	"Single!",
@@ -42,13 +70,3 @@ var round_names = [6]string{
 	"Final!",
 	"Tiebreaker!!",
 	"[printed media]"}
-
-type Selection struct {
-	Position    `json:",inline"`
-	ChallengeID `json:",inline"`
-}
-
-type Position struct {
-	Column uint `json:"column" cue:"<6"`
-	Index  uint `json:"index" cue:"<5"`
-}

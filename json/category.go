@@ -23,7 +23,7 @@
 package json
 
 type Category struct {
-	Title      string        `json:"title"`
-	Commentary string        `json:"commentary,omitempty"`
-	Challenges []ChallengeID `json:"challenges,omitempty"`
+	Title      string              `json:"title"`
+	Commentary string              `json:"commentary,omitempty"`
+	Challenges []ChallengeMetadata `json:"challenges,omitempty"`
 }

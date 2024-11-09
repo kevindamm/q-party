@@ -29,7 +29,7 @@ type Media struct {
 
 // This enumeration over available media types is modeled after its equivalent
 // MIME type such as image/jpeg, image/png, audio/mpeg, etc.  The default (its
-// zero value) is an empty string which implicitly represents text/plain, UTF-8.
+// zero value) is an empty string which implicitly represents an unknown media.
 type MediaType string
 
 const (

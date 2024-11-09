@@ -18,25 +18,42 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-// github:kevindamm/q-party/json/contestants.go
+// github:kevindamm/q-party/json/challenges.go
 
 package json
 
-type ContestantID struct {
-	JCID `json:"id" cue:">=0"`
-	Name string `json:"name,omitempty"`
+type ChallengeMetadata struct {
+	ChallengeID uint        `json:"id"`
+	Value       DollarValue `json:"value,omitempty"`
+
+	TripleStumper bool `json:"stumper,omitempty"`
 }
 
-type JCID int
+// Sentinel value for board entries that are missing/blank.
+var UnknownChallenge = ChallengeMetadata{0, 0, false}
 
-type Contestant struct {
-	ContestantID `json:",inline"`
-	Biography    string `json:"bio"`
+// Challenge data (without the answer), for when a board position is selected.
+type Challenge struct {
+	ChallengeMetadata `json:",inline"`
 
-	Episodes []EpisodeID `json:"episodes"`
+	Category string  `json:"category,omitempty"`
+	Clue     string  `json:"clue"`
+	Media    []Media `json:"media,omitempty"`
+	Comments string  `json:"comments,omitempty"`
 }
 
-type Appearance struct {
-	ContestantID `json:",inline"`
-	EpisodeID    `json:",inline"`
+// Host view of the challenge, includes the correct response.
+type HostChallenge struct {
+	Challenge `json:",inline"`
+	Correct   string `json:"correct"` // excluding "what is..." preface
+}
+
+type PlayerWager struct {
+	ChallengeMetadata `json:",inline"`
+	Comments          string `json:"comments,omitempty"`
+}
+
+type PlayerResponse struct {
+	ChallengeMetadata `json:",inline"`
+	Response          string `json:"response,omitempty"`
 }

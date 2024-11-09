@@ -18,38 +18,31 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-// github:kevindamm/q-party/json/challenges.go
+// github:kevindamm/q-party/json/contestants.go
 
 package json
 
-type ChallengeID struct {
-	Ident int         `json:"id"`
-	Value DollarValue `json:"value,omitempty"`
+// Struct for embedding in entities that extend the contestant role.
+type ContestantID struct {
+	UCID `json:"id" cue:">=0"`
+	Name string `json:"name,omitempty"`
 }
 
-// Sentinel value for board entries that are missing/blank.
-var UnknownChallenge = ChallengeID{0, 0}
+// Unique identifier for contestants.
+type UCID uint
 
-type Challenge struct {
-	ChallengeID `json:",inline"`
-	CluePrompt  string  `json:"clue"`
-	Media       []Media `json:"media,omitempty"`
-
-	Category string `json:"category,omitempty"`
-	Comments string `json:"comments,omitempty"`
+type Contestant struct {
+	ContestantID `json:",inline"`
+	Biography    string `json:"bio"`
 }
 
-type HostChallenge struct {
-	ChallengeID `json:",inline"`
-	Correct     string `json:"correct"`
+type Appearance struct {
+	ContestantID `json:",inline"`
+	Episode      ShowNumber `json:"episode" cue:">0"`
 }
 
-type PlayerWager struct {
-	ChallengeID `json:",inline"`
-	Comments    string `json:"comments,omitempty"`
-}
-
-type PlayerResponse struct {
-	ChallengeID `json:",inline"`
-	Response    string `json:"response,omitempty"`
+type Career struct {
+	ContestantID `json:",inline"`
+	Episodes     []ShowNumber `json:"episodes"`
+	Winnings     int          `json:"winnings"`
 }
