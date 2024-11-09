@@ -54,15 +54,17 @@ func main() {
 		return
 	}
 
-	//? type identical to cue:EpisodeMetadata?
+	// type identical to cue:EpisodeMetadata
 	type EpisodeMetadata struct {
 		JSID       `json:"season"`
-		JEID       `json:"episode"`
-		ShowNumber int `json:"show_number"`
+		ShowNumber int      `json:"show_number"`
+		Aired      ShowDate `json:"aired"`
+		Comments   string   `json:"comments"`
+		Media      []Media  `json:"media"`
 
-		JArchiveEpisodeMetadata
+		Contestants [3]JCID `json:"contestants"`
 	}
-	//? type identical to cue:AllSeasonsMetadata?
+	// type identical to cue:AllSeasonsMetadata
 	type AllSeasonsMetadata struct {
 		Version  []uint                   `json:"version"`
 		Seasons  map[JSID]JArchiveSeason  `json:"seasons"`
@@ -92,8 +94,11 @@ func main() {
 				log.Print("ERROR:", err)
 				continue
 			}
-			ep_meta := EpisodeMetadata{
-				jsid, jeid, episode.ShowNumber, jarchive_meta}
+			ep_meta := EpisodeMetadata{}
+			ep_meta.JSID = jsid
+			ep_meta.ShowNumber = episode.ShowNumber
+			ep_meta.Aired = jarchive_meta.Aired
+
 			metadata.Episodes[jeid] = ep_meta
 		}
 	}

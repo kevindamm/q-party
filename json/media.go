@@ -18,35 +18,22 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-// github:kevindamm/q-party/cue/board.cue
+// github:kevindamm/q-party/json/media.go
 
-package qparty
+package json
 
-// A board state, includes the minimum needed information for starting play.
-#Board: #EpisodeID & {
-  round: int & >=0 & <len(round_names)
-  round_name: round_names[round]
-
-  columns: [...#Category]
-  missing?: [...#Position]
-  history?: [...#Selection]
+type Media struct {
+	MediaType `json:"mime"`
+	MediaURL  string `json:"url"`
 }
 
-// Represents the board position and challenge, without contestant performance.
-#Selection: #Position & #ChallengeID
+// This enumeration over available media types is modeled after its equivalent
+// MIME type such as image/jpeg, image/png, audio/mpeg, etc.  The default (its
+// zero value) is an empty string which implicitly represents text/plain, UTF-8.
+type MediaType string
 
-// Display strings for the different rounds.
-round_names: [...string] & [
-  "[UNKNOWN]",
-	"Single!",
-	"Double!",
-	"Final!",
-	"Tiebreaker!!",
-	"[printed media]",
-]
-
-// A board position is identified by its column and (row) index.
-#Position: {
-  column!: uint & <6
-  index!: uint & <5
-}
+const (
+	MediaImageJPG MediaType = "image/jpeg"
+	MediaAudioMP3 MediaType = "audio/mpeg"
+	MediaVideoMP4 MediaType = "video/mp4"
+)

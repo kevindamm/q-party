@@ -18,35 +18,32 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-// github:kevindamm/q-party/cue/board.cue
+// github:kevindamm/q-party/json/seasons.go
 
-package qparty
+package json
 
-// A board state, includes the minimum needed information for starting play.
-#Board: #EpisodeID & {
-  round: int & >=0 & <len(round_names)
-  round_name: round_names[round]
-
-  columns: [...#Category]
-  missing?: [...#Position]
-  history?: [...#Selection]
+type SeasonIndex struct {
+	Version  []int             `json:"version,omitempty"`
+	Seasons  []SeasonMetadata  `json:"seasons"`
+	Episodes []EpisodeMetadata `json:"episodes"`
 }
 
-// Represents the board position and challenge, without contestant performance.
-#Selection: #Position & #ChallengeID
+type SeasonID struct {
+	JSID `json:"id"`
+	Name string `json:"name,omitempty"`
+}
 
-// Display strings for the different rounds.
-round_names: [...string] & [
-  "[UNKNOWN]",
-	"Single!",
-	"Double!",
-	"Final!",
-	"Tiebreaker!!",
-	"[printed media]",
-]
+type JSID string
 
-// A board position is identified by its column and (row) index.
-#Position: {
-  column!: uint & <6
-  index!: uint & <5
+type SeasonMetadata struct {
+	SeasonID `json:",inline"`
+	Aired    ShowDateRange `json:"aired"`
+
+	EpisodeCount   int `json:"episode_count"`
+	ChallengeCount int `json:"challenge_count"`
+}
+
+type ShowDateRange struct {
+	From  ShowDate `json:"from"`
+	Until ShowDate `json:"until"`
 }

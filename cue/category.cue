@@ -18,35 +18,14 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-// github:kevindamm/q-party/cue/board.cue
+// github:kevindamm/q-party/cue/category.cue
 
 package qparty
 
-// A board state, includes the minimum needed information for starting play.
-#Board: #EpisodeID & {
-  round: int & >=0 & <len(round_names)
-  round_name: round_names[round]
-
-  columns: [...#Category]
-  missing?: [...#Position]
-  history?: [...#Selection]
-}
-
-// Represents the board position and challenge, without contestant performance.
-#Selection: #Position & #ChallengeID
-
-// Display strings for the different rounds.
-round_names: [...string] & [
-  "[UNKNOWN]",
-	"Single!",
-	"Double!",
-	"Final!",
-	"Tiebreaker!!",
-	"[printed media]",
-]
-
-// A board position is identified by its column and (row) index.
-#Position: {
-  column!: uint & <6
-  index!: uint & <5
+// A category instance must have a title and
+// may have any number of challenges (typically five).
+#Category: {
+  title!: string
+  commentary?: string
+  challenges: [...#ChallengeID]
 }

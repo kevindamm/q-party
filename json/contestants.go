@@ -18,35 +18,25 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-// github:kevindamm/q-party/cue/board.cue
+// github:kevindamm/q-party/json/contestants.go
 
-package qparty
+package json
 
-// A board state, includes the minimum needed information for starting play.
-#Board: #EpisodeID & {
-  round: int & >=0 & <len(round_names)
-  round_name: round_names[round]
-
-  columns: [...#Category]
-  missing?: [...#Position]
-  history?: [...#Selection]
+type ContestantID struct {
+	JCID `json:"id" cue:">=0"`
+	Name string `json:"name,omitempty"`
 }
 
-// Represents the board position and challenge, without contestant performance.
-#Selection: #Position & #ChallengeID
+type JCID int
 
-// Display strings for the different rounds.
-round_names: [...string] & [
-  "[UNKNOWN]",
-	"Single!",
-	"Double!",
-	"Final!",
-	"Tiebreaker!!",
-	"[printed media]",
-]
+type Contestant struct {
+	ContestantID `json:",inline"`
+	Biography    string `json:"bio"`
 
-// A board position is identified by its column and (row) index.
-#Position: {
-  column!: uint & <6
-  index!: uint & <5
+	Episodes []EpisodeID `json:"episodes"`
+}
+
+type Appearance struct {
+	ContestantID `json:",inline"`
+	EpisodeID    `json:",inline"`
 }

@@ -18,35 +18,38 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-// github:kevindamm/q-party/cue/board.cue
+// github:kevindamm/q-party/json/challenges.go
 
-package qparty
+package json
 
-// A board state, includes the minimum needed information for starting play.
-#Board: #EpisodeID & {
-  round: int & >=0 & <len(round_names)
-  round_name: round_names[round]
-
-  columns: [...#Category]
-  missing?: [...#Position]
-  history?: [...#Selection]
+type ChallengeID struct {
+	Ident int         `json:"id"`
+	Value DollarValue `json:"value,omitempty"`
 }
 
-// Represents the board position and challenge, without contestant performance.
-#Selection: #Position & #ChallengeID
+// Sentinel value for board entries that are missing/blank.
+var UnknownChallenge = ChallengeID{0, 0}
 
-// Display strings for the different rounds.
-round_names: [...string] & [
-  "[UNKNOWN]",
-	"Single!",
-	"Double!",
-	"Final!",
-	"Tiebreaker!!",
-	"[printed media]",
-]
+type Challenge struct {
+	ChallengeID `json:",inline"`
+	CluePrompt  string  `json:"clue"`
+	Media       []Media `json:"media,omitempty"`
 
-// A board position is identified by its column and (row) index.
-#Position: {
-  column!: uint & <6
-  index!: uint & <5
+	Category string `json:"category,omitempty"`
+	Comments string `json:"comments,omitempty"`
+}
+
+type HostChallenge struct {
+	ChallengeID `json:",inline"`
+	Correct     string `json:"correct"`
+}
+
+type PlayerWager struct {
+	ChallengeID `json:",inline"`
+	Comments    string `json:"comments,omitempty"`
+}
+
+type PlayerResponse struct {
+	ChallengeID `json:",inline"`
+	Response    string `json:"response,omitempty"`
 }

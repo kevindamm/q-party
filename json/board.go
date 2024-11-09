@@ -18,35 +18,37 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-// github:kevindamm/q-party/cue/board.cue
+// github:kevindamm/q-party/json/board.go
 
-package qparty
+package json
 
-// A board state, includes the minimum needed information for starting play.
-#Board: #EpisodeID & {
-  round: int & >=0 & <len(round_names)
-  round_name: round_names[round]
+type Board struct {
+	EpisodeID `json:",inline"`
+	Round     uint `json:"round" cue:">=0 & <len(round_names)"`
 
-  columns: [...#Category]
-  missing?: [...#Position]
-  history?: [...#Selection]
+	Columns []Category  `json:"columns"`
+	Missing []Position  `json:"missing,omitempty"`
+	History []Selection `json:"history,omitempty"`
 }
 
-// Represents the board position and challenge, without contestant performance.
-#Selection: #Position & #ChallengeID
+func (board Board) RoundName() string {
+	return round_names[board.Round]
+}
 
-// Display strings for the different rounds.
-round_names: [...string] & [
-  "[UNKNOWN]",
+var round_names = [6]string{
+	"[UNKNOWN]",
 	"Single!",
 	"Double!",
 	"Final!",
 	"Tiebreaker!!",
-	"[printed media]",
-]
+	"[printed media]"}
 
-// A board position is identified by its column and (row) index.
-#Position: {
-  column!: uint & <6
-  index!: uint & <5
+type Selection struct {
+	Position    `json:",inline"`
+	ChallengeID `json:",inline"`
+}
+
+type Position struct {
+	Column uint `json:"column" cue:"<6"`
+	Index  uint `json:"index" cue:"<5"`
 }

@@ -18,35 +18,35 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-// github:kevindamm/q-party/cue/board.cue
+// github:kevindamm/q-party/cue/episodes.cue
 
 package qparty
 
-// A board state, includes the minimum needed information for starting play.
-#Board: #EpisodeID & {
-  round: int & >=0 & <len(round_names)
-  round_name: round_names[round]
-
-  columns: [...#Category]
-  missing?: [...#Position]
-  history?: [...#Selection]
+// Episode identifier and the show number (based on airing order).
+#EpisodeID: {
+  id!: #JEID
+  show_number?: int
+  ...
 }
 
-// Represents the board position and challenge, without contestant performance.
-#Selection: #Position & #ChallengeID
+#JEID: uint
 
-// Display strings for the different rounds.
-round_names: [...string] & [
-  "[UNKNOWN]",
-	"Single!",
-	"Double!",
-	"Final!",
-	"Tiebreaker!!",
-	"[printed media]",
-]
+// Identifiers and statistics for each episode.
+#EpisodeMetadata: #EpisodeID & {
+  season: #SeasonID
+  aired?: #ShowDate
 
-// A board position is identified by its column and (row) index.
-#Position: {
-  column!: uint & <6
-  index!: uint & <5
+  contestant_ids?: [int, int, int]
+  comments?: string
+  media?: [...#Media]
+
+  single_count?: int
+  double_count?: int
+  triple_stumpers?: int
+}
+
+#ShowDate: {
+  year: int & >1980
+  month: int & >=1 & <=12
+  day: int & >=1 & <=31
 }

@@ -18,12 +18,11 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-// github:kevindamm/q-party/cmd/jarchive/dollar_value.go
+// github:kevindamm/q-party/json/dollar_value.go
 
-package main
+package json
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"strconv"
@@ -52,12 +51,8 @@ func (value *DollarValue) ToggleWager(next bool) {
 }
 
 func (value *DollarValue) UnmarshalText(text []byte) error {
-	var strVal string
-	err := json.Unmarshal(text, &strVal)
-	if err != nil {
-		return err
-	}
-	*value, err = ParseDollarValue(strVal)
+	var err error
+	*value, err = ParseDollarValue(string(text))
 	return err
 }
 

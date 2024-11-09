@@ -18,35 +18,33 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-// github:kevindamm/q-party/cue/board.cue
+// github:kevindamm/q-party/json/episodes.go
 
-package qparty
+package json
 
-// A board state, includes the minimum needed information for starting play.
-#Board: #EpisodeID & {
-  round: int & >=0 & <len(round_names)
-  round_name: round_names[round]
-
-  columns: [...#Category]
-  missing?: [...#Position]
-  history?: [...#Selection]
+type EpisodeID struct {
+	JEID       `json:"jeid" cue:">0"`
+	ShowNumber int `json:"show_number,omitempty" cue:">=0"`
 }
 
-// Represents the board position and challenge, without contestant performance.
-#Selection: #Position & #ChallengeID
+type JEID int
 
-// Display strings for the different rounds.
-round_names: [...string] & [
-  "[UNKNOWN]",
-	"Single!",
-	"Double!",
-	"Final!",
-	"Tiebreaker!!",
-	"[printed media]",
-]
+type EpisodeMetadata struct {
+	EpisodeID `json:",inline"`
+	SeasonID  `json:"season"`
+	Aired     ShowDate `json:"aired,omitempty"`
 
-// A board position is identified by its column and (row) index.
-#Position: {
-  column!: uint & <6
-  index!: uint & <5
+	ContestantIDs [3]int  `json:"contestant_ids"`
+	Comments      string  `json:"comments,omitempty"`
+	Media         []Media `json:"media,omitempty"`
+
+	SingleClues    int `json:"single_count"`
+	DoubleClues    int `json:"double_count"`
+	TripleStumpers int `json:"triple_stumpers"`
+}
+
+type ShowDate struct {
+	Year  int `json:"year"`
+	Month int `json:"month"`
+	Day   int `json:"day"`
 }

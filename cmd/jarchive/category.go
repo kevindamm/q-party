@@ -31,7 +31,7 @@ import (
 type JArchiveCategory string
 
 type CategoryChallenges struct {
-	JArchiveCategory `json:"category"`
+	JArchiveCategory `json:"title"`
 	Round            EpisodeRound        `json:"-"`
 	Commentary       string              `json:"commentary,omitempty"`
 	Challenges       []JArchiveChallenge `json:"challenges"`

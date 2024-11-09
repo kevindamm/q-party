@@ -18,35 +18,26 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-// github:kevindamm/q-party/cue/board.cue
+// github:kevindamm/q-party/cue/contestants.cue
 
 package qparty
 
-// A board state, includes the minimum needed information for starting play.
-#Board: #EpisodeID & {
-  round: int & >=0 & <len(round_names)
-  round_name: round_names[round]
-
-  columns: [...#Category]
-  missing?: [...#Position]
-  history?: [...#Selection]
+// Uniquely identifies a contestant across episodes.
+#ContestantID: {
+  id!: #JCID
+  name?: string
+  ...
 }
 
-// Represents the board position and challenge, without contestant performance.
-#Selection: #Position & #ChallengeID
+#JCID: int & >0
 
-// Display strings for the different rounds.
-round_names: [...string] & [
-  "[UNKNOWN]",
-	"Single!",
-	"Double!",
-	"Final!",
-	"Tiebreaker!!",
-	"[printed media]",
-]
+// Additional details about the contestant.
+#Contestant: #ContestantID & {
+  name!: string
+  bio: string
 
-// A board position is identified by its column and (row) index.
-#Position: {
-  column!: uint & <6
-  index!: uint & <5
+  episodes?: [...#EpisodeID]
 }
+
+// An appearance is the joining of a contestant and an episode.
+#Appearance: #ContestantID & #EpisodeID

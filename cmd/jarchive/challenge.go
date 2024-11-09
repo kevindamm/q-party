@@ -6,20 +6,22 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/kevindamm/q-party/json"
 	"golang.org/x/net/html"
 )
 
 // The de-normed representation as found in some datasets, e.g. on Kaggle.
 type JArchiveChallenge struct {
+	ShowNumber int `json:"show_number"`
 	ShowDate   `json:"air_date,omitempty"`
 	Round      EpisodeRound     `json:"round"`
 	Category   JArchiveCategory `json:"category"`
 	Commentary string           `json:"comment,omitempty"`
 
 	// String representation has a dollar sign, negated values are wagers.
-	Value DollarValue `json:"value,omitempty"`
+	Value json.DollarValue `json:"value,omitempty"`
 
-	Prompt  string  `json:"prompt"`
+	Prompt  string  `json:"clue"`
 	Media   []Media `json:"media,omitempty"`
 	Correct string  `json:"correct"` // excluding "what is..." preface
 }
@@ -33,7 +35,7 @@ type JArchiveTiebreaker struct {
 }
 
 type Media struct {
-	MediaType `json:"type,omitempty"`
+	MediaType `json:"mime"`
 	MediaURL  string `json:"url"`
 }
 
@@ -43,7 +45,6 @@ type Media struct {
 type MediaType string
 
 const (
-	MediaTextUTF8 MediaType = "" // default is text/plain;charset=UTF-8
 	MediaImageJPG MediaType = "image/jpeg"
 	MediaAudioMP3 MediaType = "audio/mpeg"
 	MediaVideoMP4 MediaType = "video/mp4"
@@ -103,7 +104,7 @@ func (challenge *JArchiveChallenge) parseChallenge(div *html.Node) error {
 	var err error
 	value_td := nextDescendantWithClass(table, "td", "clue_value")
 	if value_td != nil {
-		challenge.Value, err = ParseDollarValue(innerText(value_td))
+		challenge.Value, err = json.ParseDollarValue(innerText(value_td))
 		if err != nil {
 			return errors.New("failed to parse challenge value " + err.Error())
 		}
@@ -111,7 +112,7 @@ func (challenge *JArchiveChallenge) parseChallenge(div *html.Node) error {
 		dd_value_td := nextDescendantWithClass(table, "td", "clue_value_daily_double")
 		if dd_value_td != nil {
 			text := strings.ReplaceAll(innerText(dd_value_td), ",", "")
-			challenge.Value, err = ParseDollarValue(text[4:])
+			challenge.Value, err = json.ParseDollarValue(text[4:])
 			if err != nil {
 				return fmt.Errorf("failed to parse daily double value %s\n%s", text, err.Error())
 			}

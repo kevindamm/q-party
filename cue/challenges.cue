@@ -18,35 +18,45 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-// github:kevindamm/q-party/cue/board.cue
+// github:kevindamm/q-party/cue/challenges.cue
 
 package qparty
 
-// A board state, includes the minimum needed information for starting play.
-#Board: #EpisodeID & {
-  round: int & >=0 & <len(round_names)
-  round_name: round_names[round]
-
-  columns: [...#Category]
-  missing?: [...#Position]
-  history?: [...#Selection]
+// A unique identifier for the challenge and (optionally) its ID.
+// If value is undefined it did not have an associated monetary value.
+#ChallengeID: {
+  id!: int & >=0
+  value?: int
+  is_wager?: bool
+  ...
 }
 
-// Represents the board position and challenge, without contestant performance.
-#Selection: #Position & #ChallengeID
+// Sentinel representation for any blank board cell.
+UnknownChallenge: #ChallengeID & { id: 0 }
 
-// Display strings for the different rounds.
-round_names: [...string] & [
-  "[UNKNOWN]",
-	"Single!",
-	"Double!",
-	"Final!",
-	"Tiebreaker!!",
-	"[printed media]",
-]
 
-// A board position is identified by its column and (row) index.
-#Position: {
-  column!: uint & <6
-  index!: uint & <5
+// The challenge details, sans the correct answer.
+#Challenge: #ChallengeID & {
+  value!: int
+  clue!: string
+  media?: [...#Media]
+
+  category?: string
+  comments?: string
+}
+
+// The host may see the correct answer while the contestants cannot.
+#HostChallenge: #ChallengeID & {
+  correct: string
+}
+
+// Before answering, sometimes a player must provide a wager value first.
+#PlayerWager: #ChallengeID & {
+  value!: int
+  comments?: string
+}
+
+// The player's response for a challenge.
+#PlayerResponse: #ChallengeID & {
+  response?: string
 }

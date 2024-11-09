@@ -37,12 +37,12 @@ import (
 )
 
 type JArchiveSeason struct {
-	JSID  `json:"season"`
-	Name  string        `json:"name"`
-	Aired ShowDateRange `json:"aired"`
-	Count int           `json:"count"`
+	JSID  `json:"season"` // TODO json:"-"
+	Name  string          `json:"name"`
+	Aired ShowDateRange   `json:"aired"`
+	Count int             `json:"count"`
 
-	Episodes map[JEID]JArchiveEpisodeMetadata `json:"episodes"`
+	Episodes map[JEID]JArchiveEpisodeMetadata `json:"-"`
 }
 
 // Loads the season index and the metadata of each season in the index.
@@ -54,7 +54,7 @@ func LoadAllSeasons(data_path string) map[JSID]JArchiveSeason {
 
 	seasons := LoadSeasonsJSONL(jsonl_path)
 	for jsid, season := range seasons {
-		file_path := path.Join(seasons_dir, fmt.Sprintf("%s.json", jsid))
+		file_path := path.Join(seasons_dir, jsid.JSON())
 		reader, err := os.Open(file_path)
 		if err != nil {
 			log.Fatalf("failed to open file path '%s'\n%s", file_path, err)
