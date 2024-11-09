@@ -34,12 +34,13 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/kevindamm/q-party/json"
 	"golang.org/x/net/html"
 )
 
 func ParseEpisode(jeid JEID, html_reader io.Reader) *JArchiveEpisode {
-	episode := new(JArchiveEpisode)
-	episode.JEID = jeid
+	jaepisode := new(JArchiveEpisode)
+	jaepisode.JEID = jeid
 	doc, err := html.Parse(html_reader)
 	if err != nil {
 		log.Fatalf("error parsing HTML of %s\n\n%s", jeid, err)
@@ -54,13 +55,50 @@ func ParseEpisode(jeid JEID, html_reader io.Reader) *JArchiveEpisode {
 			continue
 		}
 		if divWithID(child) == "content" {
-			episode.parseContent(child)
+			parseContent(child, jaepisode)
 			break
 		}
 		child = child.NextSibling
 	}
 
-	return episode
+	return jaepisode
+}
+
+// Parses a [json.EpisodeMetadata] from its HTML representation,
+// with all fields populated except the Season ID, which the caller can define.
+func ParseEpisodeMetadata(jeid JEID, html_reader io.Reader) *json.EpisodeMetadata {
+	jaepisode := ParseEpisode(jeid, html_reader)
+	episode_meta := new(json.EpisodeMetadata)
+	episode_meta.ShowNumber = json.ShowNumber(jaepisode.ShowNumber)
+	episode_meta.Aired = jaepisode.Aired
+	episode_meta.Taped = jaepisode.Taped
+
+	//	episode_meta.Comments = jaepisode.Comments
+	//	episode_meta.Media = make([]json.Media, len(jaepisode.Media))
+	//	for i, media := range jaepisode.Media {
+	//		episode_meta.Media[i] = json.Media{
+	//			MediaType: json.MediaType(media.MediaType),
+	//			MediaURL:  media.MediaURL}
+	//	}
+	//	for col, category := range jaepisode.Single.Columns {
+	//		for index, challenge := range category.Challenges {
+	//			if !challenge.IsEmpty() {
+	//				episode_meta.SingleClues += 1
+	//			}
+	//			if challenge.TripleStumper {
+	//
+	//			}
+	//		}
+	//	}
+	//	for col, category := range jaepisode.Double.Columns {
+	//		for index, challenge := range category.Challenges {
+	//			if !challenge.IsEmpty() {
+	//				episode_meta.DoubleClues += 1
+	//			}
+	//		}
+	//	}
+	//
+	return episode_meta
 }
 
 // Returns a list of the direct children elements that have the indicated class.
@@ -208,7 +246,7 @@ func innerText(node *html.Node) string {
 	return strings.Trim(flattened, " \t\r\n")
 }
 
-func parseTimeYYYYMMDD(yyyy, mm, dd []byte) ShowDate {
+func parseTimeYYYYMMDD(yyyy, mm, dd []byte) json.ShowDate {
 	year, err := strconv.Atoi(string(yyyy))
 	if err != nil {
 		log.Fatal(yyyy, err)
@@ -221,12 +259,12 @@ func parseTimeYYYYMMDD(yyyy, mm, dd []byte) ShowDate {
 	if err != nil {
 		log.Fatal(dd, err)
 	}
-	return MakeShowDate(year, month, day)
+	return json.ShowDate{Year: year, Month: month, Day: day}
 }
 
-func parseIntoMarkdown(root *html.Node) (string, []Media) {
+func parseIntoMarkdown(root *html.Node) (string, []json.Media) {
 	prompt := ""
-	media := make([]Media, 0)
+	media := make([]json.Media, 0)
 	var recursiveGather func(*html.Node)
 
 	recursiveGather = func(root *html.Node) {

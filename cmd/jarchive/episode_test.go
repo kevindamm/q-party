@@ -26,6 +26,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/kevindamm/q-party/json"
 	"golang.org/x/net/html"
 )
 
@@ -1557,12 +1558,14 @@ func TestJArchiveEpisode_parseContent(t *testing.T) {
 	content_div := nextDescendantWithClass(doc, "div", "content")
 
 	jeid := JEID(579)
-	aired, taped := MakeShowDate(2005, 10, 25), MakeShowDate(2005, 9, 23)
+	aired := json.ShowDate{Year: 2005, Month: 10, Day: 25}
+	taped := json.ShowDate{Year: 2005, Month: 9, Day: 23}
+
 	episode := new(JArchiveEpisode)
 	episode.JEID = jeid
 	episode.Taped = taped
 	episode.Aired = aired
-	episode.parseContent(content_div)
+	parseContent(content_div, episode)
 
 	if episode.JEID != jeid {
 		t.Error("did not carry the episode ID from the metadata definition", episode.JEID)
@@ -1572,7 +1575,7 @@ func TestJArchiveEpisode_parseContent(t *testing.T) {
 	}
 
 	expected_show_number := 4857
-	if episode.ShowNumber != expected_show_number {
+	if episode.ShowNumber != json.ShowNumber(expected_show_number) {
 		t.Errorf("incorrect show number %d (see div#game_title %d)", episode.ShowNumber, expected_show_number)
 	}
 

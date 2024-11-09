@@ -43,22 +43,20 @@ func TestParseCategoryHeader(t *testing.T) {
 		t.Fatal("failed to parse (html_reader)\n", err)
 	}
 	td := nextDescendantWithClass(doc, "td", "category")
-	err = category.parseCategoryHeader(td)
+	err = parseCategoryHeader(td, category)
 	if err != nil {
 		t.Fatal("failed to parse the category names", err)
 	}
 
 	if category.JArchiveCategory != "HANS CHRISTIAN ANDERSEN" {
-		t.Error("category unexpected", category.JArchiveCategory)
+		t.Error("unexpected category title", category.JArchiveCategory)
 	}
 	if category.Commentary != "(Alex: We're celebrating his bicentennial this year!)" {
-		t.Error("category comment unexpected", category.Commentary)
+		t.Error("unexpected category comment", category.Commentary)
 	}
 }
 
 func TestParseCategoryChallenge(t *testing.T) {
-	category := new(CategoryChallenges)
-	category.JArchiveCategory = JArchiveCategory("category")
 	html_raw := `<table><tr><td class="clue">
 <table>
   <tr>
@@ -80,6 +78,8 @@ func TestParseCategoryChallenge(t *testing.T) {
   </tr>
 </table>
 	</td></tr></table>`
+	category := new(CategoryChallenges)
+	category.JArchiveCategory = "categoryname"
 
 	html_reader := strings.NewReader(html_raw)
 	doc, err := html.Parse(html_reader)
@@ -87,18 +87,18 @@ func TestParseCategoryChallenge(t *testing.T) {
 		t.Fatal("failed to parse (html_reader)\n", err)
 	}
 	td := nextDescendantWithClass(doc, "td", "clue")
-	err = category.parseCategoryChallenge(td)
+	err = parseCategoryChallenge(td, category)
 	if err != nil {
 		t.Fatal("failed to parse contents of <td class='clue'>",
 			"\n", err)
 	}
 
-	if category.Challenges[0].Category != category.JArchiveCategory {
+	if category.Challenges[0].Category != string(category.JArchiveCategory) {
 		t.Error("category mismatch",
 			category.Challenges[0].Category, "!=", category.JArchiveCategory)
 	}
-	if category.Challenges[0].Prompt != "expected prompt" {
-		t.Error("prompt mismatch", category.Challenges[0].Prompt, "expected prompt")
+	if category.Challenges[0].Clue != "expected prompt" {
+		t.Error("prompt mismatch", category.Challenges[0].Clue, "expected prompt")
 	}
 	if category.Challenges[0].Correct != "expected correct response" {
 		t.Error("response mismatch", category.Challenges[0].Correct, "expected correct response")

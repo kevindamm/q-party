@@ -25,6 +25,7 @@ package main
 import (
 	"log"
 
+	"github.com/kevindamm/q-party/json"
 	"golang.org/x/net/html"
 )
 
@@ -32,7 +33,7 @@ type JArchiveCategory string
 
 type CategoryChallenges struct {
 	JArchiveCategory `json:"title"`
-	Round            EpisodeRound        `json:"-"`
+	Round            json.EpisodeRound   `json:"-"`
 	Commentary       string              `json:"commentary,omitempty"`
 	Challenges       []JArchiveChallenge `json:"challenges"`
 }
@@ -49,7 +50,7 @@ const (
 	ThemeSportsLeisure  CategoryTheme = "Sports & Leisure"
 )
 
-func (category *CategoryChallenges) parseCategoryHeader(cat_td *html.Node) error {
+func parseCategoryHeader(cat_td *html.Node, category *CategoryChallenges) error {
 	table := nextDescendantWithClass(cat_td, "table", "")
 	tbody := nextDescendantWithClass(table, "tbody", "")
 	trs := childrenWithClass(tbody, "tr", "")
@@ -64,15 +65,14 @@ func (category *CategoryChallenges) parseCategoryHeader(cat_td *html.Node) error
 	return nil
 }
 
-func (category *CategoryChallenges) parseCategoryChallenge(clue_td *html.Node) error {
-	challenge := NewChallenge()
-	err := challenge.parseChallenge(clue_td)
+func parseCategoryChallenge(clue_td *html.Node, category *CategoryChallenges) error {
+	challenge := NewChallenge(string(category.JArchiveCategory))
+	err := parseChallenge(clue_td, challenge)
 	if err != nil {
 		category.Challenges = append(category.Challenges, *challenge)
 		return err
 	}
-	challenge.Category = category.JArchiveCategory
-	challenge.Round = category.Round
+	challenge.Category = string(category.JArchiveCategory)
 	category.Challenges = append(category.Challenges, *challenge)
 	return nil
 }

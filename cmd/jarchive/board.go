@@ -25,46 +25,12 @@ package main
 import (
 	"log"
 
+	"github.com/kevindamm/q-party/json"
 	"golang.org/x/net/html"
 )
 
-type JArchiveBoard struct {
-	ShowDate `json:"-"`
-	Round    EpisodeRound          `json:"round"`
-	Columns  [6]CategoryChallenges `json:"columns"`
-}
-
-func NewBoard(date ShowDate, round EpisodeRound) *JArchiveBoard {
-	if round != ROUND_SINGLE_JEOPARDY && round != ROUND_DOUBLE_JEOPARDY {
-		panic("attempting to create a new board with invalid round " + round.String())
-	}
-
-	board := new(JArchiveBoard)
-	board.Round = round
-	return board
-}
-
-func (board JArchiveBoard) WageringChallenges() []JArchiveChallenge {
-	if board.Round != 1 && board.Round != 2 {
-		return nil
-	}
-	challenges := make([]JArchiveChallenge, 0)
-	for _, column := range board.Columns {
-		for _, challenge := range column.Challenges {
-			if challenge.Value.IsWager() {
-				challenges = append(challenges, challenge)
-			}
-		}
-	}
-	return challenges
-}
-
-type BoardPosition struct {
-	Column int `cue:">=0 & <6"`
-	Index  int `cue:">=0 & <5"`
-}
-
-func (board *JArchiveBoard) parseBoard(root *html.Node) {
+func parseBoard(root *html.Node) [6]CategoryChallenges {
+	categories := [6]CategoryChallenges{}
 	round_table := nextDescendantWithClass(root, "table", "round")
 	category_tr := nextDescendantWithClass(round_table, "tr", "")
 	category_tds := childrenWithClass(category_tr, "td", "category")
@@ -72,66 +38,45 @@ func (board *JArchiveBoard) parseBoard(root *html.Node) {
 		log.Fatal("expected 6 category entries, found", len(category_tds))
 	}
 	for i, td := range category_tds {
-		err := board.Columns[i].parseCategoryHeader(td)
+		err := parseCategoryHeader(td, &categories[i])
 		if err != nil {
 			log.Fatal("failed to parse category header (name and comments)")
 		}
-		board.Columns[i].Round = board.Round
 	}
 
-	for row := range 5 {
+	for range 5 {
 		category_tr = nextSiblingWithClass(category_tr, "tr", "")
 		clue_tds := childrenWithClass(category_tr, "td", "clue")
 		if len(clue_tds) != 6 {
 			log.Fatal("expected 6 clue entries, found", len(clue_tds))
 		}
 		for i, clue_td := range clue_tds {
-			err := board.Columns[i].parseCategoryChallenge(clue_td)
+			err := parseCategoryChallenge(clue_td, &categories[i])
 			if err != nil {
 				log.Fatal("failed to parse clue entry", err)
 			}
-			board.Columns[i].Challenges[row].ShowDate = board.ShowDate
 		}
 	}
+	return categories
 }
 
-// enum representation for
-type EpisodeRound int
-
-const (
-	ROUND_UNKNOWN EpisodeRound = iota
-	ROUND_SINGLE_JEOPARDY
-	ROUND_DOUBLE_JEOPARDY
-	ROUND_FINAL_JEOPARDY
-	ROUND_TIE_BREAKER
-	ROUND_PRINTED_MEDIA
-)
-
-var round_strings = map[EpisodeRound]string{
-	ROUND_UNKNOWN:         "[UNKNOWN]",
-	ROUND_SINGLE_JEOPARDY: "Jeopardy!",
-	ROUND_DOUBLE_JEOPARDY: "Double Jeopardy!",
-	ROUND_FINAL_JEOPARDY:  "Final Jeopardy!",
-	ROUND_TIE_BREAKER:     "Tiebreaker",
-	ROUND_PRINTED_MEDIA:   "[printed media]",
+var round_strings = map[json.EpisodeRound]string{
+	json.ROUND_UNKNOWN:    "[UNKNOWN]",
+	json.ROUND_SINGLE:     "Jeopardy!",
+	json.ROUND_DOUBLE:     "Double Jeopardy!",
+	json.ROUND_FINAL:      "Final Jeopardy!",
+	json.ROUND_TIEBREAKER: "Tiebreaker",
+	json.PRINTED_MEDIA:    "[printed media]",
 }
 
-func (round EpisodeRound) String() string {
-	printed := round_strings[round]
-	if printed == "" {
-		printed = round_strings[ROUND_UNKNOWN]
-	}
-	return printed
-}
-
-func ParseString(round string) EpisodeRound {
+func ParseString(round string) json.EpisodeRound {
 	if round == "" {
-		return ROUND_UNKNOWN
+		return json.ROUND_UNKNOWN
 	}
 	for k, v := range round_strings {
 		if v == round {
 			return k
 		}
 	}
-	return ROUND_UNKNOWN
+	return json.ROUND_UNKNOWN
 }

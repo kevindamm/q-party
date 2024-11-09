@@ -23,8 +23,6 @@
 package main
 
 import (
-	"bufio"
-	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -32,34 +30,26 @@ import (
 	"os"
 	"path"
 	"regexp"
-	"strconv"
 	"time"
+
+	"github.com/kevindamm/q-party/json"
 )
-
-type JArchiveSeason struct {
-	JSID  `json:"season"` // TODO json:"-"
-	Name  string          `json:"name"`
-	Aired ShowDateRange   `json:"aired"`
-	Count int             `json:"count"`
-
-	Episodes map[JEID]JArchiveEpisodeMetadata `json:"-"`
-}
 
 // Loads the season index and the metadata of each season in the index.
 // Parameter [data_path] is the location of the seasons.jsonl, the same path
 // as the `seasons` and `episodes` directory (.data/ relative to $CWD)
-func LoadAllSeasons(data_path string) map[JSID]JArchiveSeason {
+func LoadAllSeasons(data_path string) map[json.SeasonID]json.SeasonMetadata {
 	jsonl_path := path.Join(data_path, "seasons.jsonl")
 	seasons_dir := path.Join(data_path, "seasons")
 
-	seasons := LoadSeasonsJSONL(jsonl_path)
+	seasons := json.LoadSeasonsJSONL(jsonl_path)
 	for jsid, season := range seasons {
-		file_path := path.Join(seasons_dir, jsid.JSON())
+		file_path := path.Join(seasons_dir, fmt.Sprintf("%s.json", jsid))
 		reader, err := os.Open(file_path)
 		if err != nil {
 			log.Fatalf("failed to open file path '%s'\n%s", file_path, err)
 		}
-		err = season.LoadSeasonMetadata(reader)
+		err = ParseSeasonMetadata(reader, &season)
 		if err != nil {
 			log.Fatalf("failed to parse season %s index file", jsid)
 		}
@@ -68,29 +58,7 @@ func LoadAllSeasons(data_path string) map[JSID]JArchiveSeason {
 	return seasons
 }
 
-func LoadSeasonsJSONL(jsonl_path string) map[JSID]JArchiveSeason {
-	seasons_jsonl, err := os.Open(jsonl_path)
-	if err != nil {
-		return nil
-	}
-	scanner := bufio.NewScanner(seasons_jsonl)
-	scanner.Split(bufio.ScanLines)
-
-	seasons := make(map[JSID]JArchiveSeason, 0)
-	for scanner.Scan() {
-		line := scanner.Bytes()
-		var season JArchiveSeason
-		err := json.Unmarshal(line, &season)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		seasons[season.JSID] = season
-	}
-	return seasons
-}
-
-func (season *JArchiveSeason) LoadSeasonMetadata(reader io.Reader) error {
+func ParseSeasonMetadata(reader io.Reader, season *json.SeasonMetadata) error {
 	bytes, err := io.ReadAll(reader)
 	if err != nil {
 		return err
@@ -105,8 +73,6 @@ func (season *JArchiveSeason) LoadSeasonMetadata(reader io.Reader) error {
 		season.Name = string(match[1])
 	}
 
-	season.Episodes = make(map[JEID]JArchiveEpisodeMetadata)
-
 	matches := reEpisodeLink.FindAllSubmatch(bytes, -1)
 	for _, match := range matches {
 		episode := JArchiveEpisodeMetadata{}
@@ -119,14 +85,14 @@ func (season *JArchiveSeason) LoadSeasonMetadata(reader io.Reader) error {
 		if aired != nil {
 			episode.Aired = parseTimeYYYYMMDD(aired[1], aired[2], aired[3])
 		}
-		season.Episodes[episode.JEID] = episode
+		/// TODO season.EpisodeCount += 1
 	}
 
 	return nil
 }
 
-func (season JArchiveSeason) FetchIndex(jsid JSID, filepath string) error {
-	url := jsid.URL()
+func FetchSeasonIndexHTML(jsid json.SeasonID, filepath string) error {
+	url := SeasonURL(jsid)
 	log.Print("Fetching ", url, "  -> ", filepath)
 
 	response, err := http.Get(url)
@@ -147,26 +113,6 @@ func (season JArchiveSeason) FetchIndex(jsid JSID, filepath string) error {
 	return nil
 }
 
-// Unique (sometimes numeric) identifier for seasons in the archive.
-type JSID string
-
-// Returns a non-zero value if this season is part of regular play,
-// zero otherwise.
-func (id JSID) RegularSeason() int {
-	number, err := strconv.Atoi(string(id))
-	if err != nil {
-		return 0
-	}
-	return number
-}
-
-func (id JSID) HTML() string {
-	return fmt.Sprintf("%s.html", id)
-}
-
-func (id JSID) JSON() string {
-	return fmt.Sprintf("%s.json", id)
-}
-func (id JSID) URL() string {
+func SeasonURL(id json.SeasonID) string {
 	return fmt.Sprintf("https://j-archive.com/showseason.php?season=%s", id)
 }

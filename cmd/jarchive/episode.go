@@ -29,42 +29,61 @@ import (
 	"regexp"
 	"strconv"
 
+	"github.com/kevindamm/q-party/json"
 	"golang.org/x/net/html"
 )
 
 type JArchiveEpisode struct {
-	JEID       `json:"-"`
-	ShowTitle  string   `json:"show_title"`
-	ShowNumber int      `json:"show_number" cue:">0"`
-	Aired      ShowDate `json:"aired,omitempty"`
-	Taped      ShowDate `json:"taped,omitempty"`
-	Comments   string   `json:"comments,omitempty"`
-	Media      []Media  `json:"media,omitempty"`
+	JEID `json:"-"`
+	json.EpisodeMetadata
 
 	Contestants [3]JArchiveContestant `json:"contestants"`
+	Comments    string                `json:"comments,omitempty"`
+	Media       []json.Media          `json:"media,omitempty"`
 
-	Single     *JArchiveBoard         `json:"single,omitempty"`
-	Double     *JArchiveBoard         `json:"double,omitempty"`
-	Final      JArchiveFinalChallenge `json:"final"`
-	TieBreaker *JArchiveTiebreaker    `json:"tiebreaker,omitempty"`
+	Single     [6]CategoryChallenges `json:"single,omitempty"`
+	Double     [6]CategoryChallenges `json:"double,omitempty"`
+	Final      *JArchiveChallenge    `json:"final"`
+	TieBreaker *JArchiveChallenge    `json:"tiebreaker,omitempty"`
 }
 
-func LoadEpisode(html_path string, metadata JArchiveEpisodeMetadata) (*JArchiveEpisode, error) {
+type JEID uint
+
+func (id JEID) String() string {
+	return fmt.Sprintf("%d", uint(id))
+}
+
+func (id JEID) HTML() string {
+	return fmt.Sprintf("%d.html", id)
+}
+
+func (id JEID) URL() string {
+	return fmt.Sprintf("https://j-archive.com/showgame.php?game_id=%d", id)
+}
+
+func MustParseJEID(numeric string) JEID {
+	id, err := strconv.Atoi(numeric)
+	if err != nil {
+		log.Fatalf("failed to parse JEID from string '%s'\n%s", numeric, err)
+	}
+	return JEID(id)
+}
+
+func LoadEpisode(html_path string, metadata JArchiveEpisodeMetadata) (*json.Episode, error) {
 	reader, err := os.Open(html_path)
 	if err != nil {
 		return nil, err
 	}
-	episode := ParseEpisode(metadata.JEID, reader)
-	if !metadata.Taped.Equal(unknown_showdate) {
-		episode.Taped = metadata.Taped
-	}
-	if !metadata.Aired.Equal(unknown_showdate) {
-		episode.Aired = metadata.Aired
-	}
+	jaepisode := ParseEpisode(metadata.JEID, reader)
+	episode := new(json.Episode)
+	episode.ShowNumber = json.ShowNumber(jaepisode.ShowNumber)
+	episode.ShowTitle = jaepisode.ShowTitle
+	// TODO more properties?
+
 	return episode, nil
 }
 
-func (episode *JArchiveEpisode) parseContent(content *html.Node) {
+func parseContent(content *html.Node, episode *JArchiveEpisode) {
 	child := content.FirstChild
 	for child != nil {
 		id := divWithID(child)
@@ -81,11 +100,9 @@ func (episode *JArchiveEpisode) parseContent(content *html.Node) {
 		case "contestants":
 			episode.parseContestants(child) // name & bio
 		case "jeopardy_round":
-			episode.Single = NewBoard(episode.Aired, ROUND_SINGLE_JEOPARDY)
-			episode.Single.parseBoard(child)
+			episode.Single = parseBoard(child)
 		case "double_jeopardy_round":
-			episode.Double = NewBoard(episode.Aired, ROUND_DOUBLE_JEOPARDY)
-			episode.Double.parseBoard(child)
+			episode.Double = parseBoard(child)
 		case "final_jeopardy_round":
 			episode.parseFinalRound(child) // may include tie-breaker
 		}
@@ -109,8 +126,10 @@ func (episode *JArchiveEpisode) parseTitle(game_title *html.Node) {
 	if match != nil {
 		// Pattern matching determines match[2] will always be numeric.
 		number, _ := strconv.Atoi(match[2])
-		episode.ShowNumber = number
-		episode.ShowTitle = match[3] // TODO the AirDate can usually be determined from this.
+		episode.ShowNumber = json.ShowNumber(number)
+		episode.ShowTitle = match[3]
+	} else {
+		log.Fatal("title does not match expected format", text)
 	}
 }
 
@@ -130,46 +149,17 @@ func (episode *JArchiveEpisode) parseFinalRound(div *html.Node) {
 		panic("did not find any final_round in this episode")
 	}
 
-	episode.Final.parseChallenge(rounds[0])
+	episode.Final = new(JArchiveChallenge)
+	parseFinalChallenge(rounds[0], episode.Final)
 	if len(rounds) == 2 {
-		episode.TieBreaker = new(JArchiveTiebreaker)
-		episode.TieBreaker.parseChallenge(rounds[1])
-		episode.TieBreaker.ShowDate = episode.Aired
+		episode.TieBreaker = new(JArchiveChallenge)
+		parseTiebreakerChallenge(rounds[1], episode.TieBreaker)
 	}
 }
 
 type JArchiveEpisodeMetadata struct {
-	JEID  `json:"-"`
-	Taped ShowDate `json:"taped,omitempty"`
-	Aired ShowDate `json:"aired,omitempty"`
-}
-
-// Unique numeric identifier for episodes in the archive.
-// May be different than the sequential show number used in display.
-type JEID int
-
-func (id JEID) String() string {
-	return fmt.Sprintf("%d", int(id))
-}
-
-func (id JEID) HTML() string {
-	return fmt.Sprintf("%d.html", id)
-}
-
-func (id JEID) JSON() string {
-	return fmt.Sprintf("%d.json", id)
-}
-
-func (id JEID) URL() string {
-	return fmt.Sprintf("https://j-archive.com/showgame.php?game_id=%d", id)
-}
-
-// Parses the numeric value from a string.
-// Fatal error if the value cannot be converted into a number.
-func MustParseJEID(numeric string) JEID {
-	id, err := strconv.Atoi(numeric)
-	if err != nil {
-		log.Fatalf("failed to parse JEID from string '%s'\n%s", numeric, err)
-	}
-	return JEID(id)
+	JEID       `json:"-"`
+	ShowNumber uint          `json:"show_number,omitempty"`
+	Aired      json.ShowDate `json:"aired,omitempty"`
+	Taped      json.ShowDate `json:"taped,omitempty"`
 }

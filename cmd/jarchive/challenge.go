@@ -12,90 +12,47 @@ import (
 
 // The de-normed representation as found in some datasets, e.g. on Kaggle.
 type JArchiveChallenge struct {
-	ShowNumber int `json:"show_number"`
-	ShowDate   `json:"air_date,omitempty"`
-	Round      EpisodeRound     `json:"round"`
-	Category   JArchiveCategory `json:"category"`
-	Commentary string           `json:"comment,omitempty"`
-
-	// String representation has a dollar sign, negated values are wagers.
-	Value json.DollarValue `json:"value,omitempty"`
-
-	Prompt  string  `json:"clue"`
-	Media   []Media `json:"media,omitempty"`
-	Correct string  `json:"correct"` // excluding "what is..." preface
+	json.Challenge
+	Correct string `json:"correct"`
 }
-
-type JArchiveFinalChallenge struct {
-	JArchiveChallenge
-}
-
-type JArchiveTiebreaker struct {
-	JArchiveChallenge
-}
-
-type Media struct {
-	MediaType `json:"mime"`
-	MediaURL  string `json:"url"`
-}
-
-// This enumeration over available media types is modeled after its equivalent
-// MIME type such as image/jpeg, image/png, audio/mpeg, etc.  The default (its
-// zero value) is an empty string which implicitly represents text/plain, UTF-8.
-type MediaType string
-
-const (
-	MediaImageJPG MediaType = "image/jpeg"
-	MediaAudioMP3 MediaType = "audio/mpeg"
-	MediaVideoMP4 MediaType = "video/mp4"
-)
 
 // Assumes that a file extension is present.
 var reMediaPath = regexp.MustCompile(`^https?://.*\.com/media/([^.]+)(\.[a-zA-Z0-9]+)`)
-var unknown_media = Media{"", ""}
 
-func MakeMedia(href string) Media {
+func MakeMedia(href string) json.Media {
 	match := reMediaPath.FindStringSubmatch(href)
 	if match == nil {
-		return unknown_media
+		return json.Media{}
 	}
 	filename := fmt.Sprintf("/media/%s%s", match[1], match[2])
 	mimetype := inferMediaType(match[2])
 
-	return Media{
-		MediaType: mimetype,
-		MediaURL:  filename}
+	return json.Media{
+		MimeType: mimetype,
+		MediaURL: filename}
 }
 
-func inferMediaType(ext string) MediaType {
+func inferMediaType(ext string) json.MimeType {
 	switch ext {
 	case ".jpg", ".jpeg":
-		return MediaImageJPG
+		return json.MediaImageJPG
 	case ".mp3":
-		return MediaAudioMP3
+		return json.MediaAudioMP3
 	case ".mp4":
-		return MediaVideoMP4
+		return json.MediaVideoMP4
 	default:
 		panic("unrecognized media type for " + ext)
 	}
 }
 
-func NewChallenge() *JArchiveChallenge {
+func NewChallenge(category string) *JArchiveChallenge {
 	challenge := new(JArchiveChallenge)
-	challenge.Media = make([]Media, 0)
+	challenge.Category = category
+	challenge.Media = make([]json.Media, 0)
 	return challenge
 }
 
-func (challenge JArchiveChallenge) IsEmpty() bool {
-	if challenge.Value != 0 ||
-		challenge.Prompt != "" ||
-		challenge.Correct != "" {
-		return false
-	}
-	return true
-}
-
-func (challenge *JArchiveChallenge) parseChallenge(div *html.Node) error {
+func parseChallenge(div *html.Node, challenge *JArchiveChallenge) error {
 	if strings.Trim(innerText(div), " ") == "" {
 		return nil
 	}
@@ -122,7 +79,7 @@ func (challenge *JArchiveChallenge) parseChallenge(div *html.Node) error {
 
 	clue_td := nextDescendantWithClass(table, "td", "clue_text")
 	text, media := parseIntoMarkdown(clue_td)
-	challenge.Prompt = text
+	challenge.Clue = text
 	if len(media) > 0 {
 		challenge.Media = media
 	}
@@ -143,17 +100,16 @@ func (challenge *JArchiveChallenge) parseChallenge(div *html.Node) error {
 	return nil
 }
 
-func (tiebreaker *JArchiveTiebreaker) parseChallenge(div *html.Node) error {
+func parseTiebreakerChallenge(div *html.Node, tiebreaker *JArchiveChallenge) error {
 	table := nextDescendantWithClass(div, "table", "")
-	tiebreaker.Round = ROUND_TIE_BREAKER
-	tiebreaker.Category = JArchiveCategory(innerText(
-		nextDescendantWithClass(table, "td", "category_name")))
-	tiebreaker.Commentary = innerText(
+	tiebreaker.Category = innerText(
+		nextDescendantWithClass(table, "td", "category_name"))
+	tiebreaker.Comments = innerText(
 		nextDescendantWithClass(table, "td", "category_comments"))
 
 	clue := nextDescendantWithClass(div, "td", "clue")
 	clue_td := nextDescendantWithClass(clue, "td", "clue_text")
-	tiebreaker.Prompt = innerText(clue_td)
+	tiebreaker.Clue = innerText(clue_td)
 	clue_td = nextSiblingWithClass(clue_td, "td", "clue_text")
 	if clue_td == nil {
 		return errors.New("could not find tiebreaker challenge response")
@@ -163,18 +119,17 @@ func (tiebreaker *JArchiveTiebreaker) parseChallenge(div *html.Node) error {
 	return nil
 }
 
-func (final *JArchiveFinalChallenge) parseChallenge(div *html.Node) error {
+func parseFinalChallenge(div *html.Node, final *JArchiveChallenge) error {
 	table := nextDescendantWithClass(div, "table", "")
 
-	final.Round = ROUND_FINAL_JEOPARDY
-	final.Category = JArchiveCategory(innerText(
-		nextDescendantWithClass(table, "td", "category_name")))
-	final.Commentary = innerText(
+	final.Category = innerText(
+		nextDescendantWithClass(table, "td", "category_name"))
+	final.Comments = innerText(
 		nextDescendantWithClass(table, "td", "category_comments"))
 
 	clue := nextDescendantWithClass(div, "td", "clue")
 	clue_td := nextDescendantWithClass(clue, "td", "clue_text")
-	final.Prompt = innerText(clue_td)
+	final.Clue = innerText(clue_td)
 	clue_td = nextSiblingWithClass(clue_td, "td", "clue_text")
 	if clue_td == nil {
 		return errors.New("could not find final challenge response")
