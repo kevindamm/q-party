@@ -1,3 +1,16 @@
-
 .data/
+.env
+
 *.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*templ.go
+
+*.test
+*.out
+go.work
+tmp/
+
+.DS_Store
