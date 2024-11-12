@@ -12,38 +12,39 @@ import (
 	"github.com/kevindamm/q-party/service"
 )
 
-func gracefulShutdown(apiServer *http.Server, done chan bool) {
-	// Create context that listens for the interrupt signal from the OS.
+// Calls the server's [Shutdown()] when
+// Runs in a goroutine alongside the server handler, the [done] channel runs the
+// remainder of main() (after blocking on a channel following server startup).
+// This gives a convenient place to
+func graceful_shutdown(https_server *http.Server, done chan<- bool, timeout_seconds int) {
+	// Listen for the interrupt signal or termination from the OS.
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
-
-	// Listen for the interrupt signal.
 	<-ctx.Done()
-
 	log.Println("shutting down gracefully, press Ctrl+C again to force")
 
-	// The context is used to inform the server it has 5 seconds to finish
-	// the request it is currently handling
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	// Notify the server with a 5 second timeout so that current handlers can finish.
+	timeout := time.Duration(timeout_seconds) * time.Second
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
-	if err := apiServer.Shutdown(ctx); err != nil {
+	log.Println("Graceful Shutdown: server exiting in", timeout_seconds, "...")
+	if err := https_server.Shutdown(ctx); err != nil {
 		log.Printf("Server forced to shutdown with error: %v", err)
 	}
 
-	log.Println("Server exiting")
-
-	// Notify the main goroutine that the shutdown is complete
+	// Shutdown is complete, safely notify the code execution of main().
 	done <- true
 }
 
 func main() {
+
 	server := service.NewServer()
 
 	// Create a done channel to signal when the shutdown is complete
 	done := make(chan bool, 1)
 
-	// Run graceful shutdown in a separate goroutine
-	go gracefulShutdown(server, done)
+	// Run graceful shutdown in a separate goroutine that exits after timeout.
+	go graceful_shutdown(server, done, 5)
 
 	err := server.ListenAndServe()
 	if err != nil && err != http.ErrServerClosed {

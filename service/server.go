@@ -21,12 +21,12 @@ func NewServer() *http.Server {
 	}
 	QPartyServer := &Server{port: port}
 
-	server := &http.Server{
+	server := http.Server{
 		Addr:         fmt.Sprintf(":%d", QPartyServer.port),
 		Handler:      QPartyServer.RegisterRoutes(),
 		IdleTimeout:  time.Minute,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 30 * time.Second,
 	}
-	return server
+	return &server
 }
