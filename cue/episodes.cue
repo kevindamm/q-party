@@ -25,11 +25,11 @@ package qparty
 // Identifiers and statistics for each episode.
 #EpisodeMetadata: {
   show_number!: #ShowNumber
+  show_title: string
   season?: #SeasonID
   aired?: #ShowDate
   taped?: #ShowDate
 
-  show_title: string
   contestant_ids?: [#ContestantID, #ContestantID, #ContestantID]
   comments?: string
   media?: [...#Media]

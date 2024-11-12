@@ -23,37 +23,72 @@
 package json
 
 import (
-	"bufio"
 	"encoding/json"
+	"fmt"
 	"log"
 	"os"
-	"path"
 	"strconv"
 )
 
 type SeasonIndex struct {
-	Version  []int                          `json:"version,omitempty"`
+	Version  []uint                         `json:"version,omitempty"`
 	Seasons  map[SeasonID]SeasonMetadata    `json:"seasons"`
 	Episodes map[ShowNumber]EpisodeMetadata `json:"episodes"`
 }
 
-func LoadSeasonIndex(data_path string) SeasonIndex {
-	season_index := SeasonIndex{}
-
-	// TODO load all seasons from one file.
-	season_index.Seasons = LoadSeasonsJSONL(path.Join(data_path, "seasons.jsonl"))
-
-	return season_index
-}
-
 type SeasonMetadata struct {
 	SeasonID `json:"id"`
-	Name     string        `json:"name,omitempty"`
+	Season   string        `json:"season"`         // deprecated
+	Name     string        `json:"name,omitempty"` // deprecated
+	Title    string        `json:"title"`
 	Aired    ShowDateRange `json:"aired"`
 
+	EpisodeMap `json:"-"`
+
+	Count           int `json:"count"` // deprecated
 	EpisodesCount   int `json:"episode_count"`
 	ChallengesCount int `json:"challenge_count"`
 	StumpersCount   int `json:"tripstump_count"`
+}
+
+type EpisodeMap map[uint]EpisodeMetadata
+
+func (all_seasons SeasonIndex) WriteSeasonIndexJSON(json_path string) error {
+	writer, err := os.Create(json_path)
+	if err != nil {
+		return err
+	}
+	bytes, err := json.Marshal(all_seasons)
+	if err != nil {
+		return fmt.Errorf("failed to marshal seasons to JSON bytes\n%s", err)
+	}
+	nbytes, err := writer.Write(bytes)
+	if err != nil {
+		return fmt.Errorf("failed to write%s\n%s", json_path, err)
+	} else {
+		log.Printf("Wrote seasons.json, %d bytes", nbytes)
+	}
+
+	return nil
+}
+
+func LoadSeasonsJSON(seasons_path string) *SeasonIndex {
+	season_index := new(SeasonIndex)
+	season_index.Seasons = make(map[SeasonID]SeasonMetadata)
+	if _, err := os.Stat(seasons_path); os.IsNotExist(err) {
+		log.Fatal("file not found", seasons_path)
+	}
+	seasons_json, err := os.ReadFile(seasons_path)
+	if err != nil {
+		log.Println("failed to open seasons.json path", seasons_path)
+		log.Fatal(err)
+	}
+	err = json.Unmarshal(seasons_json, season_index)
+	if err != nil {
+		log.Fatal("failed to decode seasons metadata", seasons_path)
+	}
+
+	return season_index
 }
 
 // Unique (sometimes numeric) identifier for seasons in the archive.
@@ -67,26 +102,4 @@ func (id SeasonID) RegularSeason() int {
 		return 0
 	}
 	return number
-}
-
-func LoadSeasonsJSONL(jsonl_path string) map[SeasonID]SeasonMetadata {
-	seasons_jsonl, err := os.Open(jsonl_path)
-	if err != nil {
-		return nil
-	}
-	scanner := bufio.NewScanner(seasons_jsonl)
-	scanner.Split(bufio.ScanLines)
-
-	seasons := make(map[SeasonID]SeasonMetadata, 0)
-	for scanner.Scan() {
-		line := scanner.Bytes()
-		var season SeasonMetadata
-		err = json.Unmarshal(line, &season)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		seasons[season.SeasonID] = season
-	}
-	return seasons
 }

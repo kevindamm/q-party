@@ -27,3 +27,15 @@ type Category struct {
 	Commentary string              `json:"commentary,omitempty"`
 	Challenges []ChallengeMetadata `json:"challenges,omitempty"`
 }
+
+// Proposal for category breakdown based on Trivial Pursuit classic categories.
+type CategoryTheme string
+
+const (
+	ThemeGeography      CategoryTheme = "Geography"
+	ThemeEntertainment  CategoryTheme = "Entertainment"
+	ThemeHistoryRoyalty CategoryTheme = "History & Royalty"
+	ThemeArtLiterature  CategoryTheme = "Art & Literature"
+	ThemeScienceNature  CategoryTheme = "Science & Nature"
+	ThemeSportsLeisure  CategoryTheme = "Sports & Leisure"
+)
