@@ -20,7 +20,7 @@
 //
 // github:kevindamm/q-party/json/episodes.go
 
-package json
+package qparty
 
 import (
 	"encoding/json"
@@ -32,7 +32,7 @@ import (
 )
 
 type EpisodeMetadata struct {
-	ShowNumber `json:"show_number" cue:">0"`
+	ShowNumber `json:"show_number"` // cue:">0"
 	SeasonID   `json:"season,omitempty"`
 	Aired      ShowDate `json:"aired,omitempty"`
 	Taped      ShowDate `json:"taped,omitempty"`

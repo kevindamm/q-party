@@ -26,7 +26,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/kevindamm/q-party/json"
+	qparty "github.com/kevindamm/q-party"
 	"golang.org/x/net/html"
 )
 
@@ -149,7 +149,7 @@ func TestParseImageChallenge(t *testing.T) {
 	if challenge.Clue != expected_prompt {
 		t.Errorf("incorrect prompt, got\n%s\n%s\nexpected", challenge.Clue, expected_prompt)
 	}
-	if challenge.Media[0].MimeType != json.MediaImageJPG {
+	if challenge.Media[0].MimeType != qparty.MediaImageJPG {
 		t.Error("incorrect media type")
 	}
 	if challenge.Media[0].MediaURL != "/media/2004-07-19_DJ_11.jpg" {
@@ -206,7 +206,7 @@ func TestParseAudioWageringChallenge(t *testing.T) {
 	if challenge.Clue != expected_text {
 		t.Errorf("incorrect prompt '%s' !=\n'%s'", challenge.Clue, expected_text)
 	}
-	if len(challenge.Media) != 1 || challenge.Media[0].MimeType != json.MediaAudioMP3 {
+	if len(challenge.Media) != 1 || challenge.Media[0].MimeType != qparty.MediaAudioMP3 {
 		t.Errorf("did not detect audio media type in challenge")
 	}
 	if challenge.Correct != "a capella" {
@@ -250,11 +250,11 @@ func TestParseVideoChallenge(t *testing.T) {
 	if challenge.Clue != expected_prompt {
 		t.Errorf("incorrect prompt, got\n%s\n%s\nexpected", challenge.Clue, expected_prompt)
 	}
-	expected_media := []json.Media{
-		{MimeType: json.MediaVideoMP4, MediaURL: "/media/2004-07-19_DJ_11.mp4"},
-		{MimeType: json.MediaImageJPG, MediaURL: "/media/2004-07-19_DJ_11.jpg"},
-		{MimeType: json.MediaImageJPG, MediaURL: "/media/2004-07-19_DJ_11a.jpg"},
-		{MimeType: json.MediaImageJPG, MediaURL: "/media/2004-07-19_DJ_11b.jpg"},
+	expected_media := []qparty.Media{
+		{MimeType: qparty.MediaVideoMP4, MediaURL: "/media/2004-07-19_DJ_11.mp4"},
+		{MimeType: qparty.MediaImageJPG, MediaURL: "/media/2004-07-19_DJ_11.jpg"},
+		{MimeType: qparty.MediaImageJPG, MediaURL: "/media/2004-07-19_DJ_11a.jpg"},
+		{MimeType: qparty.MediaImageJPG, MediaURL: "/media/2004-07-19_DJ_11b.jpg"},
 	}
 	for i, expected := range expected_media {
 		if challenge.Media[i].MimeType != expected.MimeType {

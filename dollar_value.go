@@ -20,7 +20,7 @@
 //
 // github:kevindamm/q-party/json/dollar_value.go
 
-package json
+package qparty
 
 import (
 	"errors"

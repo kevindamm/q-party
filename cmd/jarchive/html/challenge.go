@@ -28,40 +28,40 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/kevindamm/q-party/json"
+	qparty "github.com/kevindamm/q-party"
 	"golang.org/x/net/html"
 )
 
 // The de-normed representation as found in some datasets, e.g. on Kaggle.
 type JArchiveChallenge struct {
-	json.Challenge
+	qparty.Challenge
 	Correct string `json:"correct"`
 }
 
 // Assumes that a file extension is present.
 var reMediaPath = regexp.MustCompile(`^https?://.*\.com/media/([^.]+)(\.[a-zA-Z0-9]+)`)
 
-func MakeMedia(href string) json.Media {
+func MakeMedia(href string) qparty.Media {
 	match := reMediaPath.FindStringSubmatch(href)
 	if match == nil {
-		return json.Media{}
+		return qparty.Media{}
 	}
 	filename := fmt.Sprintf("/media/%s%s", match[1], match[2])
 	mimetype := inferMediaType(match[2])
 
-	return json.Media{
+	return qparty.Media{
 		MimeType: mimetype,
 		MediaURL: filename}
 }
 
-func inferMediaType(ext string) json.MimeType {
+func inferMediaType(ext string) qparty.MimeType {
 	switch ext {
 	case ".jpg", ".jpeg":
-		return json.MediaImageJPG
+		return qparty.MediaImageJPG
 	case ".mp3":
-		return json.MediaAudioMP3
+		return qparty.MediaAudioMP3
 	case ".mp4":
-		return json.MediaVideoMP4
+		return qparty.MediaVideoMP4
 	default:
 		panic("unrecognized media type for " + ext)
 	}
@@ -70,7 +70,7 @@ func inferMediaType(ext string) json.MimeType {
 func NewChallenge(category string) *JArchiveChallenge {
 	challenge := new(JArchiveChallenge)
 	challenge.Category = category
-	challenge.Media = make([]json.Media, 0)
+	challenge.Media = make([]qparty.Media, 0)
 	return challenge
 }
 
@@ -83,7 +83,7 @@ func parseChallenge(div *html.Node, challenge *JArchiveChallenge) error {
 	var err error
 	value_td := nextDescendantWithClass(table, "td", "clue_value")
 	if value_td != nil {
-		challenge.Value, err = json.ParseDollarValue(innerText(value_td))
+		challenge.Value, err = qparty.ParseDollarValue(innerText(value_td))
 		if err != nil {
 			return errors.New("failed to parse challenge value " + err.Error())
 		}
@@ -91,7 +91,7 @@ func parseChallenge(div *html.Node, challenge *JArchiveChallenge) error {
 		dd_value_td := nextDescendantWithClass(table, "td", "clue_value_daily_double")
 		if dd_value_td != nil {
 			text := strings.ReplaceAll(innerText(dd_value_td), ",", "")
-			challenge.Value, err = json.ParseDollarValue(text[4:])
+			challenge.Value, err = qparty.ParseDollarValue(text[4:])
 			if err != nil {
 				return fmt.Errorf("failed to parse daily double value %s\n%s", text, err.Error())
 			}

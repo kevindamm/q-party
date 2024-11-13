@@ -18,42 +18,22 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-// github:kevindamm/q-party/json/challenges.go
+// github:kevindamm/q-party/json/media.go
 
-package json
+package qparty
 
-type ChallengeMetadata struct {
-	ChallengeID uint        `json:"id"`
-	Value       DollarValue `json:"value,omitempty"`
-
-	TripleStumper bool `json:"stumper,omitempty"`
+type Media struct {
+	MimeType `json:"mime"`
+	MediaURL string `json:"url"`
 }
 
-// Sentinel value for board entries that are missing/blank.
-var UnknownChallenge = ChallengeMetadata{0, 0, false}
+// This enumeration over available media types is modeled after its equivalent
+// MIME type such as image/jpeg, image/png, audio/mpeg, etc.  The default (its
+// zero value) is an empty string which implicitly represents an unknown media.
+type MimeType string
 
-// Challenge data (without the answer), for when a board position is selected.
-type Challenge struct {
-	ChallengeMetadata `json:",inline"`
-	Clue              string `json:"clue"`
-
-	Media    []Media `json:"media,omitempty"`
-	Category string  `json:"category,omitempty"`
-	Comments string  `json:"comments,omitempty"`
-}
-
-// Host view of the challenge, includes the correct response.
-type HostChallenge struct {
-	Challenge `json:",inline"`
-	Correct   string `json:"correct"` // excluding "what is..." preface
-}
-
-type PlayerWager struct {
-	ChallengeMetadata `json:",inline"`
-	Comments          string `json:"comments,omitempty"`
-}
-
-type PlayerResponse struct {
-	ChallengeMetadata `json:",inline"`
-	Response          string `json:"response,omitempty"`
-}
+const (
+	MediaImageJPG MimeType = "image/jpeg"
+	MediaAudioMP3 MimeType = "audio/mpeg"
+	MediaVideoMP4 MimeType = "video/mp4"
+)

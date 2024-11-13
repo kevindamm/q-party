@@ -28,7 +28,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/kevindamm/q-party/json"
+	qparty "github.com/kevindamm/q-party"
 	"golang.org/x/net/html"
 )
 
@@ -62,7 +62,7 @@ func (episode *JArchiveEpisode) parseContestants(root *html.Node) {
 }
 
 // Parse a single <p class="contestants"> subtree into a [JArchiveContestant].
-func parseContestant(root *html.Node, contestant *json.Contestant) error {
+func parseContestant(root *html.Node, contestant *qparty.Contestant) error {
 	link := nextDescendantWithClass(root, "a", "")
 	contestant.Name = innerText(link)
 	for _, attr := range link.Attr {
@@ -71,7 +71,7 @@ func parseContestant(root *html.Node, contestant *json.Contestant) error {
 			if err != nil {
 				return err
 			}
-			contestant.UCID = json.UCID(jcid)
+			contestant.UCID = qparty.UCID(jcid)
 		}
 	}
 	textNode := link.NextSibling

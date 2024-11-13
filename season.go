@@ -20,7 +20,7 @@
 //
 // github:kevindamm/q-party/json/seasons.go
 
-package json
+package qparty
 
 import (
 	"encoding/json"
@@ -38,14 +38,12 @@ type SeasonIndex struct {
 
 type SeasonMetadata struct {
 	SeasonID `json:"id"`
-	Season   string        `json:"season"`         // deprecated
-	Name     string        `json:"name,omitempty"` // deprecated
+	Season   string        `json:"season,omitempty"` // deprecated
+	Name     string        `json:"name,omitempty"`   // deprecated
 	Title    string        `json:"title"`
 	Aired    ShowDateRange `json:"aired"`
 
-	EpisodeMap `json:"-"`
-
-	Count           int `json:"count"` // deprecated
+	Count           int `json:"count,omitempty"` // deprecated
 	EpisodesCount   int `json:"episode_count"`
 	ChallengesCount int `json:"challenge_count"`
 	StumpersCount   int `json:"tripstump_count"`
@@ -76,7 +74,7 @@ func LoadSeasonsJSON(seasons_path string) *SeasonIndex {
 	season_index := new(SeasonIndex)
 	season_index.Seasons = make(map[SeasonID]SeasonMetadata)
 	if _, err := os.Stat(seasons_path); os.IsNotExist(err) {
-		log.Fatal("file not found", seasons_path)
+		log.Fatal("file not found ", seasons_path)
 	}
 	seasons_json, err := os.ReadFile(seasons_path)
 	if err != nil {
@@ -85,7 +83,7 @@ func LoadSeasonsJSON(seasons_path string) *SeasonIndex {
 	}
 	err = json.Unmarshal(seasons_json, season_index)
 	if err != nil {
-		log.Fatal("failed to decode seasons metadata", seasons_path)
+		log.Fatal("failed to decode seasons metadata ", seasons_path)
 	}
 
 	return season_index
@@ -102,4 +100,8 @@ func (id SeasonID) RegularSeason() int {
 		return 0
 	}
 	return number
+}
+
+func (season SeasonID) JSON() string {
+	return fmt.Sprintf("%s.json", season)
 }

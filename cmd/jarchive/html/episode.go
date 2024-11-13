@@ -32,20 +32,20 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/kevindamm/q-party/json"
+	qparty "github.com/kevindamm/q-party"
 	"golang.org/x/net/html"
 )
 
 type EpisodeMetadata struct {
-	JEID                 `json:"-"`
-	json.EpisodeMetadata `json:",inline"`
+	JEID                   `json:"-"`
+	qparty.EpisodeMetadata `json:",inline"`
 }
 
 type JArchiveEpisode struct {
 	EpisodeMetadata
-	Contestants [3]json.Contestant `json:"contestants"`
-	Comments    string             `json:"comments,omitempty"`
-	Media       []json.Media       `json:"media,omitempty"`
+	Contestants [3]qparty.Contestant `json:"contestants"`
+	Comments    string               `json:"comments,omitempty"`
+	Media       []qparty.Media       `json:"media,omitempty"`
 
 	Single     [6]CategoryChallenges `json:"single,omitempty"`
 	Double     [6]CategoryChallenges `json:"double,omitempty"`
@@ -75,14 +75,14 @@ func MustParseJEID(numeric string) JEID {
 	return JEID(id)
 }
 
-func LoadEpisode(html_path string, metadata EpisodeMetadata) (*json.Episode, error) {
+func LoadEpisode(html_path string, metadata EpisodeMetadata) (*qparty.Episode, error) {
 	reader, err := os.Open(html_path)
 	if err != nil {
 		return nil, err
 	}
 	jaepisode := ParseEpisode(metadata.JEID, reader)
-	episode := new(json.Episode)
-	episode.ShowNumber = json.ShowNumber(jaepisode.ShowNumber)
+	episode := new(qparty.Episode)
+	episode.ShowNumber = qparty.ShowNumber(jaepisode.ShowNumber)
 	episode.ShowTitle = jaepisode.ShowTitle
 	for i := range 3 {
 		episode.ContestantIDs[i] = jaepisode.Contestants[i].ContestantID
@@ -134,7 +134,7 @@ func (episode *JArchiveEpisode) parseTitle(game_title *html.Node) {
 	if match != nil {
 		// Pattern matching determines match[2] will always be numeric.
 		number, _ := strconv.Atoi(match[2])
-		episode.ShowNumber = json.ShowNumber(number)
+		episode.ShowNumber = qparty.ShowNumber(number)
 		episode.ShowTitle = match[3]
 	} else {
 		log.Fatal("title does not match expected format", text)

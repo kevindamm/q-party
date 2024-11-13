@@ -20,7 +20,7 @@
 //
 // github:kevindamm/q-party/json/show_date.go
 
-package json
+package qparty
 
 import (
 	"fmt"

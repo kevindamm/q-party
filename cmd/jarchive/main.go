@@ -24,16 +24,16 @@ package main
 
 import (
 	"bufio"
-	gojson "encoding/json"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
 	"os"
 	"path"
 
+	qparty "github.com/kevindamm/q-party"
 	"github.com/kevindamm/q-party/cmd/jarchive/html"
 	"github.com/kevindamm/q-party/ent"
-	"github.com/kevindamm/q-party/json"
 )
 
 func main() {
@@ -54,19 +54,19 @@ func main() {
 	//		return
 	//	}
 
-	jarchive := json.SeasonIndex{
+	jarchive := qparty.SeasonIndex{
 		Version:  []uint{1, 0},
-		Episodes: make(map[json.ShowNumber]json.EpisodeMetadata, 10_000),
+		Episodes: make(map[qparty.ShowNumber]qparty.EpisodeMetadata, 10_000),
 	}
 	seasons := html.MustLoadAllSeasons(*data_path)
 
 	log.Print("loaded ", len(seasons.Seasons), " seasons")
-	jarchive.Seasons = make(map[json.SeasonID]json.SeasonMetadata, len(seasons.Seasons)+1)
+	jarchive.Seasons = make(map[qparty.SeasonID]qparty.SeasonMetadata, len(seasons.Seasons)+1)
 	for k, v := range seasons.Seasons {
-		key := json.SeasonID(k)
+		key := qparty.SeasonID(k)
 		number := key.RegularSeason()
 		if number > 0 {
-			key = json.SeasonID(fmt.Sprintf("%d", number))
+			key = qparty.SeasonID(fmt.Sprintf("%d", number))
 		}
 		modernize_season(&v)
 		jarchive.Seasons[key] = v
@@ -79,7 +79,7 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		err = gojson.Unmarshal(bytes, &season_episodes)
+		err = json.Unmarshal(bytes, &season_episodes)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -105,7 +105,7 @@ func main() {
 		}
 	}
 
-	filepath := path.Join(*data_path, "jarchive.json")
+	filepath := path.Join(*data_path, "jarchive.qparty")
 	log.Print("writing all seasons to a single file ", filepath)
 
 	writer, err := os.Create(filepath)
@@ -114,7 +114,7 @@ func main() {
 	}
 	defer writer.Close()
 
-	bytes, err := gojson.MarshalIndent(jarchive, "", "  ")
+	bytes, err := json.MarshalIndent(jarchive, "", "  ")
 	if err != nil {
 		log.Fatal("failed to marshal index into json\n", err)
 	}
@@ -125,7 +125,7 @@ func main() {
 	}
 }
 
-func LoadSeasonsJSONL(jsonl_path string) map[json.SeasonID]json.SeasonMetadata {
+func LoadSeasonsJSONL(jsonl_path string) map[qparty.SeasonID]qparty.SeasonMetadata {
 	seasons_jsonl, err := os.Open(jsonl_path)
 	if err != nil {
 		return nil
@@ -133,11 +133,11 @@ func LoadSeasonsJSONL(jsonl_path string) map[json.SeasonID]json.SeasonMetadata {
 	scanner := bufio.NewScanner(seasons_jsonl)
 	scanner.Split(bufio.ScanLines)
 
-	seasons := make(map[json.SeasonID]json.SeasonMetadata)
+	seasons := make(map[qparty.SeasonID]qparty.SeasonMetadata)
 	for scanner.Scan() {
 		line := scanner.Bytes()
-		var season json.SeasonMetadata
-		err = gojson.Unmarshal(line, &season)
+		var season qparty.SeasonMetadata
+		err = json.Unmarshal(line, &season)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -147,8 +147,8 @@ func LoadSeasonsJSONL(jsonl_path string) map[json.SeasonID]json.SeasonMetadata {
 	return seasons
 }
 
-func LoadEpisodeMetadataForSeason(filepath string, jeid html.JEID, jsid json.SeasonID) (json.EpisodeMetadata, error) {
-	var metadata json.EpisodeMetadata
+func LoadEpisodeMetadataForSeason(filepath string, jeid html.JEID, jsid qparty.SeasonID) (qparty.EpisodeMetadata, error) {
+	var metadata qparty.EpisodeMetadata
 	if _, err := os.Stat(filepath); os.IsNotExist(err) {
 		return metadata, err
 	}
@@ -174,16 +174,16 @@ func LoadEpisodeMetadataForSeason(filepath string, jeid html.JEID, jsid json.Sea
 //
 
 type SeasonEpisodes struct {
-	json.SeasonID `json:"season"`
-	Name          string                     `json:"name"`
-	Count         int                        `json:"count"`
-	Episodes      map[html.JEID]EpisodeDates `json:"episodes"`
+	qparty.SeasonID `json:"season"`
+	Name            string                     `json:"name"`
+	Count           int                        `json:"count"`
+	Episodes        map[html.JEID]EpisodeDates `json:"episodes"`
 }
 
 type EpisodeDates struct {
 	html.JEID `json:"-"`
-	Aired     json.ShowDate `json:"aired"`
-	Taped     json.ShowDate `json:"taped"`
+	Aired     qparty.ShowDate `json:"aired"`
+	Taped     qparty.ShowDate `json:"taped"`
 }
 
 //
@@ -195,7 +195,7 @@ func LegacyMain(data_path *string) {
 	switch flag.Arg(0) {
 
 	case "fetch":
-		jeid := html.JEID(json.MustParseShowNumber(flag.Arg(1)))
+		jeid := html.JEID(qparty.MustParseShowNumber(flag.Arg(1)))
 		episodes_path := create_dir(*data_path, "episodes")
 		filepath := path.Join(episodes_path, jeid.HTML())
 
@@ -205,7 +205,7 @@ func LegacyMain(data_path *string) {
 		}
 
 	case "convert":
-		seasons := json.LoadSeasonsJSON(*data_path)
+		seasons := qparty.LoadSeasonsJSON(*data_path)
 
 		/// TODO DELETE
 		var sqlclient ent.Client
@@ -215,7 +215,7 @@ func LegacyMain(data_path *string) {
 		}
 		/// TODO DELETE
 
-		jeid := json.MustParseShowNumber(flag.Arg(1))
+		jeid := qparty.MustParseShowNumber(flag.Arg(1))
 		metadata := seasons.Episodes[jeid]
 
 		filepath := path.Join(*data_path, "episodes", jeid.HTML())

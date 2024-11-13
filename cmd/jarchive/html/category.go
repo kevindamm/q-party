@@ -25,7 +25,7 @@ package html
 import (
 	"log"
 
-	"github.com/kevindamm/q-party/json"
+	qparty "github.com/kevindamm/q-party"
 	"golang.org/x/net/html"
 )
 
@@ -33,7 +33,7 @@ type JArchiveCategory string
 
 type CategoryChallenges struct {
 	JArchiveCategory `json:"title"`
-	Round            json.EpisodeRound   `json:"-"`
+	Round            qparty.EpisodeRound `json:"-"`
 	Commentary       string              `json:"commentary,omitempty"`
 	Challenges       []JArchiveChallenge `json:"challenges"`
 }

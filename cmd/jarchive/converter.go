@@ -27,14 +27,14 @@ import (
 	"os"
 	"path"
 
+	qparty "github.com/kevindamm/q-party"
 	"github.com/kevindamm/q-party/cmd/jarchive/html"
 	"github.com/kevindamm/q-party/ent"
-	"github.com/kevindamm/q-party/json"
 )
 
 func ConvertAllEpisodes(
 	data_path string,
-	metadata *json.SeasonIndex,
+	metadata *qparty.SeasonIndex,
 	sqlclient ent.Client) error {
 
 	episodes_path := path.Join(data_path, "episodes")
@@ -67,7 +67,7 @@ func ConvertAllEpisodes(
 	return nil
 }
 
-func ConvertEpisode(jeid html.JEID, metadata json.EpisodeMetadata, data_path string, sqlclient ent.Client) error {
+func ConvertEpisode(jeid html.JEID, metadata qparty.EpisodeMetadata, data_path string, sqlclient ent.Client) error {
 	html_path := path.Join(data_path, "episodes", jeid.HTML())
 	reader, err := os.Open(html_path)
 	if err != nil {
@@ -89,8 +89,8 @@ func ConvertEpisode(jeid html.JEID, metadata json.EpisodeMetadata, data_path str
 	return err
 }
 
-func modernize_season(season *json.SeasonMetadata) {
-	season.SeasonID = json.SeasonID(season.Season)
+func modernize_season(season *qparty.SeasonMetadata) {
+	season.SeasonID = qparty.SeasonID(season.Season)
 	season.Season = ""
 	season.Title = season.Name
 	season.Name = ""

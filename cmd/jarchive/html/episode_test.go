@@ -26,7 +26,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/kevindamm/q-party/json"
+	qparty "github.com/kevindamm/q-party"
 	"golang.org/x/net/html"
 )
 
@@ -1558,8 +1558,8 @@ func TestJArchiveEpisode_parseContent(t *testing.T) {
 	content_div := nextDescendantWithClass(doc, "div", "content")
 
 	jeid := JEID(579)
-	aired := json.ShowDate{Year: 2005, Month: 10, Day: 25}
-	taped := json.ShowDate{Year: 2005, Month: 9, Day: 23}
+	aired := qparty.ShowDate{Year: 2005, Month: 10, Day: 25}
+	taped := qparty.ShowDate{Year: 2005, Month: 9, Day: 23}
 
 	episode := new(JArchiveEpisode)
 	episode.JEID = jeid
@@ -1575,7 +1575,7 @@ func TestJArchiveEpisode_parseContent(t *testing.T) {
 	}
 
 	expected_show_number := 4857
-	if episode.ShowNumber != json.ShowNumber(expected_show_number) {
+	if episode.ShowNumber != qparty.ShowNumber(expected_show_number) {
 		t.Errorf("incorrect show number %d (see div#game_title %d)", episode.ShowNumber, expected_show_number)
 	}
 

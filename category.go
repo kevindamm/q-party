@@ -18,56 +18,24 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-// github:kevindamm/q-party/json/board.go
+// github:kevindamm/q-party/json/category.go
 
-package json
+package qparty
 
-type Board struct {
-	ShowNumber `json:"episode"`
-	Round      EpisodeRound `json:"round" cue:"<len(round_names)"`
-
-	Columns []Category  `json:"columns"`
-	Missing []Position  `json:"missing,omitempty"`
-	History []Selection `json:"history,omitempty"`
+type Category struct {
+	Title      string              `json:"title"`
+	Commentary string              `json:"commentary,omitempty"`
+	Challenges []ChallengeMetadata `json:"challenges,omitempty"`
 }
 
-func (board Board) RoundName() string {
-	return round_names[board.Round]
-}
-
-type Position struct {
-	Column uint `json:"column" cue:"<6"`
-	Index  uint `json:"index" cue:"<5"`
-}
-
-type Selection struct {
-	Position          `json:",inline"`
-	ChallengeMetadata `json:",inline"`
-}
-
-// An enum-like value for the different rounds.
-type EpisodeRound uint
-
-func (round EpisodeRound) String() string {
-	if int(round) >= len(round_names) {
-		return round_names[0]
-	}
-	return round_names[round]
-}
+// Proposal for category breakdown based on Trivial Pursuit classic categories.
+type CategoryTheme string
 
 const (
-	ROUND_UNKNOWN EpisodeRound = iota
-	ROUND_SINGLE
-	ROUND_DOUBLE
-	ROUND_FINAL
-	ROUND_TIEBREAKER
-	PRINTED_MEDIA
+	ThemeGeography      CategoryTheme = "Geography"
+	ThemeEntertainment  CategoryTheme = "Entertainment"
+	ThemeHistoryRoyalty CategoryTheme = "History & Royalty"
+	ThemeArtLiterature  CategoryTheme = "Art & Literature"
+	ThemeScienceNature  CategoryTheme = "Science & Nature"
+	ThemeSportsLeisure  CategoryTheme = "Sports & Leisure"
 )
-
-var round_names = [6]string{
-	"[UNKNOWN]",
-	"Single!",
-	"Double!",
-	"Final!",
-	"Tiebreaker!!",
-	"[printed media]"}

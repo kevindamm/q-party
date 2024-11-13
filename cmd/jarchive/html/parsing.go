@@ -34,7 +34,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/kevindamm/q-party/json"
+	qparty "github.com/kevindamm/q-party"
 	"golang.org/x/net/html"
 )
 
@@ -66,10 +66,10 @@ func ParseEpisode(jeid JEID, html_reader io.Reader) *JArchiveEpisode {
 
 // Parses a [json.EpisodeMetadata] from its HTML representation,
 // with all fields populated except the Season ID, which the caller can define.
-func ParseEpisodeMetadata(jeid JEID, html_reader io.Reader) *json.EpisodeMetadata {
+func ParseEpisodeMetadata(jeid JEID, html_reader io.Reader) *qparty.EpisodeMetadata {
 	jaepisode := ParseEpisode(jeid, html_reader)
-	episode_meta := new(json.EpisodeMetadata)
-	episode_meta.ShowNumber = json.ShowNumber(jaepisode.ShowNumber)
+	episode_meta := new(qparty.EpisodeMetadata)
+	episode_meta.ShowNumber = qparty.ShowNumber(jaepisode.ShowNumber)
 	episode_meta.Aired = jaepisode.Aired
 	episode_meta.Taped = jaepisode.Taped
 
@@ -246,7 +246,7 @@ func innerText(node *html.Node) string {
 	return strings.Trim(flattened, " \t\r\n")
 }
 
-func parseTimeYYYYMMDD(yyyy, mm, dd []byte) json.ShowDate {
+func parseTimeYYYYMMDD(yyyy, mm, dd []byte) qparty.ShowDate {
 	year, err := strconv.Atoi(string(yyyy))
 	if err != nil {
 		log.Fatal(yyyy, err)
@@ -259,12 +259,12 @@ func parseTimeYYYYMMDD(yyyy, mm, dd []byte) json.ShowDate {
 	if err != nil {
 		log.Fatal(dd, err)
 	}
-	return json.ShowDate{Year: year, Month: month, Day: day}
+	return qparty.ShowDate{Year: year, Month: month, Day: day}
 }
 
-func parseIntoMarkdown(root *html.Node) (string, []json.Media) {
+func parseIntoMarkdown(root *html.Node) (string, []qparty.Media) {
 	prompt := ""
-	media := make([]json.Media, 0)
+	media := make([]qparty.Media, 0)
 	var recursiveGather func(*html.Node)
 
 	recursiveGather = func(root *html.Node) {

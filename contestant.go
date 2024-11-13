@@ -18,24 +18,31 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-// github:kevindamm/q-party/json/category.go
+// github:kevindamm/q-party/json/contestants.go
 
-package json
+package qparty
 
-type Category struct {
-	Title      string              `json:"title"`
-	Commentary string              `json:"commentary,omitempty"`
-	Challenges []ChallengeMetadata `json:"challenges,omitempty"`
+// Struct for embedding in entities that extend the contestant role.
+type ContestantID struct {
+	UCID `json:"id" cue:">=0"`
+	Name string `json:"name,omitempty"`
 }
 
-// Proposal for category breakdown based on Trivial Pursuit classic categories.
-type CategoryTheme string
+// Unique identifier for contestants.
+type UCID uint
 
-const (
-	ThemeGeography      CategoryTheme = "Geography"
-	ThemeEntertainment  CategoryTheme = "Entertainment"
-	ThemeHistoryRoyalty CategoryTheme = "History & Royalty"
-	ThemeArtLiterature  CategoryTheme = "Art & Literature"
-	ThemeScienceNature  CategoryTheme = "Science & Nature"
-	ThemeSportsLeisure  CategoryTheme = "Sports & Leisure"
-)
+type Contestant struct {
+	ContestantID `json:",inline"`
+	Biography    string `json:"bio"`
+}
+
+type Appearance struct {
+	ContestantID `json:",inline"`
+	Episode      ShowNumber `json:"episode"`
+}
+
+type Career struct {
+	ContestantID `json:",inline"`
+	Episodes     []ShowNumber `json:"episodes"`
+	Winnings     DollarValue  `json:"winnings"`
+}

@@ -32,14 +32,14 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/kevindamm/q-party/json"
+	qparty "github.com/kevindamm/q-party"
 )
 
 // Loads the season index and the metadata of each season in the index.
 // Parameter [data_path] is the location of the seasons.json for metadata.
 // TODO replace with instead calling to [LoadSeasonIndex()] and [LoadEpisode()].
-func MustLoadAllSeasons(data_path string) *json.SeasonIndex {
-	season_index := json.LoadSeasonsJSON(path.Join(data_path, "seasons.json"))
+func MustLoadAllSeasons(data_path string) *qparty.SeasonIndex {
+	season_index := qparty.LoadSeasonsJSON(path.Join(data_path, "seasons.json"))
 
 	seasons_dir := path.Join(data_path, "seasons")
 	for season_id, season := range season_index.Seasons {
@@ -60,7 +60,7 @@ func MustLoadAllSeasons(data_path string) *json.SeasonIndex {
 	return season_index
 }
 
-func ParseSeasonMetadata(reader io.Reader, season *json.SeasonMetadata) error {
+func ParseSeasonMetadata(reader io.Reader, season *qparty.SeasonMetadata) error {
 	bytes, err := io.ReadAll(reader)
 	if err != nil {
 		return err
@@ -92,7 +92,7 @@ func ParseSeasonMetadata(reader io.Reader, season *json.SeasonMetadata) error {
 	return nil
 }
 
-func FetchSeasonIndexHTML(jsid json.SeasonID, filepath string) error {
+func FetchSeasonIndexHTML(jsid qparty.SeasonID, filepath string) error {
 	url := SeasonURL(jsid)
 	log.Print("Fetching ", url, "  -> ", filepath)
 
@@ -114,6 +114,6 @@ func FetchSeasonIndexHTML(jsid json.SeasonID, filepath string) error {
 	return nil
 }
 
-func SeasonURL(id json.SeasonID) string {
+func SeasonURL(id qparty.SeasonID) string {
 	return fmt.Sprintf("https://j-archive.com/showseason.php?season=%s", id)
 }

@@ -40,6 +40,8 @@ package qparty
     from: #ShowDate
     until: #ShowDate
   }
-  episode_count: int
-  challenge_count: int
+
+  episode_count?: int
+  challenge_count?: int
+  tripstump_count?: int
 }
