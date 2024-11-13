@@ -105,7 +105,7 @@ func main() {
 		}
 	}
 
-	filepath := path.Join(*data_path, "jarchive.qparty")
+	filepath := path.Join(*data_path, "jarchive.json")
 	log.Print("writing all seasons to a single file ", filepath)
 
 	writer, err := os.Create(filepath)
