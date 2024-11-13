@@ -18,9 +18,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-// github:kevindamm/q-party/cmd/jarchive/parsing.go
+// github:kevindamm/q-party/cmd/jarchive/html/parsing.go
 
-package main
+package html
 
 // Main entry points for parsing entire HTML files and some utility funcstions
 // for navigating the document after parsing it with net/html.
@@ -307,6 +307,8 @@ func parseIntoMarkdown(root *html.Node) (string, []json.Media) {
 					prompt += " **"
 					recursiveGather(child)
 					prompt += "** "
+				} else if child.Data == "span" {
+					recursiveGather(child)
 				} else if child.Data == "br" {
 					// pass, safe to ignore; insert a newline if it's a double-<br/>.
 					if child.NextSibling != nil &&

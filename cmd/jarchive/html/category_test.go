@@ -18,9 +18,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-// github:kevindamm/q-party/cmd/jarchive/category.go
+// github:kevindamm/q-party/cmd/jarchive/html/category_test.go
 
-package main
+package html
 
 import (
 	"strings"

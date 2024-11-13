@@ -18,9 +18,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-// github:kevindamm/q-party/cmd/jarchive/season.go
+// github:kevindamm/q-party/cmd/jarchive/html/season.go
 
-package main
+package html
 
 import (
 	"fmt"
@@ -36,26 +36,28 @@ import (
 )
 
 // Loads the season index and the metadata of each season in the index.
-// Parameter [data_path] is the location of the seasons.jsonl, the same path
-// as the `seasons` and `episodes` directory (.data/ relative to $CWD)
-func LoadAllSeasons(data_path string) map[json.SeasonID]json.SeasonMetadata {
-	jsonl_path := path.Join(data_path, "seasons.jsonl")
-	seasons_dir := path.Join(data_path, "seasons")
+// Parameter [data_path] is the location of the seasons.json for metadata.
+// TODO replace with instead calling to [LoadSeasonIndex()] and [LoadEpisode()].
+func MustLoadAllSeasons(data_path string) *json.SeasonIndex {
+	season_index := json.LoadSeasonsJSON(path.Join(data_path, "seasons.json"))
 
-	seasons := json.LoadSeasonsJSONL(jsonl_path)
-	for jsid, season := range seasons {
-		file_path := path.Join(seasons_dir, fmt.Sprintf("%s.json", jsid))
-		reader, err := os.Open(file_path)
+	seasons_dir := path.Join(data_path, "seasons")
+	for season_id, season := range season_index.Seasons {
+		json_path := path.Join(seasons_dir, fmt.Sprintf("%s.json", season_id))
+		if _, err := os.Stat(json_path); os.IsNotExist(err) {
+			log.Fatal("metadata file does not exist", json_path)
+		}
+		reader, err := os.Open(json_path)
 		if err != nil {
-			log.Fatalf("failed to open file path '%s'\n%s", file_path, err)
+			log.Fatal("failed to open file path", json_path, "\n", err)
 		}
 		err = ParseSeasonMetadata(reader, &season)
 		if err != nil {
-			log.Fatalf("failed to parse season %s index file", jsid)
+			log.Fatal("failed to parse season", season_id, "index file")
 		}
 	}
 
-	return seasons
+	return season_index
 }
 
 func ParseSeasonMetadata(reader io.Reader, season *json.SeasonMetadata) error {
@@ -75,8 +77,8 @@ func ParseSeasonMetadata(reader io.Reader, season *json.SeasonMetadata) error {
 
 	matches := reEpisodeLink.FindAllSubmatch(bytes, -1)
 	for _, match := range matches {
-		episode := JArchiveEpisodeMetadata{}
-		episode.JEID = MustParseJEID(string(match[1]))
+		episode := EpisodeMetadata{}
+		// episode.JEID = MustParseJEID(string(match[1]))
 		taped := reTapedDate.FindSubmatch(match[2])
 		if taped != nil {
 			episode.Taped = parseTimeYYYYMMDD(taped[1], taped[2], taped[3])
@@ -85,9 +87,8 @@ func ParseSeasonMetadata(reader io.Reader, season *json.SeasonMetadata) error {
 		if aired != nil {
 			episode.Aired = parseTimeYYYYMMDD(aired[1], aired[2], aired[3])
 		}
-		/// TODO season.EpisodeCount += 1
+		season.Count += 1
 	}
-
 	return nil
 }
 

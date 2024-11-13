@@ -1,4 +1,26 @@
-package main
+// Copyright (c) 2024 Kevin Damm
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+//
+// github:kevindamm/q-party/cmd/jarchive/html/contestants.go
+
+package html
 
 import (
 	"fmt"
@@ -6,14 +28,9 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/kevindamm/q-party/json"
 	"golang.org/x/net/html"
 )
-
-type JArchiveContestant struct {
-	JCID `json:"id,omitempty"`
-	Name string `json:"name"`
-	Bio  string `json:"comment"`
-}
 
 // Unique numeric value for identifying customers in the archive.
 type JCID int
@@ -45,7 +62,7 @@ func (episode *JArchiveEpisode) parseContestants(root *html.Node) {
 }
 
 // Parse a single <p class="contestants"> subtree into a [JArchiveContestant].
-func parseContestant(root *html.Node, contestant *JArchiveContestant) error {
+func parseContestant(root *html.Node, contestant *json.Contestant) error {
 	link := nextDescendantWithClass(root, "a", "")
 	contestant.Name = innerText(link)
 	for _, attr := range link.Attr {
@@ -54,12 +71,12 @@ func parseContestant(root *html.Node, contestant *JArchiveContestant) error {
 			if err != nil {
 				return err
 			}
-			contestant.JCID = JCID(jcid)
+			contestant.UCID = json.UCID(jcid)
 		}
 	}
 	textNode := link.NextSibling
 	if textNode.Type == html.TextNode {
-		contestant.Bio = textNode.Data[2:]
+		contestant.Biography = textNode.Data[2:]
 	}
 	return nil
 }

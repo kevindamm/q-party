@@ -27,13 +27,14 @@ import (
 	"os"
 	"path"
 
+	"github.com/kevindamm/q-party/cmd/jarchive/html"
 	"github.com/kevindamm/q-party/ent"
 	"github.com/kevindamm/q-party/json"
 )
 
 func ConvertAllEpisodes(
 	data_path string,
-	metadata json.SeasonIndex,
+	metadata *json.SeasonIndex,
 	sqlclient ent.Client) error {
 
 	episodes_path := path.Join(data_path, "episodes")
@@ -50,7 +51,7 @@ func ConvertAllEpisodes(
 			if episode.SeasonID != season.SeasonID {
 				continue
 			}
-			if _, err := os.Stat(path.Join(episodes_path, jeid.HTML())); err == os.ErrNotExist {
+			if _, err := os.Stat(path.Join(episodes_path, jeid.HTML())); os.IsNotExist(err) {
 				log.Print("skipping", jeid.HTML(), "... file not found")
 				continue
 			}
@@ -66,7 +67,7 @@ func ConvertAllEpisodes(
 	return nil
 }
 
-func ConvertEpisode(jeid JEID, metadata json.EpisodeMetadata, data_path string, sqlclient ent.Client) error {
+func ConvertEpisode(jeid html.JEID, metadata json.EpisodeMetadata, data_path string, sqlclient ent.Client) error {
 	html_path := path.Join(data_path, "episodes", jeid.HTML())
 	reader, err := os.Open(html_path)
 	if err != nil {
@@ -74,7 +75,7 @@ func ConvertEpisode(jeid JEID, metadata json.EpisodeMetadata, data_path string, 
 	}
 	defer reader.Close()
 
-	episode := ParseEpisodeMetadata(jeid, reader)
+	episode := html.ParseEpisodeMetadata(jeid, reader)
 	if !metadata.Aired.IsZero() {
 		episode.Aired = metadata.Aired
 	}
@@ -86,4 +87,13 @@ func ConvertEpisode(jeid JEID, metadata json.EpisodeMetadata, data_path string, 
 	///
 
 	return err
+}
+
+func modernize_season(season *json.SeasonMetadata) {
+	season.SeasonID = json.SeasonID(season.Season)
+	season.Season = ""
+	season.Title = season.Name
+	season.Name = ""
+	season.EpisodesCount = season.Count
+	season.Count = 0
 }

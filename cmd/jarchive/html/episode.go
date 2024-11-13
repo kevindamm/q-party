@@ -18,28 +18,34 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-// github:kevindamm/q-party/cmd/jarchive/episode.go
+// github:kevindamm/q-party/cmd/jarchive/html/episode.go
 
-package main
+package html
 
 import (
 	"fmt"
+	"io"
 	"log"
+	"net/http"
 	"os"
 	"regexp"
 	"strconv"
+	"time"
 
 	"github.com/kevindamm/q-party/json"
 	"golang.org/x/net/html"
 )
 
-type JArchiveEpisode struct {
-	JEID `json:"-"`
-	json.EpisodeMetadata
+type EpisodeMetadata struct {
+	JEID                 `json:"-"`
+	json.EpisodeMetadata `json:",inline"`
+}
 
-	Contestants [3]JArchiveContestant `json:"contestants"`
-	Comments    string                `json:"comments,omitempty"`
-	Media       []json.Media          `json:"media,omitempty"`
+type JArchiveEpisode struct {
+	EpisodeMetadata
+	Contestants [3]json.Contestant `json:"contestants"`
+	Comments    string             `json:"comments,omitempty"`
+	Media       []json.Media       `json:"media,omitempty"`
 
 	Single     [6]CategoryChallenges `json:"single,omitempty"`
 	Double     [6]CategoryChallenges `json:"double,omitempty"`
@@ -69,7 +75,7 @@ func MustParseJEID(numeric string) JEID {
 	return JEID(id)
 }
 
-func LoadEpisode(html_path string, metadata JArchiveEpisodeMetadata) (*json.Episode, error) {
+func LoadEpisode(html_path string, metadata EpisodeMetadata) (*json.Episode, error) {
 	reader, err := os.Open(html_path)
 	if err != nil {
 		return nil, err
@@ -78,7 +84,9 @@ func LoadEpisode(html_path string, metadata JArchiveEpisodeMetadata) (*json.Epis
 	episode := new(json.Episode)
 	episode.ShowNumber = json.ShowNumber(jaepisode.ShowNumber)
 	episode.ShowTitle = jaepisode.ShowTitle
-	// TODO more properties?
+	for i := range 3 {
+		episode.ContestantIDs[i] = jaepisode.Contestants[i].ContestantID
+	}
 
 	return episode, nil
 }
@@ -157,9 +165,54 @@ func (episode *JArchiveEpisode) parseFinalRound(div *html.Node) {
 	}
 }
 
-type JArchiveEpisodeMetadata struct {
-	JEID       `json:"-"`
-	ShowNumber uint          `json:"show_number,omitempty"`
-	Aired      json.ShowDate `json:"aired,omitempty"`
-	Taped      json.ShowDate `json:"taped,omitempty"`
+func FetchEpisode(episode JEID, filepath string) error {
+	url := episode.URL()
+	log.Print("Fetching ", url, "  -> ", filepath)
+
+	response, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+	defer response.Body.Close()
+	data, err := io.ReadAll(response.Body)
+	if err != nil {
+		return err
+	}
+	err = os.WriteFile(filepath, data, 0644)
+	if err != nil {
+		return err
+	}
+	time.Sleep(5 * time.Second)
+	return nil
+}
+
+func parseBoard(root *html.Node) [6]CategoryChallenges {
+	categories := [6]CategoryChallenges{}
+	round_table := nextDescendantWithClass(root, "table", "round")
+	category_tr := nextDescendantWithClass(round_table, "tr", "")
+	category_tds := childrenWithClass(category_tr, "td", "category")
+	if len(category_tds) != 6 {
+		log.Fatal("expected 6 category entries, found", len(category_tds))
+	}
+	for i, td := range category_tds {
+		err := parseCategoryHeader(td, &categories[i])
+		if err != nil {
+			log.Fatal("failed to parse category header (name and comments)")
+		}
+	}
+
+	for range 5 {
+		category_tr = nextSiblingWithClass(category_tr, "tr", "")
+		clue_tds := childrenWithClass(category_tr, "td", "clue")
+		if len(clue_tds) != 6 {
+			log.Fatal("expected 6 clue entries, found", len(clue_tds))
+		}
+		for i, clue_td := range clue_tds {
+			err := parseCategoryChallenge(clue_td, &categories[i])
+			if err != nil {
+				log.Fatal("failed to parse clue entry", err)
+			}
+		}
+	}
+	return categories
 }

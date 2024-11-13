@@ -18,9 +18,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-// github:kevindamm/q-party/cmd/jarchive/category.go
+// github:kevindamm/q-party/cmd/jarchive/html/category.go
 
-package main
+package html
 
 import (
 	"log"
@@ -37,18 +37,6 @@ type CategoryChallenges struct {
 	Commentary       string              `json:"commentary,omitempty"`
 	Challenges       []JArchiveChallenge `json:"challenges"`
 }
-
-// Proposal for category breakdown based on Trivial Pursuit classic categories.
-type CategoryTheme string
-
-const (
-	ThemeGeography      CategoryTheme = "Geography"
-	ThemeEntertainment  CategoryTheme = "Entertainment"
-	ThemeHistoryRoyalty CategoryTheme = "History & Royalty"
-	ThemeArtLiterature  CategoryTheme = "Art & Literature"
-	ThemeScienceNature  CategoryTheme = "Science & Nature"
-	ThemeSportsLeisure  CategoryTheme = "Sports & Leisure"
-)
 
 func parseCategoryHeader(cat_td *html.Node, category *CategoryChallenges) error {
 	table := nextDescendantWithClass(cat_td, "table", "")
