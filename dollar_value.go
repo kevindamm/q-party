@@ -18,7 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-// github:kevindamm/q-party/json/dollar_value.go
+// github:kevindamm/q-party/dollar_value.go
 
 package qparty
 

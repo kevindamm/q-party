@@ -18,7 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-// github:kevindamm/q-party/json/episodes.go
+// github:kevindamm/q-party/episodes.go
 
 package qparty
 
@@ -68,12 +68,8 @@ func (id ShowNumber) String() string {
 	return fmt.Sprintf("%d", uint(id))
 }
 
-func (id ShowNumber) HTML() string {
-	return fmt.Sprintf("episodes/%d.html", id)
-}
-
 func (id ShowNumber) JSON() string {
-	return fmt.Sprintf("episodes/%d.json", id)
+	return fmt.Sprintf("%04d", uint(id))
 }
 
 // Parses the numeric value from a string.

@@ -18,29 +18,48 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-// github:kevindamm/q-party/json/board.go
+// github:kevindamm/q-party/board.go
 
 package qparty
 
+// The basic board definition (contains only category metadata).
 type Board struct {
-	ShowNumber `json:"episode"`
-	Round      EpisodeRound `json:"round" cue:"<len(round_names)"`
+	BoardID `json:",inline"`
+	Columns []Category `json:"columns"`
+	Missing []Position `json:"-,omitempty"`
+}
 
-	Columns []Category  `json:"columns"`
-	Missing []Position  `json:"missing,omitempty"`
+// Extends the board definition with a history of challenge selections.
+type BoardState struct {
+	Board   `json:",inline"`
 	History []Selection `json:"history,omitempty"`
 }
 
-func (board Board) RoundName() string {
+// The host's view of a board includes the details, including correct response.
+type HostBoard struct {
+	BoardID `json:",inline"`
+	Columns []HostCategory `json:"columns"`
+}
+
+// A board is identified by its episode and whether it's single or double round.
+type BoardID struct {
+	Episode ShowNumber   `json:"episode,omitempty"`
+	Round   EpisodeRound `json:"round,omitempty"` // cue:"<len(round_names)"
+}
+
+func (board BoardID) RoundName() string {
 	return round_names[board.Round]
 }
 
+// A board position, located by the column and (descending) index in the column.
 type Position struct {
 	Column uint `json:"column" cue:"<6"`
 	Index  uint `json:"index" cue:"<5"`
 }
 
+// A contestant's selection (including possibly the wager value).
 type Selection struct {
+	ContestantIndex   uint `json:"player"` // \in { 0, 1, 2 }
 	Position          `json:",inline"`
 	ChallengeMetadata `json:",inline"`
 }

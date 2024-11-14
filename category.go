@@ -18,14 +18,19 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-// github:kevindamm/q-party/json/category.go
+// github:kevindamm/q-party/category.go
 
 package qparty
 
 type Category struct {
 	Title      string              `json:"title"`
-	Commentary string              `json:"commentary,omitempty"`
 	Challenges []ChallengeMetadata `json:"challenges,omitempty"`
+}
+
+type HostCategory struct {
+	Title      string          `json:"title"`
+	Comments   string          `json:"comments,omitempty"`
+	Challenges []HostChallenge `json:"challenges"`
 }
 
 // Proposal for category breakdown based on Trivial Pursuit classic categories.
