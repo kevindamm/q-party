@@ -54,8 +54,8 @@ type Episode struct {
 	Comments        string  `json:"comments,omitempty"`
 	Media           []Media `json:"media,omitempty"`
 
-	Single     *Board     `json:"single,omitempty"`
-	Double     *Board     `json:"double,omitempty"`
+	Single     *HostBoard `json:"single,omitempty"`
+	Double     *HostBoard `json:"double,omitempty"`
 	Final      *Challenge `json:"final,omitempty"`
 	TieBreaker *Challenge `json:"tiebreaker,omitempty"`
 }
