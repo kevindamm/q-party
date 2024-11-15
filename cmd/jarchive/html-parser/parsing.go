@@ -307,8 +307,28 @@ func parseIntoMarkdown(root *html.Node) (string, []qparty.Media) {
 					prompt += " **"
 					recursiveGather(child)
 					prompt += "** "
+				} else if child.Data == "del" {
+					prompt += " ~~"
+					recursiveGather(child)
+					prompt += "~~ "
 				} else if child.Data == "span" {
 					recursiveGather(child)
+				} else if child.Data == "big" {
+					prompt += "<big>"
+					recursiveGather(child)
+					prompt += "</big>"
+				} else if child.Data == "small" {
+					prompt += "<small>"
+					recursiveGather(child)
+					prompt += "</small>"
+				} else if child.Data == "sub" {
+					prompt += "<sub>"
+					recursiveGather(child)
+					prompt += "</sub>"
+				} else if child.Data == "sup" {
+					prompt += "<sup>"
+					recursiveGather(child)
+					prompt += "</sup>"
 				} else if child.Data == "br" {
 					// pass, safe to ignore; insert a newline if it's a double-<br/>.
 					if child.NextSibling != nil &&

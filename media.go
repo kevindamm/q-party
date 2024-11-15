@@ -34,6 +34,9 @@ type MimeType string
 
 const (
 	MediaImageJPG MimeType = "image/jpeg"
+	MediaImagePNG MimeType = "image/png"
+	MediaImageSVG MimeType = "image/svg+xml"
 	MediaAudioMP3 MimeType = "audio/mpeg"
 	MediaVideoMP4 MimeType = "video/mp4"
+	MediaVideoMOV MimeType = "video/quicktime"
 )

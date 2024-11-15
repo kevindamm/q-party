@@ -31,9 +31,9 @@ import (
 )
 
 type SeasonIndex struct {
-	Version  []uint                         `json:"version,omitempty"`
-	Seasons  map[SeasonID]SeasonMetadata    `json:"seasons"`
-	Episodes map[ShowNumber]EpisodeMetadata `json:"episodes"`
+	Version  []uint                        `json:"version,omitempty"`
+	Seasons  map[SeasonID]SeasonMetadata   `json:"seasons"`
+	Episodes map[EpisodeID]EpisodeMetadata `json:"episodes"`
 }
 
 type SeasonMetadata struct {
@@ -48,8 +48,6 @@ type SeasonMetadata struct {
 	ChallengesCount int `json:"challenge_count"`
 	StumpersCount   int `json:"tripstump_count"`
 }
-
-type EpisodeMap map[uint]EpisodeMetadata
 
 func (all_seasons SeasonIndex) WriteSeasonIndexJSON(json_path string) error {
 	writer, err := os.Create(json_path)

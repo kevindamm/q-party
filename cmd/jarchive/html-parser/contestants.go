@@ -53,6 +53,12 @@ func MustParseJCID(numeric string) JCID {
 func (episode *JArchiveEpisode) parseContestants(root *html.Node) {
 	td_parent := nextDescendantWithClass(root, "p", "contestants").Parent
 	contestants := childrenWithClass(td_parent, "p", "contestants")
+	if len(contestants) > 3 {
+		// Some all-star games have 9 contestants in rotation of threes; we can skip
+		// parsing the contestants for those, contestant details are optional.
+		log.Print("SKIPPING CONTESTANTS this is one of the weird ones.")
+		return
+	}
 	for i, contestant := range contestants {
 		err := parseContestant(contestant, &episode.Contestants[i])
 		if err != nil {

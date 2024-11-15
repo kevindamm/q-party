@@ -70,6 +70,10 @@ func TestParseChallenge(t *testing.T) {
 		t.Errorf("parseChallenge should not set Commentary property")
 	}
 
+	if challenge.ChallengeID != 164163 {
+		t.Errorf("parseChallenge should get the correct challenge ID from its edit link")
+	}
+
 	if challenge.Value.Abs() != 400 {
 		t.Errorf("incorrect dollar value '%d'", challenge.Value.Abs())
 	}

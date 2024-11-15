@@ -62,14 +62,17 @@ type Episode struct {
 
 // Unique numeric identifier for episodes in the archive.
 // May be different than the sequential show number used in display.
-type ShowNumber uint
-
-func (id ShowNumber) String() string {
-	return fmt.Sprintf("%d", uint(id))
-}
+type ShowNumber string
 
 func (id ShowNumber) JSON() string {
-	return fmt.Sprintf("%04d", uint(id))
+	return fmt.Sprintf("%s.json", id)
+}
+
+// Unique ID which J-Archive uses to identify its episodes.
+type EpisodeID uint
+
+func (id EpisodeID) HTML() string {
+	return fmt.Sprintf("%d.html", uint(id))
 }
 
 // Parses the numeric value from a string.

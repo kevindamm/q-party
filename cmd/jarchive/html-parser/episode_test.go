@@ -1576,7 +1576,7 @@ func TestJArchiveEpisode_parseContent(t *testing.T) {
 
 	expected_show_number := 4857
 	if episode.ShowNumber != qparty.ShowNumber(expected_show_number) {
-		t.Errorf("incorrect show number %d (see div#game_title %d)", episode.ShowNumber, expected_show_number)
+		t.Errorf("incorrect show number %s (see div#game_title %d)", episode.ShowNumber, expected_show_number)
 	}
 
 	expected_comments := "(Kelly: We're here in wonderful [Copenhagen](/media/2005-10-25_ComingUp.jpg) celebrating 200 years of Hans Christian Andersen. Join us, next on *Jeopardy!* )"

@@ -52,10 +52,10 @@ func main() {
 	}
 	flag.Parse()
 
-	if flag.NArg() < 2 {
-		flag.Usage()
-		return
-	}
+	// if flag.NArg() < 1 {
+	// 	flag.Usage()
+	// 	return
+	// }
 
 	var post_process func(qparty.SeasonIndex, string) error
 	switch *output_format {
@@ -72,7 +72,7 @@ func main() {
 	// Read season index (season.json)
 	jarchive := qparty.SeasonIndex{
 		Version:  []uint{1, 0},
-		Episodes: make(map[qparty.ShowNumber]qparty.EpisodeMetadata, 10_000),
+		Episodes: make(map[qparty.EpisodeID]qparty.EpisodeMetadata, 10_000),
 	}
 	seasons := html.MustLoadAllSeasons(*data_path)
 
@@ -108,6 +108,7 @@ func main() {
 			log.Fatal(err)
 		}
 
+		log.Println()
 		log.Println("Converting episodes from season [", jsid, "],", season.Name)
 		log.Print("~ - ~ - ~ - ~ - ~ - ~ - ~ - ~ - ~\n\n")
 
@@ -127,6 +128,7 @@ func main() {
 			}
 			defer reader.Close()
 
+			log.Print("parsing episode ", jeid.String())
 			var metadata qparty.EpisodeMetadata
 			episode := html.ParseEpisode(jeid, reader)
 
@@ -142,7 +144,7 @@ func main() {
 			for i := range 3 {
 				metadata.ContestantIDs[i] = episode.Contestants[i].ContestantID
 			}
-			jarchive.Episodes[episode.ShowNumber] = metadata
+			jarchive.Episodes[qparty.EpisodeID(episode.JEID)] = metadata
 
 			qpepisode := qparty.Episode{
 				EpisodeMetadata: metadata,
@@ -150,8 +152,14 @@ func main() {
 				Media:           episode.Media,
 				Single:          convert_board(episode.Single),
 				Double:          convert_board(episode.Double),
-				Final:           &episode.Final.Challenge,
-				TieBreaker:      &episode.TieBreaker.Challenge,
+			}
+			if episode.Final != nil {
+				qpepisode.Final = &episode.Final.Challenge
+			} else {
+				log.Printf("ODDNESS episode %d does not have a final challenge", jeid)
+			}
+			if episode.TieBreaker != nil {
+				qpepisode.TieBreaker = &episode.TieBreaker.Challenge
 			}
 
 			// Also write the converted episode details to .json format

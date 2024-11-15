@@ -25,7 +25,9 @@ package html
 import (
 	"errors"
 	"fmt"
+	"log"
 	"regexp"
+	"strconv"
 	"strings"
 
 	qparty "github.com/kevindamm/q-party"
@@ -40,6 +42,7 @@ type JArchiveChallenge struct {
 
 // Assumes that a file extension is present.
 var reMediaPath = regexp.MustCompile(`^https?://.*\.com/media/([^.]+)(\.[a-zA-Z0-9]+)`)
+var reCluePath = regexp.MustCompile(`^suggestcorrection\.php\?clue_id=(\d+)`)
 
 func MakeMedia(href string) qparty.Media {
 	match := reMediaPath.FindStringSubmatch(href)
@@ -54,16 +57,22 @@ func MakeMedia(href string) qparty.Media {
 		MediaURL: filename}
 }
 
-func inferMediaType(ext string) qparty.MimeType {
-	switch ext {
+func inferMediaType(extension string) qparty.MimeType {
+	switch extension {
 	case ".jpg", ".jpeg":
 		return qparty.MediaImageJPG
+	case ".png":
+		return qparty.MediaImagePNG
+	case ".svg":
+		return qparty.MediaImageSVG
 	case ".mp3":
 		return qparty.MediaAudioMP3
 	case ".mp4":
 		return qparty.MediaVideoMP4
+	case ".mov":
+		return qparty.MediaVideoMOV
 	default:
-		panic("unrecognized media type for " + ext)
+		panic("unrecognized media type for " + extension)
 	}
 }
 
@@ -96,6 +105,21 @@ func parseChallenge(div *html.Node, challenge *JArchiveChallenge) error {
 				return fmt.Errorf("failed to parse daily double value %s\n%s", text, err.Error())
 			}
 			challenge.Value = -challenge.Value
+		}
+	}
+
+	td_order_number := nextDescendantWithClass(table, "td", "clue_order_number")
+	edit_link := nextDescendantWithClass(td_order_number, "a", "")
+	for _, attr := range edit_link.Attr {
+		if attr.Key == "href" {
+			log.Print("inspecting the clue link ", attr.Val)
+			match := reCluePath.FindStringSubmatch(attr.Val)
+			if match != nil {
+				log.Print("FOUND CHALLENGE ID")
+				// We know from the regex that this is an integer.
+				clue_id, _ := strconv.Atoi(match[1])
+				challenge.ChallengeID = uint(clue_id)
+			}
 		}
 	}
 

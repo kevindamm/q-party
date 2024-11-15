@@ -120,7 +120,7 @@ func parseContent(content *html.Node, episode *JArchiveEpisode) {
 
 }
 
-var reTitleMatcher = regexp.MustCompile(`.*([Ss]how|pilot|game) #(\d+),? - (.*)`)
+var reTitleMatcher = regexp.MustCompile(`(Primetime Celebrity Jeopardy!)?.*(?:[Ss]how|pilot|game) #(\d+),? - (.*)`)
 
 func (episode *JArchiveEpisode) parseTitle(game_title *html.Node) {
 	// Expect first child to be an H1 tag
@@ -129,12 +129,16 @@ func (episode *JArchiveEpisode) parseTitle(game_title *html.Node) {
 		return
 	}
 
-	text := child.FirstChild.Data
+	text := innerText(child)
 	match := reTitleMatcher.FindStringSubmatch(text)
 	if match != nil {
 		// Pattern matching determines match[2] will always be numeric.
 		number, _ := strconv.Atoi(match[2])
-		episode.ShowNumber = qparty.ShowNumber(number)
+		if len(match[1]) > 0 {
+			episode.ShowNumber = qparty.ShowNumber(10000 + number)
+		} else {
+			episode.ShowNumber = qparty.ShowNumber(number)
+		}
 		episode.ShowTitle = match[3]
 	} else {
 		log.Fatal("title does not match expected format", text)
