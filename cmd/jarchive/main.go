@@ -128,12 +128,12 @@ func main() {
 			}
 			defer reader.Close()
 
-			log.Print("parsing episode ", jeid.String())
+			log.Print("parsing episode ", jeid)
 			var metadata qparty.EpisodeMetadata
 			episode := html.ParseEpisode(jeid, reader)
 
 			// Convert the episode metadata to qparty.* type and include added fields.
-			metadata = episode.EpisodeMetadata.EpisodeMetadata
+			metadata = episode.EpisodeMetadata
 			if !episode_dates.Aired.IsZero() {
 				metadata.Aired = episode_dates.Aired
 			}
@@ -144,7 +144,7 @@ func main() {
 			for i := range 3 {
 				metadata.ContestantIDs[i] = episode.Contestants[i].ContestantID
 			}
-			jarchive.Episodes[qparty.EpisodeID(episode.JEID)] = metadata
+			jarchive.Episodes[qparty.EpisodeID(episode.EpisodeID)] = metadata
 
 			qpepisode := qparty.Episode{
 				EpisodeMetadata: metadata,
@@ -223,15 +223,15 @@ func convert_challenges(from []html.JArchiveChallenge) []qparty.HostChallenge {
 
 type SeasonEpisodes struct {
 	qparty.SeasonID `json:"season"`
-	Name            string                     `json:"name"`
-	Count           int                        `json:"count"`
-	Episodes        map[html.JEID]EpisodeDates `json:"episodes"`
+	Name            string                            `json:"name"`
+	Count           int                               `json:"count"`
+	Episodes        map[qparty.EpisodeID]EpisodeDates `json:"episodes"`
 }
 
 type EpisodeDates struct {
-	html.JEID `json:"-"`
-	Aired     qparty.ShowDate `json:"aired"`
-	Taped     qparty.ShowDate `json:"taped"`
+	qparty.EpisodeID `json:"-"`
+	Aired            qparty.ShowDate `json:"aired"`
+	Taped            qparty.ShowDate `json:"taped"`
 }
 
 //

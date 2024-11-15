@@ -33,11 +33,13 @@ import (
 
 type EpisodeMetadata struct {
 	ShowNumber `json:"show_number"` // cue:">0"
-	SeasonID   `json:"season,omitempty"`
-	Aired      ShowDate `json:"aired,omitempty"`
-	Taped      ShowDate `json:"taped,omitempty"`
+	ShowTitle  string               `json:"show_title"`
 
-	ShowTitle     string          `json:"show_title"`
+	EpisodeID `json:"episode_id,omitempty"`
+	SeasonID  `json:"season,omitempty"`
+	Aired     ShowDate `json:"aired,omitempty"`
+	Taped     ShowDate `json:"taped,omitempty"`
+
 	ContestantIDs [3]ContestantID `json:"contestant_ids,omitempty"`
 }
 
@@ -73,6 +75,10 @@ type EpisodeID uint
 
 func (id EpisodeID) HTML() string {
 	return fmt.Sprintf("%d.html", uint(id))
+}
+
+func (id EpisodeID) URL() string {
+	return fmt.Sprintf("https://j-archive.com/showgame.php?game_id=%d", id)
 }
 
 // Parses the numeric value from a string.

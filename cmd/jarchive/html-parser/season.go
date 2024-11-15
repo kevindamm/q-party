@@ -65,28 +65,16 @@ func ParseSeasonMetadata(reader io.Reader, season *qparty.SeasonMetadata) error 
 	if err != nil {
 		return err
 	}
-	reEpisodeLink := regexp.MustCompile(`"showgame\.php\?game_id=(\d+)"(.*)\n`)
-	reTapedDate := regexp.MustCompile(`[tT]aped\s+(\d{4})-(\d{2})-(\d{2})`)
-	reAiredDate := regexp.MustCompile(`[aA]ired.*(\d{4})-(\d{2})-(\d{2})`)
-	reSeasonName := regexp.MustCompile(`<h2 class="season">(.*)</h2>`)
 
+	reSeasonName := regexp.MustCompile(`<h2 class="season">(.*)</h2>`)
 	match := reSeasonName.FindSubmatch(bytes)
 	if len(match) > 0 {
 		season.Name = string(match[1])
 	}
 
+	reEpisodeLink := regexp.MustCompile(`"showgame\.php\?game_id=(\d+)"(.*)\n`)
 	matches := reEpisodeLink.FindAllSubmatch(bytes, -1)
-	for _, match := range matches {
-		episode := EpisodeMetadata{}
-		// episode.JEID = MustParseJEID(string(match[1]))
-		taped := reTapedDate.FindSubmatch(match[2])
-		if taped != nil {
-			episode.Taped = parseTimeYYYYMMDD(taped[1], taped[2], taped[3])
-		}
-		aired := reAiredDate.FindSubmatch(match[2])
-		if aired != nil {
-			episode.Aired = parseTimeYYYYMMDD(aired[1], aired[2], aired[3])
-		}
+	for range matches {
 		season.Count += 1
 	}
 	return nil

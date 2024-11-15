@@ -31,19 +31,18 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"strconv"
 	"strings"
 
 	qparty "github.com/kevindamm/q-party"
 	"golang.org/x/net/html"
 )
 
-func ParseEpisode(jeid JEID, html_reader io.Reader) *JArchiveEpisode {
+func ParseEpisode(jeid qparty.EpisodeID, html_reader io.Reader) *JArchiveEpisode {
 	jaepisode := new(JArchiveEpisode)
-	jaepisode.JEID = jeid
+	jaepisode.EpisodeID = jeid
 	doc, err := html.Parse(html_reader)
 	if err != nil {
-		log.Fatalf("error parsing HTML of %s\n\n%s", jeid, err)
+		log.Fatalf("error parsing HTML of %d\n\n%s", jeid, err)
 	}
 
 	child := doc.FirstChild
@@ -66,7 +65,7 @@ func ParseEpisode(jeid JEID, html_reader io.Reader) *JArchiveEpisode {
 
 // Parses a [json.EpisodeMetadata] from its HTML representation,
 // with all fields populated except the Season ID, which the caller can define.
-func ParseEpisodeMetadata(jeid JEID, html_reader io.Reader) *qparty.EpisodeMetadata {
+func ParseEpisodeMetadata(jeid qparty.EpisodeID, html_reader io.Reader) *qparty.EpisodeMetadata {
 	jaepisode := ParseEpisode(jeid, html_reader)
 	episode_meta := new(qparty.EpisodeMetadata)
 	episode_meta.ShowNumber = qparty.ShowNumber(jaepisode.ShowNumber)
@@ -244,22 +243,6 @@ func innerText(node *html.Node) string {
 	recursiveFind(node)
 	flattened := strings.ReplaceAll(strings.Join(text, " "), "  ", " ")
 	return strings.Trim(flattened, " \t\r\n")
-}
-
-func parseTimeYYYYMMDD(yyyy, mm, dd []byte) qparty.ShowDate {
-	year, err := strconv.Atoi(string(yyyy))
-	if err != nil {
-		log.Fatal(yyyy, err)
-	}
-	month, err := strconv.Atoi(string(mm))
-	if err != nil {
-		log.Fatal(mm, err)
-	}
-	day, err := strconv.Atoi(string(dd))
-	if err != nil {
-		log.Fatal(dd, err)
-	}
-	return qparty.ShowDate{Year: year, Month: month, Day: day}
 }
 
 func parseIntoMarkdown(root *html.Node) (string, []qparty.Media) {

@@ -1557,26 +1557,26 @@ func TestJArchiveEpisode_parseContent(t *testing.T) {
 	}
 	content_div := nextDescendantWithClass(doc, "div", "content")
 
-	jeid := JEID(579)
+	jeid := qparty.EpisodeID(579)
 	aired := qparty.ShowDate{Year: 2005, Month: 10, Day: 25}
 	taped := qparty.ShowDate{Year: 2005, Month: 9, Day: 23}
 
 	episode := new(JArchiveEpisode)
-	episode.JEID = jeid
+	episode.EpisodeID = jeid
 	episode.Taped = taped
 	episode.Aired = aired
 	parseContent(content_div, episode)
 
-	if episode.JEID != jeid {
-		t.Error("did not carry the episode ID from the metadata definition", episode.JEID)
+	if episode.EpisodeID != jeid {
+		t.Error("did not carry the episode ID from the metadata definition", episode.EpisodeID)
 	}
 	if episode.Aired != aired || episode.Taped != taped {
-		t.Error("did not carry the episode show dates from metadata", episode.JEID)
+		t.Error("did not carry the episode show dates from metadata", episode.EpisodeID)
 	}
 
-	expected_show_number := 4857
+	expected_show_number := "4857"
 	if episode.ShowNumber != qparty.ShowNumber(expected_show_number) {
-		t.Errorf("incorrect show number %s (see div#game_title %d)", episode.ShowNumber, expected_show_number)
+		t.Errorf("incorrect show number %s (see div#game_title %s)", episode.ShowNumber, expected_show_number)
 	}
 
 	expected_comments := "(Kelly: We're here in wonderful [Copenhagen](/media/2005-10-25_ComingUp.jpg) celebrating 200 years of Hans Christian Andersen. Join us, next on *Jeopardy!* )"

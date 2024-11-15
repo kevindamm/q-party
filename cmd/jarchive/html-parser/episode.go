@@ -36,13 +36,8 @@ import (
 	"golang.org/x/net/html"
 )
 
-type EpisodeMetadata struct {
-	JEID                   `json:"-"`
-	qparty.EpisodeMetadata `json:",inline"`
-}
-
 type JArchiveEpisode struct {
-	EpisodeMetadata
+	qparty.EpisodeMetadata
 	Contestants [3]qparty.Contestant `json:"contestants"`
 	Comments    string               `json:"comments,omitempty"`
 	Media       []qparty.Media       `json:"media,omitempty"`
@@ -53,34 +48,20 @@ type JArchiveEpisode struct {
 	TieBreaker *JArchiveChallenge    `json:"tiebreaker,omitempty"`
 }
 
-type JEID uint
-
-func (id JEID) String() string {
-	return fmt.Sprintf("%d", uint(id))
-}
-
-func (id JEID) HTML() string {
-	return fmt.Sprintf("%d.html", id)
-}
-
-func (id JEID) URL() string {
-	return fmt.Sprintf("https://j-archive.com/showgame.php?game_id=%d", id)
-}
-
-func MustParseJEID(numeric string) JEID {
+func MustParseJEID(numeric string) qparty.EpisodeID {
 	id, err := strconv.Atoi(numeric)
 	if err != nil {
 		log.Fatalf("failed to parse JEID from string '%s'\n%s", numeric, err)
 	}
-	return JEID(id)
+	return qparty.EpisodeID(id)
 }
 
-func LoadEpisode(html_path string, metadata EpisodeMetadata) (*qparty.Episode, error) {
+func LoadEpisode(html_path string, metadata qparty.EpisodeMetadata) (*qparty.Episode, error) {
 	reader, err := os.Open(html_path)
 	if err != nil {
 		return nil, err
 	}
-	jaepisode := ParseEpisode(metadata.JEID, reader)
+	jaepisode := ParseEpisode(metadata.EpisodeID, reader)
 	episode := new(qparty.Episode)
 	episode.ShowNumber = qparty.ShowNumber(jaepisode.ShowNumber)
 	episode.ShowTitle = jaepisode.ShowTitle
@@ -135,9 +116,9 @@ func (episode *JArchiveEpisode) parseTitle(game_title *html.Node) {
 		// Pattern matching determines match[2] will always be numeric.
 		number, _ := strconv.Atoi(match[2])
 		if len(match[1]) > 0 {
-			episode.ShowNumber = qparty.ShowNumber(10000 + number)
+			episode.ShowNumber = qparty.ShowNumber(fmt.Sprintf("PCJ %d", number))
 		} else {
-			episode.ShowNumber = qparty.ShowNumber(number)
+			episode.ShowNumber = qparty.ShowNumber(fmt.Sprintf("%d", number))
 		}
 		episode.ShowTitle = match[3]
 	} else {
@@ -169,7 +150,7 @@ func (episode *JArchiveEpisode) parseFinalRound(div *html.Node) {
 	}
 }
 
-func FetchEpisode(episode JEID, filepath string) error {
+func FetchEpisode(episode qparty.EpisodeID, filepath string) error {
 	url := episode.URL()
 	log.Print("Fetching ", url, "  -> ", filepath)
 
