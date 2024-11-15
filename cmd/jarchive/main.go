@@ -57,16 +57,24 @@ func main() {
 	// 	return
 	// }
 
-	var post_process func(qparty.SeasonIndex, string) error
+	var write_episode func(qparty.FullEpisode, string) error
+	var write_metadata func(qparty.SeasonIndex, string) error
+
 	switch *output_format {
+	case "":
+		write_episode = NoOpEpisode
+		write_metadata = NoOpMetadata
 	case "json":
-		post_process = WriteSeasonIndexJSON
-		// write_episode = ...json
-		// write_metadata = ...json
+		must_create_dir(*data_path, "json")
+		write_episode = WriteEpisodeJSON
+		write_metadata = WriteSeasonIndexJSON
 	case "sqlite":
-		post_process = output_sqlite
+		//post_process = output_sqlite
+		// confirm database exists
 		// write_episode = ...sqlite
 		// write_metadata = ...sqlite
+		write_episode = NoOpEpisode
+		write_metadata = NoOpMetadata
 	default:
 		log.Print("unrecognized output format ", *output_format)
 		flag.Usage()
@@ -76,7 +84,7 @@ func main() {
 	// Read season index (season.json)
 	jarchive := qparty.SeasonIndex{
 		Version:  []uint{1, 0},
-		Episodes: make(map[qparty.EpisodeID]qparty.EpisodeMetadata, 10_000),
+		Episodes: make(map[qparty.EpisodeID]qparty.EpisodeStats, 10_000),
 	}
 	seasons := html.MustLoadAllSeasons(*data_path)
 
@@ -142,33 +150,85 @@ func main() {
 			if !episode_dates.Taped.IsZero() {
 				episode.Taped = episode_dates.Aired
 			}
+			episode.ShowNumber = qparty.ShowNumber(
+				season.Prefix() + string(episode.ShowNumber))
 
-			// Also write the converted episode details to .json format
-			// (these will be read again if the output format is sqlite).
-			err = WriteEpisodeJSON(episode,
+			err = write_episode(*episode,
 				path.Join(*data_path, "json", episode.ShowNumber.JSON()))
 			if err != nil {
 				log.Print("ERROR writing episode: ", err)
 			}
 
-			// Convert contestants to contestant IDs before storing in metadata
-			episode.ContestantIDs = make([]qparty.ContestantID, len(episode.Contestants))
-			for i, contestant := range episode.Contestants {
-				episode.ContestantIDs[i].UCID = contestant.UCID
+			episode_stats := qparty.EpisodeStats{
+				EpisodeMetadata: episode.EpisodeMetadata,
 			}
-			episode.Contestants = []qparty.Contestant{}
+
+			// Convert episode contestants to contestant IDs for metadata.
+			episode_stats.ContestantIDs = make([]qparty.ContestantID, len(episode.Contestants))
+			for i, contestant := range episode.Contestants {
+				episode_stats.ContestantIDs[i].UCID = contestant.UCID
+			}
+			episode_stats.Stumpers = make([][]qparty.Position, 2)
+
+			// Roll up stats (# challenges, # stumpers) for metadata.
+			// TODO
+			if episode.Single != nil && episode.Single.Columns != nil {
+				for i, column := range episode.Single.Columns {
+					for j, challenge := range column.Challenges {
+						if challenge.ChallengeID != 0 {
+							episode_stats.SingleCount += 1
+							if challenge.TripleStumper {
+								episode_stats.Stumpers[0] = append(episode_stats.Stumpers[0], qparty.Position{
+									Column: uint(i),
+									Index:  uint(j)})
+							}
+						}
+					}
+				}
+			}
+			if episode.Double != nil && episode.Double.Columns != nil {
+				for i, column := range episode.Double.Columns {
+					for j, challenge := range column.Challenges {
+						if challenge.ChallengeID != 0 {
+							episode_stats.DoubleCount += 1
+							if challenge.TripleStumper {
+								episode_stats.Stumpers[1] = append(episode_stats.Stumpers[1], qparty.Position{
+									Column: uint(i),
+									Index:  uint(j)})
+							}
+						}
+					}
+				}
+			}
 
 			// Index the episode metadata by its EpisodeID as that is all the client
 			// has when listing a season index, before fetching the episode details.
-			jarchive.Episodes[episode.EpisodeID] = episode.EpisodeMetadata
+			jarchive.Episodes[episode.EpisodeID] = episode_stats
 
+			// Roll up the stats to the season-wide counts as well.
+			season.ChallengesCount += episode_stats.SingleCount
+			season.ChallengesCount += episode_stats.DoubleCount
+			season.StumpersCount += len(episode_stats.Stumpers[0])
+			season.StumpersCount += len(episode_stats.Stumpers[1])
+			// TODO count final round triple-stumpers?
 		}
 	}
 
-	post_process(jarchive, *data_path)
+	write_metadata(jarchive, *data_path)
 }
 
-func WriteEpisodeJSON(episode *qparty.FullEpisode, filepath string) error {
+// Convenience wrapper around MkDirAll that returns the created path.
+// If the directory cannot be created, it is treated as a fatal error.
+func must_create_dir(at_path, child_path string) string {
+	new_path := path.Join(at_path, child_path)
+	err := os.MkdirAll(new_path, 0755)
+	if err != nil {
+		log.Fatal("failed to create directory", new_path)
+	}
+	return new_path
+}
+
+func WriteEpisodeJSON(episode qparty.FullEpisode, filepath string) error {
 	writer, err := os.Create(filepath)
 	if err != nil {
 		return fmt.Errorf("failed to create file %s\n%s", filepath, err)
@@ -230,7 +290,5 @@ func WriteSeasonIndexJSON(jarchive qparty.SeasonIndex, data_path string) error {
 	return nil
 }
 
-func output_sqlite(jarchive qparty.SeasonIndex, data_path string) error {
-	log.Fatal("TODO write to database")
-	return nil
-}
+func NoOpEpisode(qparty.FullEpisode, string) error  { return nil }
+func NoOpMetadata(qparty.SeasonIndex, string) error { return nil }

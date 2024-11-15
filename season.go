@@ -31,9 +31,9 @@ import (
 )
 
 type SeasonIndex struct {
-	Version  []uint                        `json:"version,omitempty"`
-	Seasons  map[SeasonID]SeasonMetadata   `json:"seasons"`
-	Episodes map[EpisodeID]EpisodeMetadata `json:"episodes"`
+	Version  []uint                      `json:"version,omitempty"`
+	Seasons  map[SeasonID]SeasonMetadata `json:"seasons"`
+	Episodes map[EpisodeID]EpisodeStats  `json:"episodes"`
 }
 
 type SeasonMetadata struct {
@@ -100,6 +100,26 @@ func (id SeasonID) RegularSeason() int {
 	return number
 }
 
+func (id SeasonID) Prefix() string {
+	prefix := prefixes[string(id)]
+
+	if len(prefix) == 0 {
+		return "Show #"
+	}
+	return prefix
+}
+
 func (season SeasonID) JSON() string {
 	return fmt.Sprintf("%s.json", season)
+}
+
+var prefixes = map[string]string{
+	"bbab":           "BBAB #",
+	"cwcpi":          "CW play-in #",
+	"goattournament": "GOAT #",
+	"jm":             "MASTERS #",
+	"ncc":            "NCC #",
+	"pcj":            "PCJ #",
+	"superjeopardy":  "SUPER #",
+	"trebekpilots":   "pilot #",
 }

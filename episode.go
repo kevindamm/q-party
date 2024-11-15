@@ -46,8 +46,8 @@ type EpisodeMetadata struct {
 type EpisodeStats struct {
 	EpisodeMetadata `json:",inline"`
 
-	SingleClues int          `json:"single_count"`
-	DoubleClues int          `json:"double_count"`
+	SingleCount int          `json:"single_count"`
+	DoubleCount int          `json:"double_count"`
 	Stumpers    [][]Position `json:"triple_stumpers"`
 }
 

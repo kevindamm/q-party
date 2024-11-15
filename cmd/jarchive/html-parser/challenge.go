@@ -136,6 +136,12 @@ func parseChallenge(div *html.Node, challenge *qparty.FullChallenge) error {
 		return errors.New("could not find correct response")
 	}
 	challenge.Correct = innerText(correct)
+
+	judgement := nextDescendantWithClass(clue_td, "table", "")
+	if innerText(judgement) == "Triple Stumper" {
+		challenge.TripleStumper = true
+	}
+
 	return nil
 }
 

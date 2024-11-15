@@ -35,18 +35,6 @@ import (
 	"golang.org/x/net/html"
 )
 
-//type JArchiveEpisode struct {
-//	qparty.EpisodeMetadata
-//	Contestants [3]qparty.Contestant `json:"contestants"`
-//	Comments    string               `json:"comments,omitempty"`
-//	Media       []qparty.Media       `json:"media,omitempty"`
-//
-//	Single     [6]qparty.FullCategory `json:"single,omitempty"`
-//	Double     [6]qparty.FullCategory `json:"double,omitempty"`
-//	Final      *qparty.FullChallenge  `json:"final"`
-//	TieBreaker *qparty.FullChallenge  `json:"tiebreaker,omitempty"`
-//}
-
 func MustParseJEID(numeric string) qparty.EpisodeID {
 	id, err := strconv.Atoi(numeric)
 	if err != nil {
@@ -66,7 +54,16 @@ func parseContent(content *html.Node, episode *qparty.FullEpisode) {
 
 		switch id {
 		case "game_title":
-			text, media := parseTitleText(child)
+			nextChild := child.FirstChild
+			for nextChild.Type != html.ElementNode {
+				nextChild = child.NextSibling
+			}
+			if nextChild.Data != "h1" {
+				log.Print("odd, div#game_title does not have an H1 as first sub-element")
+				break
+			}
+
+			text, media := parseIntoMarkdown(nextChild)
 			episode.ShowNumber = parseShowNumber(text)
 			// derived from content, not <head>...</head>
 			episode.ShowTitle = text
@@ -101,21 +98,7 @@ func parseContent(content *html.Node, episode *qparty.FullEpisode) {
 
 }
 
-func parseTitleText(game_title *html.Node) (string, []qparty.Media) {
-	// Expect first child to be an H1 tag
-	child := game_title.FirstChild
-	for child.Type != html.ElementNode {
-		child = child.NextSibling
-	}
-	if child.Data != "h1" {
-		return "", nil
-	}
-
-	return parseIntoMarkdown(child)
-}
-
 var reShowNumberMatcher = regexp.MustCompile(`#(\d+)`)
-var reShowTypeMatcher = regexp.MustCompile(`([Ss]how|pilot|game)? #\d+,?`)
 
 func parseShowNumber(full_title string) qparty.ShowNumber {
 	showNumMatch := reShowNumberMatcher.FindAllStringSubmatch(full_title, 2)
@@ -126,14 +109,6 @@ func parseShowNumber(full_title string) qparty.ShowNumber {
 		log.Fatal("more than one pattern match for #\\d+ in title")
 	}
 	number := showNumMatch[0][1]
-
-	typeMatch := reShowTypeMatcher.FindStringSubmatch(full_title)
-	if typeMatch != nil {
-		if typeMatch[1] != "" {
-			number = "Show #" + number
-		}
-	}
-
 	return qparty.ShowNumber(number)
 }
 

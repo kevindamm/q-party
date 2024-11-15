@@ -61,7 +61,10 @@ func TestParseChallenge(t *testing.T) {
 	clue_td := nextDescendantWithClass(doc, "td", "clue")
 
 	challenge := new(qparty.FullChallenge)
-	parseChallenge(clue_td, challenge)
+	err = parseChallenge(clue_td, challenge)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	if challenge.Category != "" {
 		t.Errorf("parseChallenge should not set Category property")
@@ -103,7 +106,10 @@ func TestParseEmptyChallenge(t *testing.T) {
 		t.Fatalf("failed to parse (html_reader)\n%s", err)
 	}
 	td := nextDescendantWithClass(doc, "td", "clue")
-	parseChallenge(td, challenge)
+	err = parseChallenge(td, challenge)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	if challenge.Category != "" || challenge.Comments != "" ||
 		challenge.Clue != "" || challenge.Correct != "" {
@@ -147,7 +153,10 @@ func TestParseImageChallenge(t *testing.T) {
 	clue_td := nextDescendantWithClass(doc, "td", "clue")
 
 	challenge := new(qparty.FullChallenge)
-	parseChallenge(clue_td, challenge)
+	err = parseChallenge(clue_td, challenge)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	expected_prompt := "A Veronica is a movement done in [this](/media/2004-07-19_DJ_11.jpg) sport, popular in Mexico"
 	if challenge.Clue != expected_prompt {
@@ -188,7 +197,10 @@ func TestParseAudioWageringChallenge(t *testing.T) {
 		t.Fatalf("failed to parse (html_reader)\n%s", err)
 	}
 	td := nextDescendantWithClass(doc, "td", "clue")
-	parseChallenge(td, challenge)
+	err = parseChallenge(td, challenge)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	if challenge.Category != "" {
 		t.Errorf("parseChallenge should not set Category property")
@@ -248,7 +260,10 @@ func TestParseVideoChallenge(t *testing.T) {
 		t.Fatalf("failed to parse (html_reader)\n%s", err)
 	}
 	td := nextDescendantWithClass(doc, "td", "clue")
-	parseChallenge(td, challenge)
+	err = parseChallenge(td, challenge)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	expected_prompt := "( [Cheryl of the Clue Crew drags a mustache back onto Alex.](/media/2004-07-19_DJ_11.mp4) ) [Introduced](/media/2004-07-19_DJ_11.jpg) in 1990, it's the [program](/media/2004-07-19_DJ_11a.jpg) I'm using to create an [unusual image](/media/2004-07-19_DJ_11b.jpg)"
 	if challenge.Clue != expected_prompt {
