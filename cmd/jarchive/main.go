@@ -146,7 +146,7 @@ func main() {
 			}
 			jarchive.Episodes[qparty.EpisodeID(episode.EpisodeID)] = metadata
 
-			qpepisode := qparty.Episode{
+			qpepisode := qparty.FullEpisode{
 				EpisodeMetadata: metadata,
 				Comments:        episode.Comments,
 				Media:           episode.Media,
@@ -175,7 +175,7 @@ func main() {
 	post_process(jarchive, *data_path)
 }
 
-func WriteEpisodeJSON(episode qparty.Episode, filepath string) error {
+func WriteEpisodeJSON(episode qparty.FullEpisode, filepath string) error {
 	writer, err := os.Create(filepath)
 	if err != nil {
 		return fmt.Errorf("failed to create file %s\n%s", filepath, err)
@@ -194,21 +194,21 @@ func WriteEpisodeJSON(episode qparty.Episode, filepath string) error {
 	return nil
 }
 
-func convert_board(from [6]html.CategoryChallenges) *qparty.HostBoard {
-	board := new(qparty.HostBoard)
+func convert_board(from [6]qparty.FullCategory) *qparty.FullBoard {
+	board := new(qparty.FullBoard)
 
-	board.Columns = make([]qparty.HostCategory, 6)
+	board.Columns = make([]qparty.FullCategory, 6)
 	for i, category := range from {
-		board.Columns[i].Title = string(category.JArchiveCategory)
-		board.Columns[i].Comments = category.Commentary
+		board.Columns[i].Title = string(category.Title)
+		board.Columns[i].Comments = category.Comments
 		board.Columns[i].Challenges = convert_challenges(category.Challenges)
 	}
 
 	return board
 }
 
-func convert_challenges(from []html.JArchiveChallenge) []qparty.HostChallenge {
-	challenges := make([]qparty.HostChallenge, len(from))
+func convert_challenges(from []qparty.FullChallenge) []qparty.FullChallenge {
+	challenges := make([]qparty.FullChallenge, len(from))
 	for i, challenge := range from {
 		challenges[i].Challenge = challenge.Challenge
 		challenges[i].Correct = challenge.Correct

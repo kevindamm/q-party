@@ -60,7 +60,7 @@ func TestParseChallenge(t *testing.T) {
 	}
 	clue_td := nextDescendantWithClass(doc, "td", "clue")
 
-	challenge := new(JArchiveChallenge)
+	challenge := new(qparty.FullChallenge)
 	parseChallenge(clue_td, challenge)
 
 	if challenge.Category != "" {
@@ -96,7 +96,7 @@ func TestParseEmptyChallenge(t *testing.T) {
 <table><tr><td class="clue">
     </td></tr></table>`
 
-	challenge := new(JArchiveChallenge)
+	challenge := new(qparty.FullChallenge)
 	html_reader := strings.NewReader(html_raw)
 	doc, err := html.Parse(html_reader)
 	if err != nil {
@@ -146,7 +146,7 @@ func TestParseImageChallenge(t *testing.T) {
 	}
 	clue_td := nextDescendantWithClass(doc, "td", "clue")
 
-	challenge := new(JArchiveChallenge)
+	challenge := new(qparty.FullChallenge)
 	parseChallenge(clue_td, challenge)
 
 	expected_prompt := "A Veronica is a movement done in [this](/media/2004-07-19_DJ_11.jpg) sport, popular in Mexico"
@@ -181,7 +181,7 @@ func TestParseAudioWageringChallenge(t *testing.T) {
 </table>
     </td></tr></table>`
 
-	challenge := new(JArchiveChallenge)
+	challenge := new(qparty.FullChallenge)
 	html_reader := strings.NewReader(html_raw)
 	doc, err := html.Parse(html_reader)
 	if err != nil {
@@ -241,7 +241,7 @@ func TestParseVideoChallenge(t *testing.T) {
 </table>
     </td></tr></table>`
 
-	challenge := new(JArchiveChallenge)
+	challenge := new(qparty.FullChallenge)
 	html_reader := strings.NewReader(html_raw)
 	doc, err := html.Parse(html_reader)
 	if err != nil {
@@ -297,7 +297,7 @@ func TestParseFinalChallenge(t *testing.T) {
 </table>
               </div>`
 
-	final_challenge := new(JArchiveChallenge)
+	final_challenge := new(qparty.FullChallenge)
 	html_reader := strings.NewReader(html_raw)
 	doc, err := html.Parse(html_reader)
 	if err != nil {

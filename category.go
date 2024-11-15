@@ -27,10 +27,10 @@ type Category struct {
 	Challenges []ChallengeMetadata `json:"challenges,omitempty"`
 }
 
-type HostCategory struct {
+type FullCategory struct {
 	Title      string          `json:"title"`
 	Comments   string          `json:"comments,omitempty"`
-	Challenges []HostChallenge `json:"challenges"`
+	Challenges []FullChallenge `json:"challenges"`
 }
 
 // Proposal for category breakdown based on Trivial Pursuit classic categories.

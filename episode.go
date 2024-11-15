@@ -51,13 +51,13 @@ type EpisodeStats struct {
 	Stumpers    [][]Position `json:"triple_stumpers"`
 }
 
-type Episode struct {
+type FullEpisode struct {
 	EpisodeMetadata `json:",inline"`
 	Comments        string  `json:"comments,omitempty"`
 	Media           []Media `json:"media,omitempty"`
 
-	Single     *HostBoard `json:"single,omitempty"`
-	Double     *HostBoard `json:"double,omitempty"`
+	Single     *FullBoard `json:"single,omitempty"`
+	Double     *FullBoard `json:"double,omitempty"`
 	Final      *Challenge `json:"final,omitempty"`
 	TieBreaker *Challenge `json:"tiebreaker,omitempty"`
 }

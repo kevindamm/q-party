@@ -36,9 +36,9 @@ type BoardState struct {
 }
 
 // The host's view of a board includes the details, including correct response.
-type HostBoard struct {
+type FullBoard struct {
 	BoardID `json:",inline"`
-	Columns []HostCategory `json:"columns"`
+	Columns []FullCategory `json:"columns"`
 }
 
 // A board is identified by its episode and whether it's single or double round.

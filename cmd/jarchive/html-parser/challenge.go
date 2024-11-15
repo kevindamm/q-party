@@ -34,12 +34,6 @@ import (
 	"golang.org/x/net/html"
 )
 
-// The de-normed representation as found in some datasets, e.g. on Kaggle.
-type JArchiveChallenge struct {
-	qparty.Challenge
-	Correct string `json:"correct"`
-}
-
 // Assumes that a file extension is present.
 var reMediaPath = regexp.MustCompile(`^https?://.*\.com/media/([^.]+)(\.[a-zA-Z0-9]+)`)
 var reCluePath = regexp.MustCompile(`^suggestcorrection\.php\?clue_id=(\d+)`)
@@ -76,14 +70,14 @@ func inferMediaType(extension string) qparty.MimeType {
 	}
 }
 
-func NewChallenge(category string) *JArchiveChallenge {
-	challenge := new(JArchiveChallenge)
+func NewChallenge(category string) *qparty.FullChallenge {
+	challenge := new(qparty.FullChallenge)
 	challenge.Category = category
 	challenge.Media = make([]qparty.Media, 0)
 	return challenge
 }
 
-func parseChallenge(div *html.Node, challenge *JArchiveChallenge) error {
+func parseChallenge(div *html.Node, challenge *qparty.FullChallenge) error {
 	if strings.Trim(innerText(div), " ") == "" {
 		return nil
 	}
@@ -146,7 +140,7 @@ func parseChallenge(div *html.Node, challenge *JArchiveChallenge) error {
 	return nil
 }
 
-func parseTiebreakerChallenge(div *html.Node, tiebreaker *JArchiveChallenge) error {
+func parseTiebreakerChallenge(div *html.Node, tiebreaker *qparty.FullChallenge) error {
 	table := nextDescendantWithClass(div, "table", "")
 	tiebreaker.Category = innerText(
 		nextDescendantWithClass(table, "td", "category_name"))
@@ -165,7 +159,7 @@ func parseTiebreakerChallenge(div *html.Node, tiebreaker *JArchiveChallenge) err
 	return nil
 }
 
-func parseFinalChallenge(div *html.Node, final *JArchiveChallenge) error {
+func parseFinalChallenge(div *html.Node, final *qparty.FullChallenge) error {
 	table := nextDescendantWithClass(div, "table", "")
 
 	final.Category = innerText(

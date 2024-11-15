@@ -42,10 +42,10 @@ type JArchiveEpisode struct {
 	Comments    string               `json:"comments,omitempty"`
 	Media       []qparty.Media       `json:"media,omitempty"`
 
-	Single     [6]CategoryChallenges `json:"single,omitempty"`
-	Double     [6]CategoryChallenges `json:"double,omitempty"`
-	Final      *JArchiveChallenge    `json:"final"`
-	TieBreaker *JArchiveChallenge    `json:"tiebreaker,omitempty"`
+	Single     [6]qparty.FullCategory `json:"single,omitempty"`
+	Double     [6]qparty.FullCategory `json:"double,omitempty"`
+	Final      *qparty.FullChallenge  `json:"final"`
+	TieBreaker *qparty.FullChallenge  `json:"tiebreaker,omitempty"`
 }
 
 func MustParseJEID(numeric string) qparty.EpisodeID {
@@ -56,13 +56,13 @@ func MustParseJEID(numeric string) qparty.EpisodeID {
 	return qparty.EpisodeID(id)
 }
 
-func LoadEpisode(html_path string, metadata qparty.EpisodeMetadata) (*qparty.Episode, error) {
+func LoadEpisode(html_path string, metadata qparty.EpisodeMetadata) (*qparty.FullEpisode, error) {
 	reader, err := os.Open(html_path)
 	if err != nil {
 		return nil, err
 	}
 	jaepisode := ParseEpisode(metadata.EpisodeID, reader)
-	episode := new(qparty.Episode)
+	episode := new(qparty.FullEpisode)
 	episode.ShowNumber = qparty.ShowNumber(jaepisode.ShowNumber)
 	episode.ShowTitle = jaepisode.ShowTitle
 	for i := range 3 {
@@ -142,10 +142,10 @@ func (episode *JArchiveEpisode) parseFinalRound(div *html.Node) {
 		panic("did not find any final_round in this episode")
 	}
 
-	episode.Final = new(JArchiveChallenge)
+	episode.Final = new(qparty.FullChallenge)
 	parseFinalChallenge(rounds[0], episode.Final)
 	if len(rounds) == 2 {
-		episode.TieBreaker = new(JArchiveChallenge)
+		episode.TieBreaker = new(qparty.FullChallenge)
 		parseTiebreakerChallenge(rounds[1], episode.TieBreaker)
 	}
 }
@@ -171,8 +171,8 @@ func FetchEpisode(episode qparty.EpisodeID, filepath string) error {
 	return nil
 }
 
-func parseBoard(root *html.Node) [6]CategoryChallenges {
-	categories := [6]CategoryChallenges{}
+func parseBoard(root *html.Node) [6]qparty.FullCategory {
+	categories := [6]qparty.FullCategory{}
 	round_table := nextDescendantWithClass(root, "table", "round")
 	category_tr := nextDescendantWithClass(round_table, "tr", "")
 	category_tds := childrenWithClass(category_tr, "td", "category")

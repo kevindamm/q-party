@@ -26,6 +26,7 @@ import (
 	"strings"
 	"testing"
 
+	qparty "github.com/kevindamm/q-party"
 	"golang.org/x/net/html"
 )
 
@@ -36,7 +37,7 @@ func TestParseCategoryHeader(t *testing.T) {
   <tr><td class="category_comments">(Alex: We're celebrating his bicentennial this year!)</td></tr>
 </table>
     </td></tr></table>`
-	category := new(CategoryChallenges)
+	category := new(qparty.FullCategory)
 	html_reader := strings.NewReader(html_raw)
 	doc, err := html.Parse(html_reader)
 	if err != nil {
@@ -48,11 +49,11 @@ func TestParseCategoryHeader(t *testing.T) {
 		t.Fatal("failed to parse the category names", err)
 	}
 
-	if category.JArchiveCategory != "HANS CHRISTIAN ANDERSEN" {
-		t.Error("unexpected category title", category.JArchiveCategory)
+	if category.Title != "HANS CHRISTIAN ANDERSEN" {
+		t.Error("unexpected category title", category.Title)
 	}
-	if category.Commentary != "(Alex: We're celebrating his bicentennial this year!)" {
-		t.Error("unexpected category comment", category.Commentary)
+	if category.Comments != "(Alex: We're celebrating his bicentennial this year!)" {
+		t.Error("unexpected category comment", category.Comments)
 	}
 }
 
@@ -78,8 +79,8 @@ func TestParseCategoryChallenge(t *testing.T) {
   </tr>
 </table>
 	</td></tr></table>`
-	category := new(CategoryChallenges)
-	category.JArchiveCategory = "categoryname"
+	category := new(qparty.FullCategory)
+	category.Title = "categoryname"
 
 	html_reader := strings.NewReader(html_raw)
 	doc, err := html.Parse(html_reader)
@@ -93,9 +94,9 @@ func TestParseCategoryChallenge(t *testing.T) {
 			"\n", err)
 	}
 
-	if category.Challenges[0].Category != string(category.JArchiveCategory) {
+	if category.Challenges[0].Category != string(category.Title) {
 		t.Error("category mismatch",
-			category.Challenges[0].Category, "!=", category.JArchiveCategory)
+			category.Challenges[0].Category, "!=", category.Title)
 	}
 	if category.Challenges[0].Clue != "expected prompt" {
 		t.Error("prompt mismatch", category.Challenges[0].Clue, "expected prompt")

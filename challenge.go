@@ -43,7 +43,7 @@ type Challenge struct {
 }
 
 // Host view of the challenge, includes the correct response.
-type HostChallenge struct {
+type FullChallenge struct {
 	Challenge `json:",inline"`
 	Correct   string `json:"correct"` // excluding "what is..." preface
 }

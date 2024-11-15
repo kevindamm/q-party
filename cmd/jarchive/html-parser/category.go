@@ -31,36 +31,29 @@ import (
 
 type JArchiveCategory string
 
-type CategoryChallenges struct {
-	JArchiveCategory `json:"title"`
-	Round            qparty.EpisodeRound `json:"-"`
-	Commentary       string              `json:"commentary,omitempty"`
-	Challenges       []JArchiveChallenge `json:"challenges"`
-}
-
-func parseCategoryHeader(cat_td *html.Node, category *CategoryChallenges) error {
+func parseCategoryHeader(cat_td *html.Node, category *qparty.FullCategory) error {
 	table := nextDescendantWithClass(cat_td, "table", "")
 	tbody := nextDescendantWithClass(table, "tbody", "")
 	trs := childrenWithClass(tbody, "tr", "")
 	if len(trs) != 2 {
 		log.Fatal("length of trs expected 2 but have ", len(trs))
 	}
-	category.JArchiveCategory = JArchiveCategory(innerText(
-		nextDescendantWithClass(trs[0], "td", "category_name")))
-	category.Commentary = innerText(
+	category.Title = innerText(
+		nextDescendantWithClass(trs[0], "td", "category_name"))
+	category.Comments = innerText(
 		nextDescendantWithClass(trs[1], "td", "category_comments"))
 
 	return nil
 }
 
-func parseCategoryChallenge(clue_td *html.Node, category *CategoryChallenges) error {
-	challenge := NewChallenge(string(category.JArchiveCategory))
+func parseCategoryChallenge(clue_td *html.Node, category *qparty.FullCategory) error {
+	challenge := NewChallenge(string(category.Title))
 	err := parseChallenge(clue_td, challenge)
 	if err != nil {
 		category.Challenges = append(category.Challenges, *challenge)
 		return err
 	}
-	challenge.Category = string(category.JArchiveCategory)
+	challenge.Category = string(category.Title)
 	category.Challenges = append(category.Challenges, *challenge)
 	return nil
 }
