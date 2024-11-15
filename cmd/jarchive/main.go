@@ -61,8 +61,12 @@ func main() {
 	switch *output_format {
 	case "json":
 		post_process = WriteSeasonIndexJSON
+		// write_episode = ...json
+		// write_metadata = ...json
 	case "sqlite":
 		post_process = output_sqlite
+		// write_episode = ...sqlite
+		// write_metadata = ...sqlite
 	default:
 		log.Print("unrecognized output format ", *output_format)
 		flag.Usage()
@@ -128,54 +132,43 @@ func main() {
 			}
 			defer reader.Close()
 
-			log.Print("parsing episode ", jeid)
-			var metadata qparty.EpisodeMetadata
-			episode := html.ParseEpisode(jeid, reader)
-
-			// Convert the episode metadata to qparty.* type and include added fields.
-			metadata = episode.EpisodeMetadata
+			//log.Print("episode id ", jeid)
+			episode := html.ParseEpisode(reader)
+			episode.EpisodeID = jeid
+			episode.SeasonID = jsid
 			if !episode_dates.Aired.IsZero() {
-				metadata.Aired = episode_dates.Aired
+				episode.Aired = episode_dates.Aired
 			}
 			if !episode_dates.Taped.IsZero() {
-				metadata.Taped = episode_dates.Aired
-			}
-			metadata.SeasonID = jsid
-			for i := range 3 {
-				metadata.ContestantIDs[i] = episode.Contestants[i].ContestantID
-			}
-			jarchive.Episodes[qparty.EpisodeID(episode.EpisodeID)] = metadata
-
-			qpepisode := qparty.FullEpisode{
-				EpisodeMetadata: metadata,
-				Comments:        episode.Comments,
-				Media:           episode.Media,
-				Single:          convert_board(episode.Single),
-				Double:          convert_board(episode.Double),
-			}
-			if episode.Final != nil {
-				qpepisode.Final = &episode.Final.Challenge
-			} else {
-				log.Printf("ODDNESS episode %d does not have a final challenge", jeid)
-			}
-			if episode.TieBreaker != nil {
-				qpepisode.TieBreaker = &episode.TieBreaker.Challenge
+				episode.Taped = episode_dates.Aired
 			}
 
 			// Also write the converted episode details to .json format
 			// (these will be read again if the output format is sqlite).
-			err = WriteEpisodeJSON(qpepisode,
-				path.Join(*data_path, "episodes", episode.ShowNumber.JSON()))
+			err = WriteEpisodeJSON(episode,
+				path.Join(*data_path, "json", episode.ShowNumber.JSON()))
 			if err != nil {
 				log.Print("ERROR writing episode: ", err)
 			}
+
+			// Convert contestants to contestant IDs before storing in metadata
+			episode.ContestantIDs = make([]qparty.ContestantID, len(episode.Contestants))
+			for i, contestant := range episode.Contestants {
+				episode.ContestantIDs[i].UCID = contestant.UCID
+			}
+			episode.Contestants = []qparty.Contestant{}
+
+			// Index the episode metadata by its EpisodeID as that is all the client
+			// has when listing a season index, before fetching the episode details.
+			jarchive.Episodes[episode.EpisodeID] = episode.EpisodeMetadata
+
 		}
 	}
 
 	post_process(jarchive, *data_path)
 }
 
-func WriteEpisodeJSON(episode qparty.FullEpisode, filepath string) error {
+func WriteEpisodeJSON(episode *qparty.FullEpisode, filepath string) error {
 	writer, err := os.Create(filepath)
 	if err != nil {
 		return fmt.Errorf("failed to create file %s\n%s", filepath, err)
@@ -192,28 +185,6 @@ func WriteEpisodeJSON(episode qparty.FullEpisode, filepath string) error {
 		return fmt.Errorf("failed to write bytes\n%s", err)
 	}
 	return nil
-}
-
-func convert_board(from [6]qparty.FullCategory) *qparty.FullBoard {
-	board := new(qparty.FullBoard)
-
-	board.Columns = make([]qparty.FullCategory, 6)
-	for i, category := range from {
-		board.Columns[i].Title = string(category.Title)
-		board.Columns[i].Comments = category.Comments
-		board.Columns[i].Challenges = convert_challenges(category.Challenges)
-	}
-
-	return board
-}
-
-func convert_challenges(from []qparty.FullChallenge) []qparty.FullChallenge {
-	challenges := make([]qparty.FullChallenge, len(from))
-	for i, challenge := range from {
-		challenges[i].Challenge = challenge.Challenge
-		challenges[i].Correct = challenge.Correct
-	}
-	return challenges
 }
 
 //

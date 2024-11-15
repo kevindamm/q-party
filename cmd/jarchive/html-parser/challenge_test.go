@@ -297,14 +297,16 @@ func TestParseFinalChallenge(t *testing.T) {
 </table>
               </div>`
 
-	final_challenge := new(qparty.FullChallenge)
 	html_reader := strings.NewReader(html_raw)
 	doc, err := html.Parse(html_reader)
 	if err != nil {
-		t.Fatalf("failed to parse (html_reader)\n%s", err)
+		t.Fatal("failed to parse (html_reader)\n", err)
 	}
 	final_round := nextDescendantWithClass(doc, "table", "final_round")
-	parseFinalChallenge(final_round, final_challenge)
+	final_challenge, err := parseFinalChallenge(final_round)
+	if err != nil {
+		t.Fatal("failed to parse (final challenge)\n", err)
+	}
 
 	if final_challenge.Category != "WORLD AFFAIRS" {
 		t.Errorf("incorrect category '%s'", final_challenge.Category)

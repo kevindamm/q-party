@@ -25,7 +25,6 @@ package html
 import (
 	"errors"
 	"fmt"
-	"log"
 	"regexp"
 	"strconv"
 	"strings"
@@ -104,15 +103,15 @@ func parseChallenge(div *html.Node, challenge *qparty.FullChallenge) error {
 
 	td_order_number := nextDescendantWithClass(table, "td", "clue_order_number")
 	edit_link := nextDescendantWithClass(td_order_number, "a", "")
-	for _, attr := range edit_link.Attr {
-		if attr.Key == "href" {
-			log.Print("inspecting the clue link ", attr.Val)
-			match := reCluePath.FindStringSubmatch(attr.Val)
-			if match != nil {
-				log.Print("FOUND CHALLENGE ID")
-				// We know from the regex that this is an integer.
-				clue_id, _ := strconv.Atoi(match[1])
-				challenge.ChallengeID = uint(clue_id)
+	if edit_link != nil {
+		for _, attr := range edit_link.Attr {
+			if attr.Key == "href" {
+				match := reCluePath.FindStringSubmatch(attr.Val)
+				if match != nil {
+					// We know from the regex that this is an integer.
+					clue_id, _ := strconv.Atoi(match[1])
+					challenge.ChallengeID = uint(clue_id)
+				}
 			}
 		}
 	}
@@ -140,8 +139,9 @@ func parseChallenge(div *html.Node, challenge *qparty.FullChallenge) error {
 	return nil
 }
 
-func parseTiebreakerChallenge(div *html.Node, tiebreaker *qparty.FullChallenge) error {
+func parseTiebreakerChallenge(div *html.Node) (*qparty.FullChallenge, error) {
 	table := nextDescendantWithClass(div, "table", "")
+	tiebreaker := new(qparty.FullChallenge)
 	tiebreaker.Category = innerText(
 		nextDescendantWithClass(table, "td", "category_name"))
 	tiebreaker.Comments = innerText(
@@ -152,16 +152,17 @@ func parseTiebreakerChallenge(div *html.Node, tiebreaker *qparty.FullChallenge) 
 	tiebreaker.Clue = innerText(clue_td)
 	clue_td = nextSiblingWithClass(clue_td, "td", "clue_text")
 	if clue_td == nil {
-		return errors.New("could not find tiebreaker challenge response")
+		return nil, errors.New("could not find tiebreaker challenge response")
 	}
 	tiebreaker.Correct = innerText(
 		nextDescendantWithClass(clue_td, "em", "correct_response"))
-	return nil
+	return tiebreaker, nil
 }
 
-func parseFinalChallenge(div *html.Node, final *qparty.FullChallenge) error {
+func parseFinalChallenge(div *html.Node) (*qparty.FullChallenge, error) {
 	table := nextDescendantWithClass(div, "table", "")
 
+	final := new(qparty.FullChallenge)
 	final.Category = innerText(
 		nextDescendantWithClass(table, "td", "category_name"))
 	final.Comments = innerText(
@@ -172,8 +173,8 @@ func parseFinalChallenge(div *html.Node, final *qparty.FullChallenge) error {
 	final.Clue = innerText(clue_td)
 	clue_td = nextSiblingWithClass(clue_td, "td", "clue_text")
 	if clue_td == nil {
-		return errors.New("could not find final challenge response")
+		return nil, errors.New("could not find final challenge response")
 	}
 	final.Correct = innerText(nextDescendantWithClass(clue_td, "em", "correct_response"))
-	return nil
+	return final, nil
 }

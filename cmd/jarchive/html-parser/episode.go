@@ -23,7 +23,6 @@
 package html
 
 import (
-	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -36,17 +35,17 @@ import (
 	"golang.org/x/net/html"
 )
 
-type JArchiveEpisode struct {
-	qparty.EpisodeMetadata
-	Contestants [3]qparty.Contestant `json:"contestants"`
-	Comments    string               `json:"comments,omitempty"`
-	Media       []qparty.Media       `json:"media,omitempty"`
-
-	Single     [6]qparty.FullCategory `json:"single,omitempty"`
-	Double     [6]qparty.FullCategory `json:"double,omitempty"`
-	Final      *qparty.FullChallenge  `json:"final"`
-	TieBreaker *qparty.FullChallenge  `json:"tiebreaker,omitempty"`
-}
+//type JArchiveEpisode struct {
+//	qparty.EpisodeMetadata
+//	Contestants [3]qparty.Contestant `json:"contestants"`
+//	Comments    string               `json:"comments,omitempty"`
+//	Media       []qparty.Media       `json:"media,omitempty"`
+//
+//	Single     [6]qparty.FullCategory `json:"single,omitempty"`
+//	Double     [6]qparty.FullCategory `json:"double,omitempty"`
+//	Final      *qparty.FullChallenge  `json:"final"`
+//	TieBreaker *qparty.FullChallenge  `json:"tiebreaker,omitempty"`
+//}
 
 func MustParseJEID(numeric string) qparty.EpisodeID {
 	id, err := strconv.Atoi(numeric)
@@ -56,23 +55,7 @@ func MustParseJEID(numeric string) qparty.EpisodeID {
 	return qparty.EpisodeID(id)
 }
 
-func LoadEpisode(html_path string, metadata qparty.EpisodeMetadata) (*qparty.FullEpisode, error) {
-	reader, err := os.Open(html_path)
-	if err != nil {
-		return nil, err
-	}
-	jaepisode := ParseEpisode(metadata.EpisodeID, reader)
-	episode := new(qparty.FullEpisode)
-	episode.ShowNumber = qparty.ShowNumber(jaepisode.ShowNumber)
-	episode.ShowTitle = jaepisode.ShowTitle
-	for i := range 3 {
-		episode.ContestantIDs[i] = jaepisode.Contestants[i].ContestantID
-	}
-
-	return episode, nil
-}
-
-func parseContent(content *html.Node, episode *JArchiveEpisode) {
+func parseContent(content *html.Node, episode *qparty.FullEpisode) {
 	child := content.FirstChild
 	for child != nil {
 		id := divWithID(child)
@@ -83,17 +66,34 @@ func parseContent(content *html.Node, episode *JArchiveEpisode) {
 
 		switch id {
 		case "game_title":
-			episode.parseTitle(child) // derived from content, not <head>
+			text, media := parseTitleText(child)
+			episode.ShowNumber = parseShowNumber(text)
+			// derived from content, not <head>...</head>
+			episode.ShowTitle = text
+			if media != nil {
+				episode.Media = media
+			}
+
 		case "game_comments":
-			episode.parseComments(child) // minutiae about the episode
+			text, media := parseIntoMarkdown(child)
+			episode.Comments = text
+			if len(media) > 0 {
+				episode.Media = media
+			}
+
 		case "contestants":
-			episode.parseContestants(child) // name & bio
+			episode.Contestants = parseContestants(child) // name & bio
+
 		case "jeopardy_round":
 			episode.Single = parseBoard(child)
+
 		case "double_jeopardy_round":
 			episode.Double = parseBoard(child)
+
 		case "final_jeopardy_round":
-			episode.parseFinalRound(child) // may include tie-breaker
+			episode.Final, episode.TieBreaker = parseFinalRound(child)
+
+		default: // pass on unrecognized class names.
 		}
 
 		child = child.NextSibling
@@ -101,40 +101,43 @@ func parseContent(content *html.Node, episode *JArchiveEpisode) {
 
 }
 
-var reTitleMatcher = regexp.MustCompile(`(Primetime Celebrity Jeopardy!)?.*(?:[Ss]how|pilot|game) #(\d+),? - (.*)`)
-
-func (episode *JArchiveEpisode) parseTitle(game_title *html.Node) {
+func parseTitleText(game_title *html.Node) (string, []qparty.Media) {
 	// Expect first child to be an H1 tag
 	child := game_title.FirstChild
-	if child.Type != html.ElementNode || child.Data != "h1" || child.FirstChild.Type != html.TextNode {
-		return
+	for child.Type != html.ElementNode {
+		child = child.NextSibling
+	}
+	if child.Data != "h1" {
+		return "", nil
 	}
 
-	text := innerText(child)
-	match := reTitleMatcher.FindStringSubmatch(text)
-	if match != nil {
-		// Pattern matching determines match[2] will always be numeric.
-		number, _ := strconv.Atoi(match[2])
-		if len(match[1]) > 0 {
-			episode.ShowNumber = qparty.ShowNumber(fmt.Sprintf("PCJ %d", number))
-		} else {
-			episode.ShowNumber = qparty.ShowNumber(fmt.Sprintf("%d", number))
+	return parseIntoMarkdown(child)
+}
+
+var reShowNumberMatcher = regexp.MustCompile(`#(\d+)`)
+var reShowTypeMatcher = regexp.MustCompile(`([Ss]how|pilot|game)? #\d+,?`)
+
+func parseShowNumber(full_title string) qparty.ShowNumber {
+	showNumMatch := reShowNumberMatcher.FindAllStringSubmatch(full_title, 2)
+	if showNumMatch == nil {
+		log.Fatal("title does not match expected format", full_title)
+	}
+	if len(showNumMatch) > 1 {
+		log.Fatal("more than one pattern match for #\\d+ in title")
+	}
+	number := showNumMatch[0][1]
+
+	typeMatch := reShowTypeMatcher.FindStringSubmatch(full_title)
+	if typeMatch != nil {
+		if typeMatch[1] != "" {
+			number = "Show #" + number
 		}
-		episode.ShowTitle = match[3]
-	} else {
-		log.Fatal("title does not match expected format", text)
 	}
+
+	return qparty.ShowNumber(number)
 }
 
-func (episode *JArchiveEpisode) parseComments(game_comments *html.Node) {
-	text, media := parseIntoMarkdown(game_comments)
-	episode.Comments = text
-	if len(media) > 0 {
-		episode.Media = media
-	}
-}
-
-func (episode *JArchiveEpisode) parseFinalRound(div *html.Node) {
+func parseFinalRound(div *html.Node) (*qparty.FullChallenge, *qparty.FullChallenge) {
 	// On a rare occasion there is also a tiebreaker question,
 	// with two instead of one <div class="final_round">
 	rounds := childrenWithClass(div, "table", "final_round")
@@ -142,12 +145,20 @@ func (episode *JArchiveEpisode) parseFinalRound(div *html.Node) {
 		panic("did not find any final_round in this episode")
 	}
 
-	episode.Final = new(qparty.FullChallenge)
-	parseFinalChallenge(rounds[0], episode.Final)
-	if len(rounds) == 2 {
-		episode.TieBreaker = new(qparty.FullChallenge)
-		parseTiebreakerChallenge(rounds[1], episode.TieBreaker)
+	final, err := parseFinalChallenge(rounds[0])
+	if err != nil {
+		log.Println("ERROR\n", err)
+		return nil, nil
 	}
+	var tiebreak *qparty.FullChallenge
+	if len(rounds) == 2 {
+		tiebreak, err = parseTiebreakerChallenge(rounds[1])
+		if err != nil {
+			log.Println("ERROR\n", err)
+			return final, nil
+		}
+	}
+	return final, tiebreak
 }
 
 func FetchEpisode(episode qparty.EpisodeID, filepath string) error {
@@ -169,35 +180,4 @@ func FetchEpisode(episode qparty.EpisodeID, filepath string) error {
 	}
 	time.Sleep(5 * time.Second)
 	return nil
-}
-
-func parseBoard(root *html.Node) [6]qparty.FullCategory {
-	categories := [6]qparty.FullCategory{}
-	round_table := nextDescendantWithClass(root, "table", "round")
-	category_tr := nextDescendantWithClass(round_table, "tr", "")
-	category_tds := childrenWithClass(category_tr, "td", "category")
-	if len(category_tds) != 6 {
-		log.Fatal("expected 6 category entries, found", len(category_tds))
-	}
-	for i, td := range category_tds {
-		err := parseCategoryHeader(td, &categories[i])
-		if err != nil {
-			log.Fatal("failed to parse category header (name and comments)")
-		}
-	}
-
-	for range 5 {
-		category_tr = nextSiblingWithClass(category_tr, "tr", "")
-		clue_tds := childrenWithClass(category_tr, "td", "clue")
-		if len(clue_tds) != 6 {
-			log.Fatal("expected 6 clue entries, found", len(clue_tds))
-		}
-		for i, clue_td := range clue_tds {
-			err := parseCategoryChallenge(clue_td, &categories[i])
-			if err != nil {
-				log.Fatal("failed to parse clue entry", err)
-			}
-		}
-	}
-	return categories
 }

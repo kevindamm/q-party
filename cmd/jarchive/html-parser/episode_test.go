@@ -1561,7 +1561,7 @@ func TestJArchiveEpisode_parseContent(t *testing.T) {
 	aired := qparty.ShowDate{Year: 2005, Month: 10, Day: 25}
 	taped := qparty.ShowDate{Year: 2005, Month: 9, Day: 23}
 
-	episode := new(JArchiveEpisode)
+	episode := new(qparty.FullEpisode)
 	episode.EpisodeID = jeid
 	episode.Taped = taped
 	episode.Aired = aired

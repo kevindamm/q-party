@@ -37,12 +37,11 @@ import (
 	"golang.org/x/net/html"
 )
 
-func ParseEpisode(jeid qparty.EpisodeID, html_reader io.Reader) *JArchiveEpisode {
-	jaepisode := new(JArchiveEpisode)
-	jaepisode.EpisodeID = jeid
+func ParseEpisode(html_reader io.Reader) *qparty.FullEpisode {
+	episode := new(qparty.FullEpisode)
 	doc, err := html.Parse(html_reader)
 	if err != nil {
-		log.Fatalf("error parsing HTML of %d\n\n%s", jeid, err)
+		log.Fatal("error parsing HTML\n", err)
 	}
 
 	child := doc.FirstChild
@@ -54,50 +53,13 @@ func ParseEpisode(jeid qparty.EpisodeID, html_reader io.Reader) *JArchiveEpisode
 			continue
 		}
 		if divWithID(child) == "content" {
-			parseContent(child, jaepisode)
+			parseContent(child, episode)
 			break
 		}
 		child = child.NextSibling
 	}
 
-	return jaepisode
-}
-
-// Parses a [json.EpisodeMetadata] from its HTML representation,
-// with all fields populated except the Season ID, which the caller can define.
-func ParseEpisodeMetadata(jeid qparty.EpisodeID, html_reader io.Reader) *qparty.EpisodeMetadata {
-	jaepisode := ParseEpisode(jeid, html_reader)
-	episode_meta := new(qparty.EpisodeMetadata)
-	episode_meta.ShowNumber = qparty.ShowNumber(jaepisode.ShowNumber)
-	episode_meta.Aired = jaepisode.Aired
-	episode_meta.Taped = jaepisode.Taped
-
-	//	episode_meta.Comments = jaepisode.Comments
-	//	episode_meta.Media = make([]json.Media, len(jaepisode.Media))
-	//	for i, media := range jaepisode.Media {
-	//		episode_meta.Media[i] = json.Media{
-	//			MediaType: json.MediaType(media.MediaType),
-	//			MediaURL:  media.MediaURL}
-	//	}
-	//	for col, category := range jaepisode.Single.Columns {
-	//		for index, challenge := range category.Challenges {
-	//			if !challenge.IsEmpty() {
-	//				episode_meta.SingleClues += 1
-	//			}
-	//			if challenge.TripleStumper {
-	//
-	//			}
-	//		}
-	//	}
-	//	for col, category := range jaepisode.Double.Columns {
-	//		for index, challenge := range category.Challenges {
-	//			if !challenge.IsEmpty() {
-	//				episode_meta.DoubleClues += 1
-	//			}
-	//		}
-	//	}
-	//
-	return episode_meta
+	return episode
 }
 
 // Returns a list of the direct children elements that have the indicated class.

@@ -40,7 +40,7 @@ type EpisodeMetadata struct {
 	Aired     ShowDate `json:"aired,omitempty"`
 	Taped     ShowDate `json:"taped,omitempty"`
 
-	ContestantIDs [3]ContestantID `json:"contestant_ids,omitempty"`
+	ContestantIDs []ContestantID `json:"contestant_ids,omitempty"`
 }
 
 type EpisodeStats struct {
@@ -53,13 +53,14 @@ type EpisodeStats struct {
 
 type FullEpisode struct {
 	EpisodeMetadata `json:",inline"`
-	Comments        string  `json:"comments,omitempty"`
-	Media           []Media `json:"media,omitempty"`
+	Contestants     []Contestant `json:"contestant_ids,omitempty"`
+	Comments        string       `json:"comments,omitempty"`
+	Media           []Media      `json:"media,omitempty"`
 
-	Single     *FullBoard `json:"single,omitempty"`
-	Double     *FullBoard `json:"double,omitempty"`
-	Final      *Challenge `json:"final,omitempty"`
-	TieBreaker *Challenge `json:"tiebreaker,omitempty"`
+	Single     *FullBoard     `json:"single,omitempty"`
+	Double     *FullBoard     `json:"double,omitempty"`
+	Final      *FullChallenge `json:"final,omitempty"`
+	TieBreaker *FullChallenge `json:"tiebreaker,omitempty"`
 }
 
 // Unique numeric identifier for episodes in the archive.

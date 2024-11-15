@@ -22,6 +22,16 @@
 
 package qparty
 
+// A board is identified by its episode and whether it's single or double round.
+type BoardID struct {
+	Episode ShowNumber   `json:"episode,omitempty"`
+	Round   EpisodeRound `json:"round,omitempty"` // cue:"<len(round_names)"
+}
+
+func (board BoardID) RoundName() string {
+	return round_names[board.Round]
+}
+
 // The basic board definition (contains only category metadata).
 type Board struct {
 	BoardID `json:",inline"`
@@ -37,18 +47,9 @@ type BoardState struct {
 
 // The host's view of a board includes the details, including correct response.
 type FullBoard struct {
-	BoardID `json:",inline"`
-	Columns []FullCategory `json:"columns"`
-}
-
-// A board is identified by its episode and whether it's single or double round.
-type BoardID struct {
-	Episode ShowNumber   `json:"episode,omitempty"`
-	Round   EpisodeRound `json:"round,omitempty"` // cue:"<len(round_names)"
-}
-
-func (board BoardID) RoundName() string {
-	return round_names[board.Round]
+	BoardID     `json:",inline"`
+	Columns     []FullCategory `json:"columns"`
+	Contestants []Contestant   `json:"contestants,omitempty"`
 }
 
 // A board position, located by the column and (descending) index in the column.
@@ -67,13 +68,6 @@ type Selection struct {
 // An enum-like value for the different rounds.
 type EpisodeRound uint
 
-func (round EpisodeRound) String() string {
-	if int(round) >= len(round_names) {
-		return round_names[0]
-	}
-	return round_names[round]
-}
-
 const (
 	ROUND_UNKNOWN EpisodeRound = iota
 	ROUND_SINGLE
@@ -81,7 +75,15 @@ const (
 	ROUND_FINAL
 	ROUND_TIEBREAKER
 	PRINTED_MEDIA
+	MaxRoundEnum
 )
+
+func (round EpisodeRound) String() string {
+	if round >= MaxRoundEnum {
+		return round_names[0]
+	}
+	return round_names[round]
+}
 
 var round_names = [6]string{
 	"[UNKNOWN]",

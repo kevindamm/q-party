@@ -50,39 +50,43 @@ func MustParseJCID(numeric string) JCID {
 }
 
 // Parse all three contestants, storing in the episode's metadata.
-func (episode *JArchiveEpisode) parseContestants(root *html.Node) {
+func parseContestants(root *html.Node) []qparty.Contestant {
 	td_parent := nextDescendantWithClass(root, "p", "contestants").Parent
-	contestants := childrenWithClass(td_parent, "p", "contestants")
-	if len(contestants) > 3 {
-		// Some all-star games have 9 contestants in rotation of threes; we can skip
-		// parsing the contestants for those, contestant details are optional.
-		log.Print("SKIPPING CONTESTANTS this is one of the weird ones.")
-		return
+	if td_parent == nil {
+		return []qparty.Contestant{}
 	}
-	for i, contestant := range contestants {
-		err := parseContestant(contestant, &episode.Contestants[i])
+	elements := childrenWithClass(td_parent, "p", "contestants")
+
+	all_contestants := make([]qparty.Contestant, 0)
+	for _, el := range elements {
+		contestant, err := parseContestant(el)
 		if err != nil {
-			log.Fatal("failed to parse contestant", err)
+			log.Fatal("failed to parse contestant\n", err)
 		}
+		all_contestants = append(all_contestants, *contestant)
 	}
+	return all_contestants
 }
 
 // Parse a single <p class="contestants"> subtree into a [JArchiveContestant].
-func parseContestant(root *html.Node, contestant *qparty.Contestant) error {
+func parseContestant(root *html.Node) (*qparty.Contestant, error) {
+	contestant := new(qparty.Contestant)
+
 	link := nextDescendantWithClass(root, "a", "")
 	contestant.Name = innerText(link)
+
 	for _, attr := range link.Attr {
 		if attr.Key == "href" {
-			jcid, err := strconv.Atoi(strings.Split(attr.Val, "=")[1])
+			id, err := strconv.Atoi(strings.Split(attr.Val, "=")[1])
 			if err != nil {
-				return err
+				return nil, err
 			}
-			contestant.UCID = qparty.UCID(jcid)
+			contestant.UCID = qparty.UCID(id)
 		}
 	}
 	textNode := link.NextSibling
 	if textNode.Type == html.TextNode {
 		contestant.Biography = textNode.Data[2:]
 	}
-	return nil
+	return contestant, nil
 }
