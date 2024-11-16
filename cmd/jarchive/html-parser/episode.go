@@ -23,6 +23,7 @@
 package html
 
 import (
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -137,7 +138,7 @@ func parseFinalRound(div *html.Node) (*qparty.FullChallenge, *qparty.FullChallen
 }
 
 func FetchEpisode(episode qparty.EpisodeID, filepath string) error {
-	url := episode.URL()
+	url := EpisodeURL(episode)
 	log.Print("Fetching ", url, "  -> ", filepath)
 
 	response, err := http.Get(url)
@@ -155,4 +156,8 @@ func FetchEpisode(episode qparty.EpisodeID, filepath string) error {
 	}
 	time.Sleep(5 * time.Second)
 	return nil
+}
+
+func EpisodeURL(id qparty.EpisodeID) string {
+	return fmt.Sprintf("https://j-archive.com/showgame.php?game_id=%d", id)
 }

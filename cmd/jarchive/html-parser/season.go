@@ -28,37 +28,11 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"path"
 	"regexp"
 	"time"
 
 	qparty "github.com/kevindamm/q-party"
 )
-
-// Loads the season index and the metadata of each season in the index.
-// Parameter [data_path] is the location of the seasons.json for metadata.
-// TODO replace with instead calling to [LoadSeasonIndex()] and [LoadEpisode()].
-func MustLoadAllSeasons(data_path string) *qparty.SeasonIndex {
-	season_index := qparty.LoadSeasonsJSON(path.Join(data_path, "seasons.json"))
-
-	seasons_dir := path.Join(data_path, "seasons")
-	for season_id, season := range season_index.Seasons {
-		json_path := path.Join(seasons_dir, fmt.Sprintf("%s.json", season_id))
-		if _, err := os.Stat(json_path); os.IsNotExist(err) {
-			log.Fatal("metadata file does not exist", json_path)
-		}
-		reader, err := os.Open(json_path)
-		if err != nil {
-			log.Fatal("failed to open file path", json_path, "\n", err)
-		}
-		err = ParseSeasonMetadata(reader, &season)
-		if err != nil {
-			log.Fatal("failed to parse season", season_id, "index file")
-		}
-	}
-
-	return season_index
-}
 
 func ParseSeasonMetadata(reader io.Reader, season *qparty.SeasonMetadata) error {
 	bytes, err := io.ReadAll(reader)

@@ -32,11 +32,14 @@ import (
 
 	qparty "github.com/kevindamm/q-party"
 	"github.com/kevindamm/q-party/cmd/jarchive/html-parser"
+	"github.com/kevindamm/q-party/ent"
 )
 
 func main() {
 	data_path := flag.String("data", ".data",
 		"path where converted and created games are written")
+	sqlite_path := flag.String("db", "jarchive.sqlite",
+		"path of the file (within `data` path) that represents the sqlite3 database")
 	output_format := flag.String("out", "json",
 		"(json|sqlite) encoding of the converted season or episode representation")
 
@@ -57,104 +60,49 @@ func main() {
 	// 	return
 	// }
 
-	var write_episode func(qparty.FullEpisode, string) error
-	var write_metadata func(qparty.SeasonIndex, string) error
+	var write_episode func(qparty.FullEpisode) error
+	var write_metadata func(*qparty.JArchiveIndex) error
 
 	switch *output_format {
 	case "":
 		write_episode = NoOpEpisode
 		write_metadata = NoOpMetadata
 	case "json":
-		must_create_dir(*data_path, "json")
-		write_episode = WriteEpisodeJSON
-		write_metadata = WriteSeasonIndexJSON
+		json_path := must_create_dir(*data_path, "json")
+		write_episode = WriteEpisodeJSON(json_path)
+		write_metadata = WriteSeasonIndexJSON(json_path)
 	case "sqlite":
-		//post_process = output_sqlite
-		// confirm database exists
-		// write_episode = ...sqlite
-		// write_metadata = ...sqlite
-		write_episode = NoOpEpisode
-		write_metadata = NoOpMetadata
+		dbclient := must_open_db(*sqlite_path)
+		write_episode = WriteEpisodeDB(dbclient)
+		write_metadata = WriteMetadataDB(dbclient)
 	default:
 		log.Print("unrecognized output format ", *output_format)
 		flag.Usage()
 		return
 	}
 
-	// Read season index (season.json)
-	jarchive := qparty.SeasonIndex{
-		Version:  []uint{1, 0},
-		Episodes: make(map[qparty.EpisodeID]qparty.EpisodeStats, 10_000),
-	}
-	seasons := html.MustLoadAllSeasons(*data_path)
-
-	log.Print("loaded ", len(seasons.Seasons), " seasons")
-
-	// Read per-season episode list (seasons/[seasonid].json)
-	jarchive.Seasons = make(map[qparty.SeasonID]qparty.SeasonMetadata, len(seasons.Seasons)+1)
-	for jsid, season := range seasons.Seasons {
-		key := qparty.SeasonID(jsid)
-		number := key.RegularSeason()
-		if number > 0 {
-			key = qparty.SeasonID(fmt.Sprintf("%d", number))
-		}
-		season.SeasonID = qparty.SeasonID(season.Season)
-		season.Season = ""
-		season.Title = season.Name
-		season.Name = ""
-		season.EpisodesCount = season.Count
-		season.Count = 0
-		jarchive.Seasons[key] = season
-	}
+	jarchive_path := path.Join(*data_path, "jarchive.json")
+	jarchive := qparty.LoadJArchiveIndex(jarchive_path)
 
 	// Read per-season episode list (seasons/[seasonid].json)
 	for jsid, season := range jarchive.Seasons {
-		var season_episodes SeasonEpisodes
-		season_json := path.Join(*data_path, "seasons", jsid.JSON())
-		bytes, err := os.ReadFile(season_json)
-		if err != nil {
-			log.Fatal(err)
-		}
-		err = json.Unmarshal(bytes, &season_episodes)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		log.Println()
-		log.Println("Converting episodes from season [", jsid, "],", season.Name)
-		log.Print("~ - ~ - ~ - ~ - ~ - ~ - ~ - ~ - ~\n\n")
-
-		for jeid, episode_dates := range season_episodes.Episodes {
+		for jeid, episode_meta := range jarchive.Episodes {
+			if episode_meta.SeasonID != jsid {
+				continue
+			}
 			filepath := path.Join(*data_path, "episodes", jeid.HTML())
 			if _, err := os.Stat(filepath); os.IsNotExist(err) {
 				log.Print("HTML not found (fetch?) ", jeid.HTML())
 				continue
 			}
 
-			// Parse the episode's HTML to get the show and challenge details.
-			reader, err := os.Open(filepath)
-			if err != nil {
-				// Unlikely, we know the file exists at this point, but state changes...
-				log.Print("ERROR: ", err)
-				continue
-			}
-			defer reader.Close()
-
-			//log.Print("episode id ", jeid)
-			episode := html.ParseEpisode(reader)
+			episode := LoadEpisode(filepath)
 			episode.EpisodeID = jeid
 			episode.SeasonID = jsid
-			if !episode_dates.Aired.IsZero() {
-				episode.Aired = episode_dates.Aired
-			}
-			if !episode_dates.Taped.IsZero() {
-				episode.Taped = episode_dates.Aired
-			}
 			episode.ShowNumber = qparty.ShowNumber(
 				season.Prefix() + string(episode.ShowNumber))
 
-			err = write_episode(*episode,
-				path.Join(*data_path, "json", episode.ShowNumber.JSON()))
+			err := write_episode(*episode)
 			if err != nil {
 				log.Print("ERROR writing episode: ", err)
 			}
@@ -214,7 +162,10 @@ func main() {
 		}
 	}
 
-	write_metadata(jarchive, *data_path)
+	err := write_metadata(jarchive)
+	if err != nil {
+		log.Fatal("failed to write JArchive index\n", err)
+	}
 }
 
 // Convenience wrapper around MkDirAll that returns the created path.
@@ -228,67 +179,86 @@ func must_create_dir(at_path, child_path string) string {
 	return new_path
 }
 
-func WriteEpisodeJSON(episode qparty.FullEpisode, filepath string) error {
-	writer, err := os.Create(filepath)
-	if err != nil {
-		return fmt.Errorf("failed to create file %s\n%s", filepath, err)
-	}
-	defer writer.Close()
+func NoOpEpisode(qparty.FullEpisode) error     { return nil }
+func NoOpMetadata(*qparty.JArchiveIndex) error { return nil }
 
-	bytes, err := json.MarshalIndent(episode, "", "  ")
+func LoadEpisode(html_path string) *qparty.FullEpisode {
+	// Parse the episode's HTML to get the show and challenge details.
+	reader, err := os.Open(html_path)
 	if err != nil {
-		return fmt.Errorf("failed to marshal index into json\n%s", err)
+		// Unlikely, we know the file exists at this point, but state changes...
+		log.Print("ERROR: ", err)
+		return nil
 	}
+	defer reader.Close()
 
-	_, err = writer.Write(bytes)
-	if err != nil {
-		return fmt.Errorf("failed to write bytes\n%s", err)
-	}
-	return nil
+	//log.Print("episode id ", jeid)
+	episode := html.ParseEpisode(reader)
+	return episode
 }
 
-//
-//
-//
-//
+func WriteEpisodeJSON(json_path string) func(qparty.FullEpisode) error {
+	return func(episode qparty.FullEpisode) error {
+		filepath := path.Join(json_path, episode.ShowNumber.JSON(episode.SeasonID))
+		writer, err := os.Create(filepath)
+		if err != nil {
+			return fmt.Errorf("failed to create file %s\n%s", filepath, err)
+		}
+		defer writer.Close()
 
-type SeasonEpisodes struct {
-	qparty.SeasonID `json:"season"`
-	Name            string                            `json:"name"`
-	Count           int                               `json:"count"`
-	Episodes        map[qparty.EpisodeID]EpisodeDates `json:"episodes"`
+		bytes, err := json.MarshalIndent(episode, "", "  ")
+		if err != nil {
+			return fmt.Errorf("failed to marshal index into json\n%s", err)
+		}
+
+		_, err = writer.Write(bytes)
+		if err != nil {
+			return fmt.Errorf("failed to write bytes\n%s", err)
+		}
+		return nil
+	}
 }
 
-type EpisodeDates struct {
-	qparty.EpisodeID `json:"-"`
-	Aired            qparty.ShowDate `json:"aired"`
-	Taped            qparty.ShowDate `json:"taped"`
+func WriteSeasonIndexJSON(data_path string) func(*qparty.JArchiveIndex) error {
+	return func(jarchive *qparty.JArchiveIndex) error {
+		filepath := path.Join(data_path, "jarchive.json")
+		writer, err := os.Create(filepath)
+		if err != nil {
+			return fmt.Errorf("failed to create file %s\n%s", filepath, err)
+		}
+		defer writer.Close()
+
+		bytes, err := json.MarshalIndent(jarchive, "", "  ")
+		if err != nil {
+			return fmt.Errorf("failed to marshal index into json\n%s", err)
+		}
+
+		_, err = writer.Write(bytes)
+		if err != nil {
+			return fmt.Errorf("failed to write bytes\n%s", err)
+		}
+		return nil
+	}
 }
 
-//
-//
-//
-//
-
-func WriteSeasonIndexJSON(jarchive qparty.SeasonIndex, data_path string) error {
-	filepath := path.Join(data_path, "jarchive.json")
-	writer, err := os.Create(filepath)
+func must_open_db(sqlite_path string) *ent.Client {
+	client, err := ent.Open("sqlite3", "file:"+sqlite_path+"?cache=shared&_fk=1")
 	if err != nil {
-		return fmt.Errorf("failed to create file %s\n%s", filepath, err)
+		log.Fatal("failed to open DB\n", err)
 	}
-	defer writer.Close()
-
-	bytes, err := json.MarshalIndent(jarchive, "", "  ")
-	if err != nil {
-		return fmt.Errorf("failed to marshal index into json\n%s", err)
-	}
-
-	_, err = writer.Write(bytes)
-	if err != nil {
-		return fmt.Errorf("failed to write bytes\n%s", err)
-	}
-	return nil
+	return client
 }
 
-func NoOpEpisode(qparty.FullEpisode, string) error  { return nil }
-func NoOpMetadata(qparty.SeasonIndex, string) error { return nil }
+func WriteEpisodeDB(dbclient *ent.Client) func(qparty.FullEpisode) error {
+	log.Fatal("TODO (NYI)")
+	return func(qparty.FullEpisode) error {
+		return nil
+	}
+}
+
+func WriteMetadataDB(dbclient *ent.Client) func(*qparty.JArchiveIndex) error {
+	log.Fatal("TODO (NYI)")
+	return func(*qparty.JArchiveIndex) error {
+		return nil
+	}
+}

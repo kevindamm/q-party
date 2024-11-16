@@ -30,12 +30,6 @@ import (
 	"strconv"
 )
 
-type SeasonIndex struct {
-	Version  []uint                      `json:"version,omitempty"`
-	Seasons  map[SeasonID]SeasonMetadata `json:"seasons"`
-	Episodes map[EpisodeID]EpisodeStats  `json:"episodes"`
-}
-
 type SeasonMetadata struct {
 	SeasonID `json:"id"`
 	Season   string        `json:"season,omitempty"` // deprecated
@@ -49,7 +43,7 @@ type SeasonMetadata struct {
 	StumpersCount   int `json:"tripstump_count"`
 }
 
-func (all_seasons SeasonIndex) WriteSeasonIndexJSON(json_path string) error {
+func (all_seasons JArchiveIndex) WriteSeasonIndexJSON(json_path string) error {
 	writer, err := os.Create(json_path)
 	if err != nil {
 		return err
@@ -66,25 +60,6 @@ func (all_seasons SeasonIndex) WriteSeasonIndexJSON(json_path string) error {
 	}
 
 	return nil
-}
-
-func LoadSeasonsJSON(seasons_path string) *SeasonIndex {
-	season_index := new(SeasonIndex)
-	season_index.Seasons = make(map[SeasonID]SeasonMetadata)
-	if _, err := os.Stat(seasons_path); os.IsNotExist(err) {
-		log.Fatal("file not found ", seasons_path)
-	}
-	seasons_json, err := os.ReadFile(seasons_path)
-	if err != nil {
-		log.Println("failed to open seasons.json path", seasons_path)
-		log.Fatal(err)
-	}
-	err = json.Unmarshal(seasons_json, season_index)
-	if err != nil {
-		log.Fatal("failed to decode seasons metadata ", seasons_path)
-	}
-
-	return season_index
 }
 
 // Unique (sometimes numeric) identifier for seasons in the archive.

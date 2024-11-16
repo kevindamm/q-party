@@ -23,12 +23,10 @@
 package qparty
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
-	"os"
-	"path"
 	"strconv"
+	"strings"
 )
 
 type EpisodeMetadata struct {
@@ -67,19 +65,10 @@ type FullEpisode struct {
 // May be different than the sequential show number used in display.
 type ShowNumber string
 
-func (id ShowNumber) JSON() string {
-	return fmt.Sprintf("%s.json", id)
-}
-
-// Unique ID which J-Archive uses to identify its episodes.
-type EpisodeID uint
-
-func (id EpisodeID) HTML() string {
-	return fmt.Sprintf("%d.html", uint(id))
-}
-
-func (id EpisodeID) URL() string {
-	return fmt.Sprintf("https://j-archive.com/showgame.php?game_id=%d", id)
+func (show ShowNumber) JSON(season SeasonID) string {
+	parts := strings.Split(string(season), "#")
+	number := parts[len(parts)-1]
+	return fmt.Sprintf("%s-%s.json", string(season), number)
 }
 
 // Parses the numeric value from a string.
@@ -92,25 +81,9 @@ func MustParseShowNumber(numeric string) ShowNumber {
 	return ShowNumber(id)
 }
 
-func (episode EpisodeMetadata) WriteJSON(dir string) error {
-	episode_json, err := json.MarshalIndent(episode, "", "  ")
-	if err != nil {
-		return err
-	}
+// Unique ID which J-Archive uses to identify its episodes.
+type EpisodeID uint
 
-	filepath := path.Join(dir, episode.ShowNumber.JSON())
-	log.Println("converting episode", filepath)
-	writer, err := os.Create(filepath)
-	if err != nil {
-		return err
-	}
-	defer writer.Close()
-
-	nbytes, err := writer.Write(episode_json)
-	if err != nil {
-		return err
-	}
-
-	log.Println(nbytes, "bytes written")
-	return nil
+func (id EpisodeID) HTML() string {
+	return fmt.Sprintf("%d.html", uint(id))
 }

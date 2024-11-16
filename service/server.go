@@ -8,13 +8,14 @@ import (
 	"time"
 
 	_ "github.com/joho/godotenv/autoload"
+	qparty "github.com/kevindamm/q-party"
 )
 
 type Server struct {
 	port int
 }
 
-func NewServer() *http.Server {
+func NewServer(jarchive *qparty.JArchiveIndex) *http.Server {
 	port, err := strconv.Atoi(os.Getenv("QPARTY_PORT"))
 	if err != nil {
 		port = 0

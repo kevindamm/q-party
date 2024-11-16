@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -9,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	qparty "github.com/kevindamm/q-party"
 	"github.com/kevindamm/q-party/service"
 )
 
@@ -37,8 +39,12 @@ func graceful_shutdown(https_server *http.Server, done chan<- bool, timeout_seco
 }
 
 func main() {
+	jarchive_path := flag.String("index", "./data/jarchive.json",
+		"path to the season and episode index")
+	flag.Parse()
 
-	server := service.NewServer()
+	jarchive := qparty.LoadJArchiveIndex(*jarchive_path)
+	server := service.NewServer(jarchive)
 
 	// Create a done channel to signal when the shutdown is complete
 	done := make(chan bool, 1)
