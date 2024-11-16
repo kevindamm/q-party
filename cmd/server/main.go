@@ -39,7 +39,7 @@ func graceful_shutdown(https_server *http.Server, done chan<- bool, timeout_seco
 }
 
 func main() {
-	jarchive_path := flag.String("index", "./data/jarchive.json",
+	jarchive_path := flag.String("index", ".data/jarchive.json",
 		"path to the season and episode index")
 	flag.Parse()
 

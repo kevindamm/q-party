@@ -31,14 +31,14 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func TestHelloWorld(t *testing.T) {
+func TestLanding(t *testing.T) {
 	e := echo.New()
 	request := httptest.NewRequest(http.MethodGet, "/", nil)
 	response := httptest.NewRecorder()
 	ctx := e.NewContext(request, response)
 	server := &Server{}
 
-	if err := server.HelloWorldHandler(ctx); err != nil {
+	if err := server.LandingPage(ctx); err != nil {
 		t.Errorf("handler() error = %v", err)
 		return
 	}

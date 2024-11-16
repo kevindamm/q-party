@@ -34,17 +34,37 @@ func (server *Server) RegisterRoutes() http.Handler {
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 
-	e.GET("/", server.HelloWorldHandler)
+	e.GET("/", server.LandingPage)
+
+	// TODO flesh this out some more, add callback path and POST handler
+	e.GET("/login", server.GetLoginForm)
+
+	// Vue3 app is hosted here, see /app/* within this repo for implementation.
+	// It's effectively static until it routes to lobby or an in-progress game.
+	e.Static("/app", "vuedist")
+	// image, audio and video media for challenges are also under a static path.
+	e.Static("/media", "media")
+	// And some root-level static files that can be listed individually.
+	e.Static("/favicon.ico", "public/favicon.ico")
+	e.Static("/jarchive.json", "public/jarchive.json")
 
 	// TODO other request handlers
+	// /play/:room_id (contestant interface)
+	// /host/:room_id (host interface)
+	// /view/:room_id (audience interface)
+	// websockets endpoints
 
 	return e
 }
 
-func (s *Server) HelloWorldHandler(ctx echo.Context) error {
+func (s *Server) LandingPage(ctx echo.Context) error {
 	response := map[string]string{
 		"message": "Hello World!",
 	}
 
 	return ctx.HTML(http.StatusOK, response["message"])
+}
+
+func (s *Server) GetLoginForm(ctx echo.Context) error {
+	return ctx.HTML(http.StatusOK, "TODO host login")
 }
