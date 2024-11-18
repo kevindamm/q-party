@@ -18,46 +18,21 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-// github:kevindamm/q-party/service/server.go
+// github:kevindamm/q-party/service/home.go
 
 package service
 
 import (
-	"fmt"
-	"log"
+	_ "embed"
 	"net/http"
-	"os"
-	"strconv"
-	"time"
 
-	_ "github.com/joho/godotenv/autoload"
-	qparty "github.com/kevindamm/q-party"
+	"github.com/labstack/echo/v4"
 )
 
-type Server struct {
-	port int
-	*http.Server
-	*qparty.JArchiveIndex
-}
-
-func NewServer(jarchive *qparty.JArchiveIndex) *Server {
-	port, err := strconv.Atoi(os.Getenv("QPARTY_PORT"))
-	if err != nil {
-		port = 80
+func (s *Server) LandingPage(ctx echo.Context) error {
+	response := map[string]any{
+		"name": "World",
 	}
-	qps := new(Server)
-	qps.port = port
-	log.Printf("Listening on port %d", port)
 
-	server := http.Server{
-		Addr:         fmt.Sprintf(":%d", qps.port),
-		Handler:      qps.RegisterRoutes(),
-		IdleTimeout:  time.Minute,
-		ReadTimeout:  10 * time.Second,
-		WriteTimeout: 30 * time.Second,
-	}
-	qps.Server = &server
-	qps.JArchiveIndex = jarchive
-
-	return qps
+	return ctx.Render(http.StatusOK, "home_copy", response)
 }

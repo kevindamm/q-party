@@ -49,12 +49,14 @@ type EpisodeStats struct {
 	Stumpers    [][]Position `json:"triple_stumpers"`
 }
 
+// All details of the episode, including correct answers & the contestants' bios.
 type FullEpisode struct {
 	EpisodeMetadata `json:",inline"`
 	Contestants     []Contestant `json:"contestant_ids,omitempty"`
 	Comments        string       `json:"comments,omitempty"`
 	Media           []Media      `json:"media,omitempty"`
 
+	// Due to absence of archival evidence, not every episode has both single & double rounds.
 	Single     *FullBoard     `json:"single,omitempty"`
 	Double     *FullBoard     `json:"double,omitempty"`
 	Final      *FullChallenge `json:"final,omitempty"`

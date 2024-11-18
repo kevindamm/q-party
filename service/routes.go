@@ -23,8 +23,10 @@
 package service
 
 import (
+	_ "embed"
 	"net/http"
 
+	qparty "github.com/kevindamm/q-party"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
@@ -33,11 +35,16 @@ func (server *Server) RegisterRoutes() http.Handler {
 	e := echo.New()
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
+	e.Renderer = NewRenderer()
 
 	e.GET("/", server.LandingPage).Name = "home"
 
+	e.GET("/favicon.ico", func(ctx echo.Context) error {
+		return ctx.Blob(http.StatusOK, "image/x-icon", favicon_bytes)
+	}).Name = "favicon"
+
 	// TEMPORARY just to view some stats
-	e.GET("/categories", server.ListCategoriesPerYear)
+	e.GET("/categories", server.ListCategoriesByYear)
 
 	// websockets endpoints
 	// /join/:room_id (ask to join room, get host/contestant/audience assignment)
@@ -50,7 +57,6 @@ func (server *Server) RegisterRoutes() http.Handler {
 	// image, audio and video media for challenges are also under a static path.
 	e.Static("/media", "media").Name = "media-root"
 	// And some root-level static files that can be listed individually.
-	e.Static("/favicon.ico", "public/favicon.ico")
 	e.Static("/jarchive.json", "public/jarchive.json")
 
 	// TODO other request handlers
@@ -59,15 +65,24 @@ func (server *Server) RegisterRoutes() http.Handler {
 	return e
 }
 
-func (s *Server) LandingPage(ctx echo.Context) error {
-	response := map[string]string{
-		"message": "Hello World!",
+// The web server's favicon is baked into the binary.
+//
+//go:embed favicon.ico
+var favicon_bytes []byte
+
+func (server *Server) ListCategoriesByYear(ctx echo.Context) error {
+	cat_years := make(map[int][]qparty.CategoryMetadata)
+	for _, category := range server.Categories {
+		for _, episode := range category.Episodes {
+			year := episode.Aired.Year
+			list, exists := cat_years[year]
+			if exists {
+				cat_years[year] = append(list, category)
+			} else {
+				cat_years[year] = []qparty.CategoryMetadata{category}
+			}
+		}
 	}
 
-	return ctx.HTML(http.StatusOK, response["message"])
-}
-
-func (s *Server) ListCategoriesPerYear(ctx echo.Context) error {
-
-	return ctx.HTML(http.StatusOK, "TODO list categories")
+	return ctx.HTML(http.StatusOK, "TODO template categories")
 }

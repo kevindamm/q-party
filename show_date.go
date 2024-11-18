@@ -35,8 +35,8 @@ type ShowDateRange struct {
 
 type ShowDate struct {
 	Year  int `json:"year"`
-	Month int `json:"month"`
-	Day   int `json:"day"`
+	Month int `json:"month,omitempty"`
+	Day   int `json:"day,omitempty"`
 }
 
 func (date ShowDate) IsZero() bool {
@@ -59,8 +59,20 @@ func (date ShowDate) String() string {
 	if date.IsZero() {
 		return ""
 	}
-	return fmt.Sprintf("%d/%02d/%02d",
-		date.Year, date.Month, date.Day)
+	if date.Month != 0 && date.Day != 0 {
+		return fmt.Sprintf("%d/%02d/%02d",
+			date.Year, date.Month, date.Day)
+	}
+
+	month := "??"
+	if date.Month != 0 {
+		month = fmt.Sprintf("%02d", date.Month)
+	}
+	day := "??"
+	if date.Day != 0 {
+		day = fmt.Sprintf("%02d", date.Day)
+	}
+	return fmt.Sprintf("%d/%s/%s", date.Year, month, day)
 }
 
 func (date ShowDate) MarshalText() ([]byte, error) {
@@ -68,21 +80,31 @@ func (date ShowDate) MarshalText() ([]byte, error) {
 }
 
 func (date *ShowDate) UnmarshalText(text []byte) error {
-	if len(text) != len("YYYY_MM_DD") {
-		return fmt.Errorf("incorrect format for aired date '%s'", text)
+	if len(text) == 0 {
+		*date = ShowDate{0, 0, 0}
+		return nil
+	}
+	if len(text) < len("YYYY") || len(text) > len("YYYY_MM_DD") {
+		return fmt.Errorf("incorrect format for aired date '%s', use YYYY/MM/DD having at least the year", text)
 	}
 
 	year, err := strconv.Atoi(string(text[:4]))
 	if err != nil {
 		return err
 	}
-	month, err := strconv.Atoi(string(text[5:7]))
-	if err != nil {
-		return err
+	var month int
+	if len(text) > 4 {
+		month, err = strconv.Atoi(string(text[5:7]))
+		if err != nil {
+			month = 0
+		}
 	}
-	day, err := strconv.Atoi(string(text[8:]))
-	if err != nil {
-		return err
+	var day int
+	if len(text) > 6 {
+		day, err = strconv.Atoi(string(text[8:]))
+		if err != nil {
+			day = 0
+		}
 	}
 
 	*date = ShowDate{year, month, day}

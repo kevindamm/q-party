@@ -22,8 +22,14 @@
 
 package qparty
 
+type CategoryMetadata struct {
+	Title    string            `json:"title"`
+	Theme    CategoryTheme     `json:"theme,omitempty"`
+	Episodes []EpisodeMetadata `json:"episodes,omitempty"`
+}
+
 type Category struct {
-	Title      string              `json:"title"`
+	Metadata   CategoryMetadata    `json:"metadata,omitempty"`
 	Challenges []ChallengeMetadata `json:"challenges,omitempty"`
 }
 
