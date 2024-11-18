@@ -22,13 +22,22 @@
 
 package qparty
 
+import "encoding/json"
+
 type JArchiveIndex struct {
-	Version  []uint                      `json:"version,omitempty"`
-	Seasons  map[SeasonID]SeasonMetadata `json:"seasons"`
-	Episodes map[EpisodeID]EpisodeStats  `json:"episodes"`
+	Version    []uint                      `json:"version,omitempty"`
+	Seasons    map[SeasonID]SeasonMetadata `json:"seasons"`
+	Categories map[string]CategoryMetadata `json:"categories"`
+	Episodes   map[EpisodeID]EpisodeStats  `json:"episodes"`
 }
 
-func LoadJArchiveIndex(json_path string) *JArchiveIndex {
-
-	return &JArchiveIndex{}
+func LoadJArchiveIndex(jarchive_json []byte) (*JArchiveIndex, error) {
+	index := new(JArchiveIndex)
+	err := json.Unmarshal(jarchive_json, index)
+	if err != nil {
+		return nil, err
+	}
+	// TODO create additional (in-memory) indexes for easier retrieval
+	// TODO also cache recently loaded episodes?  that can be done separately in main, though
+	return index, nil
 }

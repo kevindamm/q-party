@@ -82,7 +82,14 @@ func main() {
 	}
 
 	jarchive_path := path.Join(*data_path, "jarchive.json")
-	jarchive := qparty.LoadJArchiveIndex(jarchive_path)
+	jarchive_bytes, err := os.ReadFile(jarchive_path)
+	if err != nil {
+		log.Fatal(err)
+	}
+	jarchive, err := qparty.LoadJArchiveIndex(jarchive_bytes)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	// Read per-season episode list (seasons/[seasonid].json)
 	for jsid, season := range jarchive.Seasons {
@@ -162,7 +169,7 @@ func main() {
 		}
 	}
 
-	err := write_metadata(jarchive)
+	err = write_metadata(jarchive)
 	if err != nil {
 		log.Fatal("failed to write JArchive index\n", err)
 	}
