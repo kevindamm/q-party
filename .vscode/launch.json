@@ -9,16 +9,14 @@
       "type": "go",
       "request": "launch",
       "mode": "debug",
-      "program": "${workspaceFolder}/cmd/jarchive",
-      "args": ["convert", "${input:episodeID}"]
+      "program": "${workspaceFolder}/cmd/jarchive"
     },
     {
-      "name": "Debug convert-all",
+      "name": "Debug current file",
       "type": "go",
       "request": "launch",
       "mode": "debug",
-      "program": "${fileDirname}",
-      "args": ["convert", "*"]
+      "program": "${fileDirname}"
     }
   ],
   "inputs": [
