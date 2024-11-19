@@ -7,10 +7,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"os/signal"
-	"path"
-	"strconv"
 	"syscall"
 	"time"
 
@@ -48,9 +45,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	//
-	//
-	//
 	jarchive_json, err := f.ReadFile("jarchive.json")
 	if err != nil {
 		log.Fatal(err)
@@ -59,103 +53,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	jarchive.Categories = make(map[string]qparty.CategoryMetadata)
-	files, err := os.ReadDir("json/")
-	if err != nil {
-		log.Fatal(err)
-	}
-	for _, file := range files {
-		if file.IsDir() {
-			continue
-		}
-		bytes, err := os.ReadFile(path.Join("json", file.Name()))
-		if err != nil {
-			log.Fatal(err)
-		}
-		var episode qparty.FullEpisode
-		err = json.Unmarshal(bytes, &episode)
-		if err != nil {
-			log.Fatal(err)
-		}
-		year := 0
-		if !episode.Aired.IsZero() {
-			year = episode.Aired.Year
-		}
-		if year == 0 {
-			continue
-		}
-		if episode.Single != nil {
-			for _, category := range episode.Single.Columns {
-				if !category.Complete() {
-					continue
-				}
-				metadata, ok := jarchive.Categories[category.Title]
-				if !ok {
-					metadata = qparty.CategoryMetadata{
-						Title: category.Title,
-						Theme: qparty.ThemeUnknown,
-						Episodes: []qparty.CategoryAired{{
-							EpisodeID: episode.EpisodeID,
-							ShowDate:  episode.Aired}}}
-				} else {
-					metadata.Episodes = append(
-						metadata.Episodes,
-						qparty.CategoryAired{
-							EpisodeID: episode.EpisodeID,
-							ShowDate:  episode.Aired},
-					)
-				}
-				jarchive.Categories[category.Title] = metadata
-			}
-		} else {
-			fmt.Println("episode without a Single J: ", strconv.Itoa(int(episode.EpisodeID)), episode.ShowTitle)
-		}
-		if episode.Double != nil {
-			for _, category := range episode.Double.Columns {
-				if !category.Complete() {
-					continue
-				}
-				metadata, ok := jarchive.Categories[category.Title]
-				if !ok {
-					metadata = qparty.CategoryMetadata{
-						Title: category.Title,
-						Theme: qparty.ThemeUnknown,
-						Episodes: []qparty.CategoryAired{{
-							EpisodeID: episode.EpisodeID,
-							ShowDate:  episode.Aired}}}
-				} else {
-					metadata.Episodes = append(
-						metadata.Episodes,
-						qparty.CategoryAired{
-							EpisodeID: episode.EpisodeID,
-							ShowDate:  episode.Aired},
-					)
-				}
-				jarchive.Categories[category.Title] = metadata
-			}
-		} else {
-			fmt.Println("episode without a Double J: ", strconv.Itoa(int(episode.EpisodeID)), episode.ShowTitle)
-		}
-	}
-	writer, err := os.Create("jarchive2.json")
-	if err != nil {
-		log.Fatal(err)
-	}
-	bytes, err := json.Marshal(jarchive)
-	if err != nil {
-		log.Fatal(err)
-	}
-	writer.Write(bytes)
-	writer.Close()
-	//
-	//
-	//
-	// TODO Remove
-	if true {
-		return
-	}
-	//
-	//
+	server.JArchiveIndex = jarchive
 
 	// Create a done channel to signal when the shutdown is complete
 	done := make(chan bool, 1)
