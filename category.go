@@ -23,9 +23,14 @@
 package qparty
 
 type CategoryMetadata struct {
-	Title    string            `json:"title"`
-	Theme    CategoryTheme     `json:"theme,omitempty"`
-	Episodes []EpisodeMetadata `json:"episodes,omitempty"`
+	Title    string          `json:"title"`
+	Theme    CategoryTheme   `json:"theme,omitempty"`
+	Episodes []CategoryAired `json:"episodes"`
+}
+
+type CategoryAired struct {
+	EpisodeID `json:"episode_id"`
+	ShowDate  `json:",inline"`
 }
 
 type Category struct {
@@ -39,10 +44,20 @@ type FullCategory struct {
 	Challenges []FullChallenge `json:"challenges"`
 }
 
+func (category FullCategory) Complete() bool {
+	for _, challenge := range category.Challenges {
+		if challenge.ChallengeID == 0 {
+			return false
+		}
+	}
+	return true
+}
+
 // Proposal for category breakdown based on Trivial Pursuit classic categories.
 type CategoryTheme string
 
 const (
+	ThemeUnknown        CategoryTheme = ""
 	ThemeGeography      CategoryTheme = "Geography"
 	ThemeEntertainment  CategoryTheme = "Entertainment"
 	ThemeHistoryRoyalty CategoryTheme = "History & Royalty"

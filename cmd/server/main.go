@@ -10,8 +10,6 @@ import (
 	"os"
 	"os/signal"
 	"path"
-	"slices"
-	"sort"
 	"strconv"
 	"syscall"
 	"time"
@@ -53,7 +51,15 @@ func main() {
 	//
 	//
 	//
-	by_year := make(map[int]map[string]int)
+	jarchive_json, err := f.ReadFile("jarchive.json")
+	if err != nil {
+		log.Fatal(err)
+	}
+	jarchive, err := qparty.LoadJArchiveIndex(jarchive_json)
+	if err != nil {
+		log.Fatal(err)
+	}
+	jarchive.Categories = make(map[string]qparty.CategoryMetadata)
 	files, err := os.ReadDir("json/")
 	if err != nil {
 		log.Fatal(err)
@@ -80,54 +86,67 @@ func main() {
 		}
 		if episode.Single != nil {
 			for _, category := range episode.Single.Columns {
-				counters, ok := by_year[year]
-				if !ok {
-					counters = make(map[string]int)
+				if !category.Complete() {
+					continue
 				}
-				counters[category.Title] += 1
-				by_year[year] = counters
+				metadata, ok := jarchive.Categories[category.Title]
+				if !ok {
+					metadata = qparty.CategoryMetadata{
+						Title: category.Title,
+						Theme: qparty.ThemeUnknown,
+						Episodes: []qparty.CategoryAired{{
+							EpisodeID: episode.EpisodeID,
+							ShowDate:  episode.Aired}}}
+				} else {
+					metadata.Episodes = append(
+						metadata.Episodes,
+						qparty.CategoryAired{
+							EpisodeID: episode.EpisodeID,
+							ShowDate:  episode.Aired},
+					)
+				}
+				jarchive.Categories[category.Title] = metadata
 			}
 		} else {
 			fmt.Println("episode without a Single J: ", strconv.Itoa(int(episode.EpisodeID)), episode.ShowTitle)
 		}
 		if episode.Double != nil {
 			for _, category := range episode.Double.Columns {
-				counters, ok := by_year[year]
-				if !ok {
-					counters = make(map[string]int)
+				if !category.Complete() {
+					continue
 				}
-				counters[category.Title] += 1
-				by_year[year] = counters
+				metadata, ok := jarchive.Categories[category.Title]
+				if !ok {
+					metadata = qparty.CategoryMetadata{
+						Title: category.Title,
+						Theme: qparty.ThemeUnknown,
+						Episodes: []qparty.CategoryAired{{
+							EpisodeID: episode.EpisodeID,
+							ShowDate:  episode.Aired}}}
+				} else {
+					metadata.Episodes = append(
+						metadata.Episodes,
+						qparty.CategoryAired{
+							EpisodeID: episode.EpisodeID,
+							ShowDate:  episode.Aired},
+					)
+				}
+				jarchive.Categories[category.Title] = metadata
 			}
 		} else {
 			fmt.Println("episode without a Double J: ", strconv.Itoa(int(episode.EpisodeID)), episode.ShowTitle)
 		}
 	}
-	writer, err := os.Create("categories.md")
+	writer, err := os.Create("jarchive2.json")
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer writer.Close()
-	writer.WriteString("# Category counts by year\n\n")
-	for year := range 2024 - 1984 {
-		year = year + 1984
-		writer.WriteString(fmt.Sprintf("## %d\n\n", year))
-
-		counters := by_year[year]
-		cats := make([]string, 0, len(by_year[year]))
-		for cat := range counters {
-			cats = append(cats, cat)
-		}
-		sort.Slice(cats, func(i, j int) bool {
-			return counters[cats[i]] < counters[cats[j]]
-		})
-		slices.Reverse(cats)
-
-		for _, category := range cats {
-			writer.WriteString(fmt.Sprintf("%s\n(appears %d times)\n\n",
-				category, counters[category]))
-		}
+	bytes, err := json.Marshal(jarchive)
+	if err != nil {
+		log.Fatal(err)
 	}
+	writer.Write(bytes)
+	writer.Close()
 	//
 	//
 	//

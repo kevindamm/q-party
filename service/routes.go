@@ -74,7 +74,7 @@ func (server *Server) ListCategoriesByYear(ctx echo.Context) error {
 	cat_years := make(map[int][]qparty.CategoryMetadata)
 	for _, category := range server.Categories {
 		for _, episode := range category.Episodes {
-			year := episode.Aired.Year
+			year := episode.Year
 			list, exists := cat_years[year]
 			if exists {
 				cat_years[year] = append(list, category)
