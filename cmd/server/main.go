@@ -74,6 +74,7 @@ func main() {
 //go:embed episodes/*
 //go:embed jarchive.json
 //go:embed index.html
+//go:embed favicon.ico
 var embedded_files embed.FS
 
 func NewServer() (*service.Server, error) {
