@@ -5,7 +5,6 @@ import (
 	"embed"
 	"encoding/json"
 	"fmt"
-	"io/fs"
 	"log"
 	"net/http"
 	"os/signal"
@@ -41,12 +40,12 @@ func graceful_shutdown(https_server *http.Server, done chan<- bool, timeout_seco
 }
 
 func main() {
-	server, err := NewServer(fs)
+	server, err := NewServer()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	jarchive_json, err := fs.ReadFile("jarchive.json")
+	jarchive_json, err := embedded_files.ReadFile("jarchive.json")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -75,10 +74,10 @@ func main() {
 //go:embed episodes/*
 //go:embed jarchive.json
 //go:embed index.html
-var f embed.FS
+var embedded_files embed.FS
 
 func NewServer() (*service.Server, error) {
-	jarchive_json, err := f.ReadFile("jarchive.json")
+	jarchive_json, err := embedded_files.ReadFile("jarchive.json")
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +86,7 @@ func NewServer() (*service.Server, error) {
 	if err != nil {
 		return nil, err
 	}
-	server := service.NewServer(jarchive, fs)
+	server := service.NewServer(jarchive, embedded_files)
 
 	// TODO additional indices, set up cache, etc.
 
