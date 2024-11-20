@@ -23,7 +23,7 @@
 package service
 
 import (
-	_ "embed"
+	"io/fs"
 	"net/http"
 
 	qparty "github.com/kevindamm/q-party"
@@ -31,17 +31,15 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 )
 
-func (server *Server) RegisterRoutes() http.Handler {
+func (server *Server) RegisterRoutes(fs fs.FS) http.Handler {
 	e := echo.New()
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 	e.Renderer = NewRenderer()
 
-	e.GET("/", server.LandingPage).Name = "home"
+	e.GET("/", server.LandingPage(fs)).Name = "home"
 
-	e.GET("/favicon.ico", func(ctx echo.Context) error {
-		return ctx.Blob(http.StatusOK, "image/x-icon", favicon_bytes)
-	}).Name = "favicon"
+	e.GET("/favicon.ico", Favicon(fs)).Name = "favicon"
 
 	// TEMPORARY just to view some stats
 	e.GET("/categories", server.ListCategoriesByYear)
@@ -64,11 +62,6 @@ func (server *Server) RegisterRoutes() http.Handler {
 
 	return e
 }
-
-// The web server's favicon is baked into the binary.
-//
-//go:embed favicon.ico
-var favicon_bytes []byte
 
 func (server *Server) ListCategoriesByYear(ctx echo.Context) error {
 	cat_years := make(map[int][]qparty.CategoryMetadata)

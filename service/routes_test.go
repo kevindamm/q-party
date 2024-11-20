@@ -27,6 +27,7 @@ import (
 	"net/http/httptest"
 	"regexp"
 	"testing"
+	"testing/fstest"
 
 	"github.com/labstack/echo/v4"
 )
@@ -36,9 +37,14 @@ func TestLanding(t *testing.T) {
 	request := httptest.NewRequest(http.MethodGet, "/", nil)
 	response := httptest.NewRecorder()
 	ctx := e.NewContext(request, response)
-	server := &Server{}
+	server := new(Server)
 
-	if err := server.LandingPage(ctx); err != nil {
+	test_fs := fstest.MapFS{
+		"index.html": {Data: []byte("<html><body><p>Hello, World!</p></body></html>")},
+	}
+
+	handler := server.LandingPage(test_fs)
+	if err := handler(ctx); err != nil {
 		t.Errorf("handler() error = %v", err)
 		return
 	}
@@ -48,7 +54,7 @@ func TestLanding(t *testing.T) {
 		return
 	}
 
-	reContentMatch := regexp.MustCompile(`Hello World!`)
+	reContentMatch := regexp.MustCompile(`Hello, World!`)
 	if !reContentMatch.Match(response.Body.Bytes()) {
 		t.Error("handler() unexpected body (missing the greeting)\n",
 			response.Body.String())
