@@ -51,11 +51,14 @@ func (server *Server) RegisterRoutes(fs fs.FS) http.Handler {
 
 	// Vue3 app is hosted here, see /app/* within this repo for implementation.
 	// It's effectively static until it routes to lobby or an in-progress game.
-	e.Static("/app", "vuedist").Name = "vue3-root"
+	e.Static("/app", "app/dist/").Name = "vue3-root"
 	// image, audio and video media for challenges are also under a static path.
 	e.Static("/media", "media").Name = "media-root"
 	// And some root-level static files that can be listed individually.
 	e.Static("/jarchive.json", "public/jarchive.json")
+
+	// Generate a random board of six categories and send response as JSON.
+	e.GET("/randboard", server.NewRandomBoard(fs))
 
 	// TODO other request handlers
 	// /view/:room_id (audience interface via SSE)

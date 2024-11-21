@@ -34,7 +34,7 @@ type CategoryAired struct {
 }
 
 type Category struct {
-	Metadata   CategoryMetadata    `json:"metadata,omitempty"`
+	Metadata   CategoryMetadata    `json:"metadata,omitempty,inline"`
 	Challenges []ChallengeMetadata `json:"challenges,omitempty"`
 }
 
