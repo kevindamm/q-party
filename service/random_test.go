@@ -18,47 +18,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-// github:kevindamm/q-party/service/routes_test.go
+// github:kevindamm/q-party/service/random_test.go
 
-package service
-
-import (
-	"net/http"
-	"net/http/httptest"
-	"regexp"
-	"testing"
-	"testing/fstest"
-
-	"github.com/labstack/echo/v4"
-)
-
-func TestLanding(t *testing.T) {
-	e := echo.New()
-	request := httptest.NewRequest(http.MethodGet, "/", nil)
-	response := httptest.NewRecorder()
-	ctx := e.NewContext(request, response)
-	server := new(Server)
-
-	test_fs := fstest.MapFS{
-		"index.html": {Data: []byte("<html><body><p>Hello, World!</p></body></html>")},
-	}
-	server.embeddedFS = test_fs
-
-	handler := server.RouteLandingPage()
-	if err := handler(ctx); err != nil {
-		t.Errorf("handler() error = %v", err)
-		return
-	}
-
-	if response.Code != http.StatusOK {
-		t.Errorf("handler() unexpected status code = %v", response.Code)
-		return
-	}
-
-	reContentMatch := regexp.MustCompile(`Hello, World!`)
-	if !reContentMatch.Match(response.Body.Bytes()) {
-		t.Error("handler() unexpected body (missing the greeting)\n",
-			response.Body.String())
-		return
-	}
-}
+package service_test

@@ -38,9 +38,11 @@ import (
 )
 
 type Server struct {
-	port int
+	port       int
+	embeddedFS fs.FS
+	jarchive   *qparty.JArchiveIndex
+
 	*http.Server
-	*qparty.JArchiveIndex
 }
 
 func NewServer(jarchive *qparty.JArchiveIndex, embedded fs.FS) *Server {
@@ -54,47 +56,48 @@ func NewServer(jarchive *qparty.JArchiveIndex, embedded fs.FS) *Server {
 
 	server := http.Server{
 		Addr:         fmt.Sprintf(":%d", qps.port),
-		Handler:      qps.RegisterRoutes(embedded),
 		IdleTimeout:  time.Minute,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 30 * time.Second,
 	}
 	qps.Server = &server
-	qps.JArchiveIndex = jarchive
+	qps.embeddedFS = embedded
+	qps.jarchive = jarchive
+	qps.Handler = qps.RegisterRoutes()
 
 	return qps
 }
 
-func Favicon(fs fs.FS) func(ctx echo.Context) error {
-	reader, err := fs.Open("favicon.ico")
-	if err != nil {
-		log.Fatal(err)
+func (server *Server) Favicon() func(echo.Context) error {
+	if server.embeddedFS == nil {
+		log.Fatal("embedded filesystem absent when setting up favicon route")
 	}
-	favicon_bytes, err := io.ReadAll(reader)
-	if err != nil {
-		log.Fatal(err)
-	}
+	favicon_bytes := must_load_file(server.embeddedFS, "favicon.ico")
 
 	return func(ctx echo.Context) error {
 		return ctx.Blob(http.StatusOK, "image/x-icon", favicon_bytes)
 	}
 }
 
-func (s *Server) LandingPage(fs fs.FS) func(ctx echo.Context) error {
-	reader, err := fs.Open("index.html")
-	if err != nil {
-		log.Fatal(err)
+func (server *Server) StyleCSS() func(echo.Context) error {
+	if server.embeddedFS == nil {
+		log.Fatal("embedded filesystem absent when setting up favicon route")
 	}
-	homepage, err := io.ReadAll(reader)
-	if err != nil {
-		log.Fatal(err)
-	}
+	stylecss_bytes := must_load_file(server.embeddedFS, "style.css")
 
 	return func(ctx echo.Context) error {
-		// TODO check if user has logged in?
-		// TODO check session for recently being in a room?
-		// redirects in either case
-
-		return ctx.Blob(http.StatusOK, "text/html", homepage)
+		return ctx.Blob(http.StatusOK, "text/css", stylecss_bytes)
 	}
+}
+
+func must_load_file(fs fs.FS, filename string) []byte {
+	reader, err := fs.Open(filename)
+	if err != nil {
+		log.Fatal(err)
+	}
+	bytes, err := io.ReadAll(reader)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return bytes
 }

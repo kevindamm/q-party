@@ -23,7 +23,7 @@
 package service
 
 import (
-	"io/fs"
+	"log"
 	"net/http"
 
 	qparty "github.com/kevindamm/q-party"
@@ -31,20 +31,33 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 )
 
-func (server *Server) RegisterRoutes(fs fs.FS) http.Handler {
+func (server *Server) RegisterRoutes() http.Handler {
 	e := echo.New()
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 	e.Renderer = NewRenderer()
 
-	e.GET("/", server.LandingPage(fs)).Name = "home"
+	if server.embeddedFS == nil {
+		log.Fatal("embedded filesystem absent when setting up routes")
+	}
 
-	e.GET("/favicon.ico", Favicon(fs)).Name = "favicon"
+	e.GET("/", server.RouteLandingPage()).Name = "home"
+	e.GET("/favicon.ico", server.Favicon()).Name = "favicon"
+	e.GET("/style.css", server.StyleCSS()).Name = "style"
 
-	// TEMPORARY just to view some stats
-	e.GET("/categories", server.ListCategoriesByYear)
+	// Retrieve the season, episode and category indices as subsets of the index.
+	// Served separately because they are often used independently and can be
+	// delivered in smaller pieces this way.
+	e.GET("/seasons", server.RouteIndexJSON("seasons"))
+	e.GET("/episodes", server.RouteIndexJSON("episodes"))
+	e.GET("/categories", server.RouteIndexJSON("categories"))
 
-	// websockets endpoints
+	// Generate a random board of six categories and send response as JSON.
+	e.GET("/random/episode", server.RouteRandomEpisode())
+	e.GET("/random/categories", server.RouteRandomCategories())
+	e.GET("/random/challenges", server.RouteRandomChallenges())
+
+	// TODO websockets endpoints
 	// /join/:room_id (ask to join room, get host/contestant/audience assignment)
 	// /play/:room_id (contestant interface) .Group( player_auth )
 	// /host/:room_id (host interface)       .Group( host_auth )
@@ -54,21 +67,16 @@ func (server *Server) RegisterRoutes(fs fs.FS) http.Handler {
 	e.Static("/app", "app/dist/").Name = "vue3-root"
 	// image, audio and video media for challenges are also under a static path.
 	e.Static("/media", "media").Name = "media-root"
-	// And some root-level static files that can be listed individually.
-	e.Static("/jarchive.json", "public/jarchive.json")
-
-	// Generate a random board of six categories and send response as JSON.
-	e.GET("/randboard", server.NewRandomBoard(fs))
 
 	// TODO other request handlers
-	// /view/:room_id (audience interface via SSE)
+	// TODO /view/:room_id (audience interface via SSE)
 
 	return e
 }
 
 func (server *Server) ListCategoriesByYear(ctx echo.Context) error {
 	cat_years := make(map[int][]qparty.CategoryMetadata)
-	for _, category := range server.Categories {
+	for _, category := range server.jarchive.Categories {
 		for _, episode := range category.Episodes {
 			year := episode.Year
 			list, exists := cat_years[year]
