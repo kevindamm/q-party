@@ -44,7 +44,7 @@ type FullCategory struct {
 	Challenges []FullChallenge `json:"challenges"`
 }
 
-func (category FullCategory) Complete() bool {
+func (category FullCategory) IsComplete() bool {
 	for _, challenge := range category.Challenges {
 		if challenge.ChallengeID == 0 {
 			return false

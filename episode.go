@@ -68,7 +68,7 @@ type FullEpisode struct {
 type ShowNumber string
 
 func (show ShowNumber) JSON(season SeasonID) string {
-	parts := strings.Split(string(season), "#")
+	parts := strings.Split(string(show), "#")
 	number := parts[len(parts)-1]
 	return fmt.Sprintf("%s-%s.json", string(season), number)
 }
