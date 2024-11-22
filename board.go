@@ -47,9 +47,8 @@ type BoardState struct {
 
 // The host's view of a board includes the details, including correct response.
 type FullBoard struct {
-	BoardID     `json:",inline"`
-	Columns     []FullCategory `json:"columns"`
-	Contestants []Contestant   `json:"contestants,omitempty"`
+	BoardID `json:",inline"`
+	Columns []FullCategory `json:"columns"`
 }
 
 // A board position, located by the column and (descending) index in the column.

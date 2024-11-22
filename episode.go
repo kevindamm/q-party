@@ -37,8 +37,6 @@ type EpisodeMetadata struct {
 	SeasonID  `json:"season,omitempty"`
 	Aired     ShowDate `json:"aired,omitempty"`
 	Taped     ShowDate `json:"taped,omitempty"`
-
-	ContestantIDs []ContestantID `json:"contestant_ids,omitempty"`
 }
 
 type EpisodeStats struct {
@@ -52,9 +50,8 @@ type EpisodeStats struct {
 // All details of the episode, including correct answers & the contestants' bios.
 type FullEpisode struct {
 	EpisodeMetadata `json:",inline"`
-	Contestants     []Contestant `json:"contestant_ids,omitempty"`
-	Comments        string       `json:"comments,omitempty"`
-	Media           []Media      `json:"media,omitempty"`
+	Comments        string  `json:"comments,omitempty"`
+	Media           []Media `json:"media,omitempty"`
 
 	// Due to absence of archival evidence, not every episode has both single & double rounds.
 	Single     *FullBoard     `json:"single,omitempty"`

@@ -79,9 +79,6 @@ func parseContent(content *html.Node, episode *qparty.FullEpisode) {
 				episode.Media = media
 			}
 
-		case "contestants":
-			episode.Contestants = parseContestants(child) // name & bio
-
 		case "jeopardy_round":
 			episode.Single = parseBoard(child)
 
