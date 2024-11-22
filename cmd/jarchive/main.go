@@ -40,7 +40,7 @@ func main() {
 		"path where converted and created games are written")
 	sqlite_path := flag.String("db", "jarchive.sqlite",
 		"path of the file (within `data` path) that represents the sqlite3 database")
-	output_format := flag.String("out", "json",
+	output_format := flag.String("out", "",
 		"(json|sqlite) encoding of the converted season or episode representation")
 
 	flag.Usage = func() {
@@ -66,15 +66,16 @@ func main() {
 	switch *output_format {
 	case "":
 		write_episode = NoOpEpisode
-		write_metadata = NoOpMetadata
+		//write_metadata = NoOpMetadata
+		write_metadata = WriteSeasonIndexJSON(*data_path)
 	case "json":
+		write_metadata = WriteSeasonIndexJSON(*data_path)
 		json_path := must_create_dir(*data_path, "json")
 		write_episode = WriteEpisodeJSON(json_path)
-		write_metadata = WriteSeasonIndexJSON(json_path)
 	case "sqlite":
 		dbclient := must_open_db(*sqlite_path)
-		write_episode = WriteEpisodeDB(dbclient)
 		write_metadata = WriteMetadataDB(dbclient)
+		write_episode = WriteEpisodeDB(dbclient)
 	default:
 		log.Print("unrecognized output format ", *output_format)
 		flag.Usage()
@@ -91,12 +92,15 @@ func main() {
 		log.Fatal(err)
 	}
 
+	season_episodes := make(map[qparty.SeasonID][]qparty.EpisodeID)
+	for jeid, episode := range jarchive.Episodes {
+		season_episodes[episode.SeasonID] = append(
+			season_episodes[episode.SeasonID], jeid)
+	}
+
 	// Read per-season episode list (seasons/[seasonid].json)
 	for jsid, season := range jarchive.Seasons {
-		for jeid, episode_meta := range jarchive.Episodes {
-			if episode_meta.SeasonID != jsid {
-				continue
-			}
+		for _, jeid := range season_episodes[jsid] {
 			filepath := path.Join(*data_path, "episodes", jeid.HTML())
 			if _, err := os.Stat(filepath); os.IsNotExist(err) {
 				log.Print("HTML not found (fetch?) ", jeid.HTML())
@@ -106,27 +110,17 @@ func main() {
 			episode := LoadEpisode(filepath)
 			episode.EpisodeID = jeid
 			episode.SeasonID = jsid
-			episode.ShowNumber = qparty.ShowNumber(
-				season.Prefix() + string(episode.ShowNumber))
 
 			err := write_episode(*episode)
 			if err != nil {
 				log.Print("ERROR writing episode: ", err)
 			}
 
-			episode_stats := qparty.EpisodeStats{
-				EpisodeMetadata: episode.EpisodeMetadata,
-			}
-
-			// Convert episode contestants to contestant IDs for metadata.
-			episode_stats.ContestantIDs = make([]qparty.ContestantID, len(episode.Contestants))
-			for i, contestant := range episode.Contestants {
-				episode_stats.ContestantIDs[i].UCID = contestant.UCID
-			}
+			episode_stats := jarchive.Episodes[jeid]
+			episode_stats.EpisodeMetadata = episode.EpisodeMetadata
 			episode_stats.Stumpers = make([][]qparty.Position, 2)
 
-			// Roll up stats (# challenges, # stumpers) for metadata.
-			// TODO
+			// Stats (count challenges, triple-stumpers) for the first round.
 			if episode.Single != nil && episode.Single.Columns != nil {
 				for i, column := range episode.Single.Columns {
 					for j, challenge := range column.Challenges {
@@ -141,6 +135,7 @@ func main() {
 					}
 				}
 			}
+			// Stats (count challenges, triple-stumpers) for the second round.
 			if episode.Double != nil && episode.Double.Columns != nil {
 				for i, column := range episode.Double.Columns {
 					for j, challenge := range column.Challenges {
@@ -155,17 +150,16 @@ func main() {
 					}
 				}
 			}
+			// TODO also count correct/incorrect responses from contestants (proxy for difficulty)
 
-			// Index the episode metadata by its EpisodeID as that is all the client
-			// has when listing a season index, before fetching the episode details.
 			jarchive.Episodes[episode.EpisodeID] = episode_stats
 
-			// Roll up the stats to the season-wide counts as well.
+			// Aggregate the stats to the season-wide counts as well.
 			season.ChallengesCount += episode_stats.SingleCount
 			season.ChallengesCount += episode_stats.DoubleCount
 			season.StumpersCount += len(episode_stats.Stumpers[0])
 			season.StumpersCount += len(episode_stats.Stumpers[1])
-			// TODO count final round triple-stumpers?
+			jarchive.Seasons[jsid] = season
 		}
 	}
 
@@ -199,7 +193,6 @@ func LoadEpisode(html_path string) *qparty.FullEpisode {
 	}
 	defer reader.Close()
 
-	//log.Print("episode id ", jeid)
 	episode := html.ParseEpisode(reader)
 	return episode
 }

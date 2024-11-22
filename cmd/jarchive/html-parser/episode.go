@@ -109,7 +109,8 @@ func parseShowNumber(full_title string) qparty.ShowNumber {
 	if len(showNumMatch) > 1 {
 		log.Fatal("more than one pattern match for #\\d+ in title")
 	}
-	number := showNumMatch[0][1]
+	// By regex we know this to be a positive integer.
+	number, _ := strconv.Atoi(showNumMatch[0][1])
 	return qparty.ShowNumber(number)
 }
 

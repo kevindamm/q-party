@@ -47,6 +47,15 @@ func parseBoard(root *html.Node) *qparty.FullBoard {
 		}
 		board.Columns[i].Title = innerText(
 			nextDescendantWithClass(trs[0], "td", "category_name"))
+		board.Columns[i].Comments = innerText(
+			nextDescendantWithClass(trs[1], "td", "category_comments"))
+		if board.Columns[i].Title == "" {
+			// Sometimes the category comment appears before the category name.
+			board.Columns[i].Title = innerText(
+				nextDescendantWithClass(trs[1], "td", "category_name"))
+			board.Columns[i].Comments = innerText(
+				nextDescendantWithClass(trs[0], "td", "category_comments"))
+		}
 	}
 
 	for range 5 { // for each row of the board.

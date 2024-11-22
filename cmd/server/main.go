@@ -48,8 +48,7 @@ func main() {
 	log.Println("Graceful shutdown complete.")
 }
 
-//go:embed episodes/*
-//go:embed jarchive.json
+//go:embed json/*
 //go:embed index.html
 //go:embed favicon.ico
 //go:embed style.css

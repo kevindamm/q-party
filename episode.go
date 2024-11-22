@@ -23,10 +23,10 @@
 package qparty
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"strconv"
-	"strings"
 )
 
 type EpisodeMetadata struct {
@@ -65,12 +65,30 @@ type FullEpisode struct {
 
 // Unique numeric identifier for episodes in the archive.
 // May be different than the sequential show number used in display.
-type ShowNumber string
+type ShowNumber uint
 
+func (show *ShowNumber) UnmarshalJSON(json_bytes []byte) error {
+	var intVal int
+	if err := json.Unmarshal(json_bytes, &intVal); err != nil {
+		*show = ShowNumber(intVal)
+	} else {
+		var stringVal string
+		if err := json.Unmarshal(json_bytes, &stringVal); err != nil {
+			number, err := strconv.Atoi(stringVal)
+			if err != nil {
+				return err
+			}
+			*show = ShowNumber(number)
+		}
+	}
+	return nil
+}
+
+// Show numbers are unique within regular seasons but a new sequence is created
+// for non-regular seasons also.  Thus the JSON name uses both season and show
+// number, even though this leads to some number-hyphen-number naming.
 func (show ShowNumber) JSON(season SeasonID) string {
-	parts := strings.Split(string(show), "#")
-	number := parts[len(parts)-1]
-	return fmt.Sprintf("%s-%s.json", string(season), number)
+	return fmt.Sprintf("%s-%d.json", string(season), show)
 }
 
 // Parses the numeric value from a string.
@@ -78,7 +96,7 @@ func (show ShowNumber) JSON(season SeasonID) string {
 func MustParseShowNumber(numeric string) ShowNumber {
 	id, err := strconv.Atoi(numeric)
 	if err != nil {
-		log.Fatalf("failed to parse JEID from string '%s'\n%s", numeric, err)
+		log.Fatalf("failed to parse Show Number from string '%s'\n%s", numeric, err)
 	}
 	return ShowNumber(id)
 }
@@ -86,6 +104,7 @@ func MustParseShowNumber(numeric string) ShowNumber {
 // Unique ID which J-Archive uses to identify its episodes.
 type EpisodeID uint
 
+// Only the HTML filename and not the JSON filename can be inferred from the ID.
 func (id EpisodeID) HTML() string {
 	return fmt.Sprintf("%d.html", uint(id))
 }
