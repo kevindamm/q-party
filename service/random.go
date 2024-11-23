@@ -62,9 +62,8 @@ func (server *Server) RouteRandomChallenges() func(echo.Context) error {
 }
 
 func (server *Server) NewRandomBoard() func(ctx echo.Context) error {
-	fs := server.embeddedFS
-	if fs == nil {
-		log.Fatal("embedded filesystem absent when setting up route for random categories")
+	if server.jsonFS == nil {
+		log.Fatal("embedded json files absent when setting up route for random categories")
 	}
 
 	cat_names := make([]string, 0, len(server.jarchive.Categories))

@@ -38,14 +38,15 @@ import (
 )
 
 type Server struct {
-	port       int
-	embeddedFS fs.FS
-	jarchive   *qparty.JArchiveIndex
-
 	*http.Server
+
+	port     int
+	jarchive *qparty.JArchiveIndex
+	jsonFS   fs.FS
+	staticFS fs.FS
 }
 
-func NewServer(jarchive *qparty.JArchiveIndex, embedded fs.FS) *Server {
+func NewServer(jarchive *qparty.JArchiveIndex, jsonFS fs.FS, staticFS fs.FS) *Server {
 	port, err := strconv.Atoi(os.Getenv("QPARTY_PORT"))
 	if err != nil {
 		port = 80
@@ -61,18 +62,19 @@ func NewServer(jarchive *qparty.JArchiveIndex, embedded fs.FS) *Server {
 		WriteTimeout: 30 * time.Second,
 	}
 	qps.Server = &server
-	qps.embeddedFS = embedded
 	qps.jarchive = jarchive
+	qps.jsonFS = jsonFS
+	qps.staticFS = staticFS
 	qps.Handler = qps.RegisterRoutes()
 
 	return qps
 }
 
 func (server *Server) Favicon() func(echo.Context) error {
-	if server.embeddedFS == nil {
+	if server.staticFS == nil {
 		log.Fatal("embedded filesystem absent when setting up favicon route")
 	}
-	favicon_bytes := must_load_file(server.embeddedFS, "favicon.ico")
+	favicon_bytes := must_load_file(server.staticFS, "favicon.ico")
 
 	return func(ctx echo.Context) error {
 		return ctx.Blob(http.StatusOK, "image/x-icon", favicon_bytes)
@@ -80,10 +82,10 @@ func (server *Server) Favicon() func(echo.Context) error {
 }
 
 func (server *Server) StyleCSS() func(echo.Context) error {
-	if server.embeddedFS == nil {
+	if server.staticFS == nil {
 		log.Fatal("embedded filesystem absent when setting up favicon route")
 	}
-	stylecss_bytes := must_load_file(server.embeddedFS, "style.css")
+	stylecss_bytes := must_load_file(server.staticFS, "style.css")
 
 	return func(ctx echo.Context) error {
 		return ctx.Blob(http.StatusOK, "text/css", stylecss_bytes)

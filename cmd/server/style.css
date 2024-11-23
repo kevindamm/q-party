@@ -3,13 +3,14 @@ body {
   color: #ffbe0b;
 }
 
-#title {
-  font-size: 1.5em;
+h1.title {
+  font-size: clamp(3em, 7vw, 5.5em);
   justify-content: center;
   text-align: center;
+}
 
-  padding-top: 5em;
-  padding-bottom: 2em;
+.hidden {
+  display: none;
 }
 
 .bakbak-one-regular {
@@ -21,14 +22,14 @@ body {
 .oxanium-light {
   font-family: "Oxanium", serif;
   font-optical-sizing: auto;
-  font-weight: 200;
+  font-weight: 500;
   font-style: normal;
 }
 
 .oxanium-heavy {
   font-family: "Oxanium", serif;
   font-optical-sizing: auto;
-  font-weight: 500;
+  font-weight: 700;
   font-style: normal;
 }
 
@@ -56,10 +57,18 @@ body {
   font-style: italic;
 }
 
-#menu {
+#centered {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+/*  gap: 3em; */
+  align-content: stretch;
+}
+
+#centered > div {
+  display: flex;
+  flex-direction: column;
+  padding-top: 14vh;
+  gap: 1.6em;
   justify-content: center;
   align-items: center;
 }
@@ -75,7 +84,9 @@ body {
   color: #fff;
   cursor: pointer;
   display: inline-flex;
-  font-family: "JetBrains Mono",monospace;
+  font-family: "Libre Caslon Text", serif;
+  font-weight: 400;
+  font-style: normal;
   height: 48px;
   justify-content: center;
   line-height: 1;

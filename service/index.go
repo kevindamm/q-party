@@ -39,12 +39,12 @@ import (
 // Serves the root page, redirecting to an in-progress game or previous room,
 // if a session is present.
 func (server *Server) RouteLandingPage() func(ctx echo.Context) error {
-	if server.embeddedFS == nil {
+	if server.staticFS == nil {
 		log.Fatal("embedded filesystem absent when setting up route for landing page")
 	}
 
 	// Load the bytes for the favicon during server startup.
-	reader, err := server.embeddedFS.Open("index.html")
+	reader, err := server.staticFS.Open("index.html")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -87,5 +87,25 @@ func (server *Server) RouteIndexJSON(index_name string) func(echo.Context) error
 
 	return func(ctx echo.Context) error {
 		return ctx.Blob(http.StatusOK, "application/json", bytes)
+	}
+}
+
+func (server *Server) AboutPage() func(echo.Context) error {
+	if server.staticFS == nil {
+		log.Fatal("embedded filesystem absent when setting up route for landing page")
+	}
+
+	// Load the bytes for the favicon during server startup.
+	reader, err := server.staticFS.Open("about.html")
+	if err != nil {
+		log.Fatal(err)
+	}
+	about_html, err := io.ReadAll(reader)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return func(ctx echo.Context) error {
+		return ctx.Blob(http.StatusOK, "text/html", about_html)
 	}
 }

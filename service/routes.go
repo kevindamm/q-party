@@ -37,13 +37,15 @@ func (server *Server) RegisterRoutes() http.Handler {
 	e.Use(middleware.Recover())
 	e.Renderer = NewRenderer()
 
-	if server.embeddedFS == nil {
+	if server.jsonFS == nil || server.staticFS == nil {
 		log.Fatal("embedded filesystem absent when setting up routes")
 	}
 
+	//group := e.Group("/", ...staticFiles)
 	e.GET("/", server.RouteLandingPage()).Name = "home"
 	e.GET("/favicon.ico", server.Favicon()).Name = "favicon"
 	e.GET("/style.css", server.StyleCSS()).Name = "style"
+	e.GET("/about.html", server.AboutPage()).Name = "about"
 
 	// Retrieve the season, episode and category indices as subsets of the index.
 	// Served separately because they are often used independently and can be
@@ -51,6 +53,8 @@ func (server *Server) RegisterRoutes() http.Handler {
 	e.GET("/seasons", server.RouteIndexJSON("seasons"))
 	e.GET("/episodes", server.RouteIndexJSON("episodes"))
 	e.GET("/categories", server.RouteIndexJSON("categories"))
+
+	e.POST("/join", server.RouteJoinRoom())
 
 	// Generate a random board of six categories and send response as JSON.
 	e.GET("/random/episode", server.RouteRandomEpisode())

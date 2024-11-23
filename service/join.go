@@ -18,50 +18,19 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-// github:kevindamm/q-party/service/routes_test.go
+// github:kevindamm/q-party/service/join.go
 
 package service
 
-import (
-	"net/http"
-	"net/http/httptest"
-	"regexp"
-	"testing"
-	"testing/fstest"
+import "github.com/labstack/echo/v4"
 
-	"github.com/labstack/echo/v4"
-)
+func (server *Server) RouteJoinRoom() func(echo.Context) error {
+	// Setup fixed set of available rooms.
+	// (a future version may allow this to be dynamic via a database)
 
-func TestLanding(t *testing.T) {
-	e := echo.New()
-	request := httptest.NewRequest(http.MethodGet, "/", nil)
-	response := httptest.NewRecorder()
-	ctx := e.NewContext(request, response)
-	server := new(Server)
+	return func(ctx echo.Context) error {
+		// TODO
 
-	server.staticFS = fstest.MapFS{
-		"index.html": {Data: []byte("<html><body><p>Hello, World!</p></body></html>")},
-	}
-	server.jsonFS = fstest.MapFS{
-		"json/1234.json": {},
-		"jarchive.json":  {},
-	}
-
-	handler := server.RouteLandingPage()
-	if err := handler(ctx); err != nil {
-		t.Errorf("handler() error = %v", err)
-		return
-	}
-
-	if response.Code != http.StatusOK {
-		t.Errorf("handler() unexpected status code = %v", response.Code)
-		return
-	}
-
-	reContentMatch := regexp.MustCompile(`Hello, World!`)
-	if !reContentMatch.Match(response.Body.Bytes()) {
-		t.Error("handler() unexpected body (missing the greeting)\n",
-			response.Body.String())
-		return
+		return nil
 	}
 }

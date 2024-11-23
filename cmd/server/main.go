@@ -18,7 +18,7 @@ import (
 // Wraps the server in a signal listener that initiates a graceful shutdown.
 
 func main() {
-	jarchive_json, err := embedded_files.ReadFile("jarchive.json")
+	jarchive_json, err := jsonFS.ReadFile("jarchive.json")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -27,7 +27,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	server := service.NewServer(jarchive, embedded_files)
+	server := service.NewServer(jarchive, jsonFS, staticFS)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -49,10 +49,14 @@ func main() {
 }
 
 //go:embed json/*
-//go:embed index.html
+//go:embed jarchive.json
+var jsonFS embed.FS
+
 //go:embed favicon.ico
+//go:embed index.html
 //go:embed style.css
-var embedded_files embed.FS
+//go:embed about.html
+var staticFS embed.FS
 
 // Calls the server's [Shutdown()] when
 // Runs in a goroutine alongside the server handler, the [done] channel runs the
