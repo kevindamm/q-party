@@ -18,19 +18,66 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-// github:kevindamm/q-party/service/join.go
+// github:kevindamm/q-party/service/joinroom.go
 
 package service
 
-import "github.com/labstack/echo/v4"
+import (
+	"encoding/json"
+	"fmt"
+	"io"
+	"log"
+
+	"github.com/labstack/echo/v4"
+)
+
+type RoomMetadata struct {
+	Members []QPartySecret
+}
+
+type QPartyPlayer struct {
+	Name string `json:"name"`
+}
+
+type QPartySecret struct {
+	QPartyPlayer
+	Token string
+}
 
 func (server *Server) RouteJoinRoom() func(echo.Context) error {
 	// Setup fixed set of available rooms.
 	// (a future version may allow this to be dynamic via a database)
+	var rooms map[string]*RoomMetadata
+	if server.jsonFS == nil {
+		log.Fatal("missing embedded json files")
+	}
+	reader, err := server.jsonFS.Open("rooms.json")
+	if err != nil {
+		log.Fatal(err)
+	}
+	json_bytes, err := io.ReadAll(reader)
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = json.Unmarshal(json_bytes, &rooms)
 
 	return func(ctx echo.Context) error {
-		// TODO
+		room_id := ctx.Param("room_id")
+		room, ok := rooms[room_id]
+		if !ok {
+			return fmt.Errorf("room not found")
+		}
+		if len(room.Members) == 0 {
+			// First to join the room becomes host.
+
+		}
 
 		return nil
 	}
+}
+
+func NewRoomMetadata() *RoomMetadata {
+	metadata := new(RoomMetadata)
+	metadata.Members = make([]QPartySecret, 0)
+	return metadata
 }
