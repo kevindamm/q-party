@@ -18,69 +18,31 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-// github:kevindamm/q-party/service/joinroom.go
+// github:kevindamm/q-party/service/updates.go
 
 package service
 
 import (
-	"encoding/json"
-	"fmt"
-	"io"
-	"log"
-
 	"github.com/labstack/echo/v4"
+	"github.com/r3labs/sse/v2"
 )
 
-type RoomMetadata struct {
-	Members []QPartySecret
-}
+// Notifies clients of changes using SSE (server-sent events).  This could also
+// be done with websockets, and perhaps that will be necessary for STT later.
+// Even with websocket handling, SSE is still better for audience members.
+//
+// The client app (e.g. a SPA in Vue) can listen to these events and update its
+// local path structure to match updates in game state (e.g. view categories,
+// peer buzz-in, challenge selection, etc.) that were not initiated by a player.
+func (server *Server) RouteInitiateUpdates() func(echo.Context) error {
+	sseServer := sse.New()
+	sseServer.AutoReplay = true
+	_ = sseServer.CreateStream("updates")
 
-type QPartyPlayer struct {
-	Name string `json:"name"`
-}
-
-type QPartySecret struct {
-	QPartyPlayer
-	Token string
-}
-
-func (server *Server) RouteJoinRoom() func(echo.Context) error {
-	// Setup fixed set of available rooms.
-	// (a future version may allow this to be dynamic via a database)
-	var rooms map[string]*RoomMetadata
-	if server.jsonFS == nil {
-		log.Fatal("missing embedded json files")
-	}
-	reader, err := server.jsonFS.Open("rooms.json")
-	if err != nil {
-		log.Fatal(err)
-	}
-	json_bytes, err := io.ReadAll(reader)
-	if err != nil {
-		log.Fatal(err)
-	}
-	err = json.Unmarshal(json_bytes, &rooms)
-	if err != nil {
-		log.Fatal(err)
-	}
+	//map[string]RoomState for each room being managed.
 
 	return func(ctx echo.Context) error {
-		room_id := ctx.Param("room_id")
-		room, ok := rooms[room_id]
-		if !ok {
-			return fmt.Errorf("room not found")
-		}
-		if len(room.Members) == 0 {
-			// First to join the room becomes host.
-
-		}
 
 		return nil
 	}
-}
-
-func NewRoomMetadata() *RoomMetadata {
-	metadata := new(RoomMetadata)
-	metadata.Members = make([]QPartySecret, 0)
-	return metadata
 }

@@ -41,12 +41,6 @@ func (server *Server) RegisterRoutes() http.Handler {
 		log.Fatal("embedded filesystem absent when setting up routes")
 	}
 
-	//group := e.Group("/", ...staticFiles)
-	e.GET("/", server.RouteLandingPage()).Name = "home"
-	e.GET("/favicon.ico", server.Favicon()).Name = "favicon"
-	e.GET("/style.css", server.StyleCSS()).Name = "style"
-	e.GET("/about.html", server.AboutPage()).Name = "about"
-
 	// Retrieve the season, episode and category indices as subsets of the index.
 	// Served separately because they are often used independently and can be
 	// delivered in smaller pieces this way.
@@ -56,10 +50,23 @@ func (server *Server) RegisterRoutes() http.Handler {
 
 	e.POST("/join", server.RouteJoinRoom())
 
+	// Serve only files embedded in staticFS for the root path.
+	static := e.Group("/")
+	static.Use(middleware.StaticWithConfig(middleware.StaticConfig{
+		Filesystem: http.FS(server.staticFS)}))
+
 	// Generate a random board of six categories and send response as JSON.
-	e.GET("/random/episode", server.RouteRandomEpisode())
-	e.GET("/random/categories", server.RouteRandomCategories())
-	e.GET("/random/challenges", server.RouteRandomChallenges())
+	e.GET("/play/:roomid/random/episode", server.RouteRandomEpisode())
+	e.GET("/play/:roomid/random/categories", server.RouteRandomCategories())
+	e.GET("/play/:roomid/random/challenges", server.RouteRandomChallenges())
+
+	spa := e.Group("/play")
+	spa.Use(middleware.StaticWithConfig(middleware.StaticConfig{
+		HTML5:      true,
+		Root:       "play",
+		IgnoreBase: false,
+		Filesystem: http.Dir("app/dist"),
+	}))
 
 	// TODO websockets endpoints
 	// /join/:room_id (ask to join room, get host/contestant/audience assignment)
