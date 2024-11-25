@@ -21,10 +21,11 @@ import (
 // Wraps the server in a signal listener that initiates a graceful shutdown.
 
 func main() {
-	cert_path := flag.String("certs", "",
+	cert_path := flag.String("cert_path", "",
 		"path where server.crt and server.key can be found (for this environment)")
 	port := flag.Int("port", 0,
 		"server port to listen on (0 uses default 80/443 ports)")
+	flag.Parse()
 
 	if *port == 0 {
 		*port = 80
