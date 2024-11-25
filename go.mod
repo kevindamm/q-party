@@ -6,7 +6,7 @@ require (
 	entgo.io/ent v0.14.1
 	github.com/joho/godotenv v1.5.1
 	github.com/labstack/echo/v4 v4.12.0
-	github.com/r3labs/sse/v2 v2.10.0
+	github.com/r3labs/sse v0.0.0-20210224172625-26fe804710bc
 	golang.org/x/net v0.30.0
 )
 

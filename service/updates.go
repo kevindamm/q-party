@@ -24,7 +24,6 @@ package service
 
 import (
 	"github.com/labstack/echo/v4"
-	"github.com/r3labs/sse/v2"
 )
 
 // Notifies clients of changes using SSE (server-sent events).  This could also
@@ -35,13 +34,13 @@ import (
 // local path structure to match updates in game state (e.g. view categories,
 // peer buzz-in, challenge selection, etc.) that were not initiated by a player.
 func (server *Server) RouteInitiateUpdates() func(echo.Context) error {
-	sseServer := sse.New()
-	sseServer.AutoReplay = true
-	_ = sseServer.CreateStream("updates")
-
-	//map[string]RoomState for each room being managed.
 
 	return func(ctx echo.Context) error {
+		// get room state
+		// if not exists, create
+		// if empty, add this user session as host
+		// else user starts as a player
+		//   (or, by request, as audience)
 
 		return nil
 	}

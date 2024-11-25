@@ -27,12 +27,29 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"sync"
 
 	"github.com/labstack/echo/v4"
+	"github.com/r3labs/sse"
 )
 
+type RoomID string
+
+// Maintains independent state for each room being managed.
 type RoomMetadata struct {
-	Members []QPartySecret
+	Rooms map[RoomID]RoomConfig
+}
+
+type RoomConfig struct {
+	Notes string `json:"notes,omitempty"`
+}
+
+type RoomState struct {
+	Tokens     map[QPartySecret]bool
+	Stream     *sse.Stream
+	HostPlayer string
+
+	lock sync.Mutex
 }
 
 type QPartyPlayer struct {
@@ -47,7 +64,7 @@ type QPartySecret struct {
 func (server *Server) RouteJoinRoom() func(echo.Context) error {
 	// Setup fixed set of available rooms.
 	// (a future version may allow this to be dynamic via a database)
-	var rooms map[string]*RoomMetadata
+	var room_config RoomMetadata
 	if server.jsonFS == nil {
 		log.Fatal("missing embedded json files")
 	}
@@ -59,28 +76,50 @@ func (server *Server) RouteJoinRoom() func(echo.Context) error {
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = json.Unmarshal(json_bytes, &rooms)
+	err = json.Unmarshal(json_bytes, &room_config)
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	server.lock.Lock()
+	server.Rooms = make(map[RoomID]*RoomState)
+	for room_id, config := range room_config.Rooms {
+		server.Rooms[room_id] = NewRoomState(config)
+	}
+	server.lock.Unlock()
+
 	return func(ctx echo.Context) error {
-		room_id := ctx.Param("room_id")
-		room, ok := rooms[room_id]
+		room_id := RoomID(ctx.Param("room_id"))
+		room, ok := server.Rooms[room_id]
 		if !ok {
 			return fmt.Errorf("room not found")
 		}
-		if len(room.Members) == 0 {
+		token := QPartySecret{QPartyPlayer{Name: "youknowwhom"}, "abcd98765432"}
+		if len(room.Tokens) == 0 {
+			room.lock.Lock()
 			// First to join the room becomes host.
-
+			room.Tokens[token] = true
+			room.lock.Unlock()
 		}
 
 		return nil
 	}
 }
 
-func NewRoomMetadata() *RoomMetadata {
-	metadata := new(RoomMetadata)
-	metadata.Members = make([]QPartySecret, 0)
-	return metadata
+func (server *Server) RoutePlayRoom() func(echo.Context) error {
+	// TODO
+
+	return func(ctx echo.Context) error {
+		return nil
+	}
+}
+
+func NewRoomState(config RoomConfig) *RoomState {
+	state := new(RoomState)
+	state.Tokens = make(map[QPartySecret]bool)
+	sseServer := sse.New()
+	sseServer.AutoReplay = true
+	state.Stream = sseServer.CreateStream("updates")
+
+	return state
 }

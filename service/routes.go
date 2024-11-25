@@ -35,6 +35,7 @@ func (server *Server) RegisterRoutes() http.Handler {
 	e := echo.New()
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
+	e.Pre(middleware.HTTPSRedirect())
 	e.Renderer = NewRenderer()
 
 	if server.jsonFS == nil || server.staticFS == nil {
@@ -54,6 +55,8 @@ func (server *Server) RegisterRoutes() http.Handler {
 	static := e.Group("/")
 	static.Use(middleware.StaticWithConfig(middleware.StaticConfig{
 		Filesystem: http.FS(server.staticFS)}))
+
+	e.GET("/play/:roomid", server.RoutePlayRoom())
 
 	// Generate a random board of six categories and send response as JSON.
 	e.GET("/play/:roomid/random/episode", server.RouteRandomEpisode())

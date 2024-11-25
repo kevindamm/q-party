@@ -24,26 +24,28 @@ package service
 
 import (
 	"fmt"
-	"io"
 	"io/fs"
 	"log"
 	"net/http"
 	"os"
 	"strconv"
+	"sync"
 	"time"
 
 	_ "github.com/joho/godotenv/autoload"
 	qparty "github.com/kevindamm/q-party"
-	"github.com/labstack/echo/v4"
 )
 
 type Server struct {
 	*http.Server
+	Rooms map[RoomID]*RoomState
 
 	port     int
 	jarchive *qparty.JArchiveIndex
 	jsonFS   fs.FS
 	staticFS fs.FS
+
+	lock sync.Mutex
 }
 
 func NewServer(jarchive *qparty.JArchiveIndex, jsonFS fs.FS, staticFS fs.FS) *Server {
@@ -68,38 +70,4 @@ func NewServer(jarchive *qparty.JArchiveIndex, jsonFS fs.FS, staticFS fs.FS) *Se
 	qps.Handler = qps.RegisterRoutes()
 
 	return qps
-}
-
-func (server *Server) Favicon() func(echo.Context) error {
-	if server.staticFS == nil {
-		log.Fatal("embedded filesystem absent when setting up favicon route")
-	}
-	favicon_bytes := must_load_file(server.staticFS, "favicon.ico")
-
-	return func(ctx echo.Context) error {
-		return ctx.Blob(http.StatusOK, "image/x-icon", favicon_bytes)
-	}
-}
-
-func (server *Server) StyleCSS() func(echo.Context) error {
-	if server.staticFS == nil {
-		log.Fatal("embedded filesystem absent when setting up favicon route")
-	}
-	stylecss_bytes := must_load_file(server.staticFS, "style.css")
-
-	return func(ctx echo.Context) error {
-		return ctx.Blob(http.StatusOK, "text/css", stylecss_bytes)
-	}
-}
-
-func must_load_file(fs fs.FS, filename string) []byte {
-	reader, err := fs.Open(filename)
-	if err != nil {
-		log.Fatal(err)
-	}
-	bytes, err := io.ReadAll(reader)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return bytes
 }
