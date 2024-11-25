@@ -23,10 +23,7 @@
 package qparty
 
 import (
-	"encoding/json"
 	"fmt"
-	"log"
-	"os"
 	"strconv"
 )
 
@@ -41,25 +38,6 @@ type SeasonMetadata struct {
 	EpisodesCount   int `json:"episode_count"`
 	ChallengesCount int `json:"challenge_count"`
 	StumpersCount   int `json:"tripstump_count"`
-}
-
-func (all_seasons JArchiveIndex) WriteSeasonIndexJSON(json_path string) error {
-	writer, err := os.Create(json_path)
-	if err != nil {
-		return err
-	}
-	bytes, err := json.Marshal(all_seasons)
-	if err != nil {
-		return fmt.Errorf("failed to marshal seasons to JSON bytes\n%s", err)
-	}
-	nbytes, err := writer.Write(bytes)
-	if err != nil {
-		return fmt.Errorf("failed to write%s\n%s", json_path, err)
-	} else {
-		log.Printf("Wrote seasons.json, %d bytes", nbytes)
-	}
-
-	return nil
 }
 
 // Unique (sometimes numeric) identifier for seasons in the archive.

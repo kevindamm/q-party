@@ -33,6 +33,7 @@ import (
 	qparty "github.com/kevindamm/q-party"
 	"github.com/kevindamm/q-party/cmd/jarchive/html-parser"
 	"github.com/kevindamm/q-party/ent"
+	"github.com/kevindamm/q-party/service"
 )
 
 func main() {
@@ -61,7 +62,7 @@ func main() {
 	// }
 
 	var write_episode func(qparty.FullEpisode) error
-	var write_metadata func(*qparty.JArchiveIndex) error
+	var write_metadata func(*service.JArchiveIndex) error
 
 	switch *output_format {
 	case "":
@@ -87,8 +88,10 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	jarchive, err := qparty.LoadJArchiveIndex(jarchive_bytes)
+	var jarchive service.JArchiveIndex
+	err = json.Unmarshal(jarchive_bytes, &jarchive)
 	if err != nil {
+		log.Print("failed to unmarshal JArchive JSON")
 		log.Fatal(err)
 	}
 
@@ -163,7 +166,7 @@ func main() {
 		}
 	}
 
-	err = write_metadata(jarchive)
+	err = write_metadata(&jarchive)
 	if err != nil {
 		log.Fatal("failed to write JArchive index\n", err)
 	}
@@ -180,8 +183,8 @@ func must_create_dir(at_path, child_path string) string {
 	return new_path
 }
 
-func NoOpEpisode(qparty.FullEpisode) error     { return nil }
-func NoOpMetadata(*qparty.JArchiveIndex) error { return nil }
+func NoOpEpisode(qparty.FullEpisode) error      { return nil }
+func NoOpMetadata(*service.JArchiveIndex) error { return nil }
 
 func LoadEpisode(html_path string) *qparty.FullEpisode {
 	// Parse the episode's HTML to get the show and challenge details.
@@ -219,8 +222,8 @@ func WriteEpisodeJSON(json_path string) func(qparty.FullEpisode) error {
 	}
 }
 
-func WriteSeasonIndexJSON(data_path string) func(*qparty.JArchiveIndex) error {
-	return func(jarchive *qparty.JArchiveIndex) error {
+func WriteSeasonIndexJSON(data_path string) func(*service.JArchiveIndex) error {
+	return func(jarchive *service.JArchiveIndex) error {
 		filepath := path.Join(data_path, "jarchive.json")
 		writer, err := os.Create(filepath)
 		if err != nil {
@@ -256,9 +259,9 @@ func WriteEpisodeDB(dbclient *ent.Client) func(qparty.FullEpisode) error {
 	}
 }
 
-func WriteMetadataDB(dbclient *ent.Client) func(*qparty.JArchiveIndex) error {
+func WriteMetadataDB(dbclient *ent.Client) func(*service.JArchiveIndex) error {
 	log.Fatal("TODO (NYI)")
-	return func(*qparty.JArchiveIndex) error {
+	return func(*service.JArchiveIndex) error {
 		return nil
 	}
 }

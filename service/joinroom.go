@@ -26,6 +26,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/fs"
 	"log"
 	"sync"
 
@@ -61,14 +62,11 @@ type QPartySecret struct {
 	Token string
 }
 
-func (server *Server) RouteJoinRoom() func(echo.Context) error {
+func (server *Server) RouteJoinRoom(jsonFS fs.FS) func(echo.Context) error {
 	// Setup fixed set of available rooms.
 	// (a future version may allow this to be dynamic via a database)
 	var room_config RoomMetadata
-	if server.jsonFS == nil {
-		log.Fatal("missing embedded json files")
-	}
-	reader, err := server.jsonFS.Open("rooms.json")
+	reader, err := jsonFS.Open("rooms.json")
 	if err != nil {
 		log.Fatal(err)
 	}

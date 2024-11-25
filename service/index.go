@@ -24,44 +24,54 @@ package service
 
 import (
 	"encoding/json"
-	"io"
+	"fmt"
 	"log"
 	"net/http"
+	"os"
 
+	qparty "github.com/kevindamm/q-party"
 	"github.com/labstack/echo/v4"
 )
 
-// Contains the landing page route and JSON representations of the metadata,
-// including seasons, episodes and categories.  These are initially pulled from
-// a bespoke flat file instance and can evolve to pull from a database with new
-// (custom and updated) challenges and episodes.
-
-// Serves the root page, redirecting to an in-progress game or previous room,
-// if a session is present.
-func (server *Server) RouteLandingPage() func(ctx echo.Context) error {
-	if server.staticFS == nil {
-		log.Fatal("embedded filesystem absent when setting up route for landing page")
-	}
-
-	// Load the bytes for the favicon during server startup.
-	reader, err := server.staticFS.Open("index.html")
-	if err != nil {
-		log.Fatal(err)
-	}
-	homepage, err := io.ReadAll(reader)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return func(ctx echo.Context) error {
-		// TODO check if user has logged in?
-		// TODO check session for recently being in a room?
-		// redirects in either case, otherwise shows the plain index.html
-
-		return ctx.Blob(http.StatusOK, "text/html", homepage)
-	}
+type JArchiveIndex struct {
+	Version    []uint                                    `json:"version,omitempty"`
+	Seasons    map[qparty.SeasonID]qparty.SeasonMetadata `json:"seasons"`
+	Categories map[string]qparty.CategoryMetadata        `json:"categories"`
+	Episodes   map[qparty.EpisodeID]qparty.EpisodeStats  `json:"episodes"`
 }
 
+func (server *Server) LoadJArchiveIndex(jarchive_json []byte) error {
+	index := new(JArchiveIndex)
+	err := json.Unmarshal(jarchive_json, index)
+	if err != nil {
+		return err
+	}
+	// TODO create additional (in-memory) indexes for easier retrieval
+	// TODO also cache recently loaded episodes?  that can be done separately in main, though
+	server.jarchive = index
+	return nil
+}
+
+func (all_seasons JArchiveIndex) WriteSeasonIndexJSON(json_path string) error {
+	writer, err := os.Create(json_path)
+	if err != nil {
+		return err
+	}
+	bytes, err := json.Marshal(all_seasons)
+	if err != nil {
+		return fmt.Errorf("failed to marshal seasons to JSON bytes\n%s", err)
+	}
+	nbytes, err := writer.Write(bytes)
+	if err != nil {
+		return fmt.Errorf("failed to write%s\n%s", json_path, err)
+	} else {
+		log.Printf("Wrote seasons.json, %d bytes", nbytes)
+	}
+
+	return nil
+}
+
+// Handler for static JSON files representing parts of the index.
 func (server *Server) RouteIndexJSON(index_name string) func(echo.Context) error {
 	// Assumes the index will not change, preload the bytes to deliver.
 	var bytes []byte
@@ -70,42 +80,21 @@ func (server *Server) RouteIndexJSON(index_name string) func(echo.Context) error
 	case "seasons":
 		bytes, err = json.Marshal(server.jarchive.Seasons)
 		if err != nil {
-			log.Fatal(err)
+			log.Print("ERROR marshaling seasons into JSON" + err.Error())
 		}
 	case "episodes":
 		bytes, err = json.Marshal(server.jarchive.Episodes)
 		if err != nil {
-			log.Fatal(err)
+			log.Print("ERROR marshaling episodes into JSON" + err.Error())
 		}
 	case "categories":
 		bytes, err = json.Marshal(server.jarchive.Categories)
 		if err != nil {
-			log.Fatal(err)
+			log.Print("ERROR marshaling categories into JSON" + err.Error())
 		}
 	}
-	// TODO cache updates to the index here or retrieve from a database on demand.
 
 	return func(ctx echo.Context) error {
 		return ctx.Blob(http.StatusOK, "application/json", bytes)
-	}
-}
-
-func (server *Server) AboutPage() func(echo.Context) error {
-	if server.staticFS == nil {
-		log.Fatal("embedded filesystem absent when setting up route for landing page")
-	}
-
-	// Load the bytes for the favicon during server startup.
-	reader, err := server.staticFS.Open("about.html")
-	if err != nil {
-		log.Fatal(err)
-	}
-	about_html, err := io.ReadAll(reader)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return func(ctx echo.Context) error {
-		return ctx.Blob(http.StatusOK, "text/html", about_html)
 	}
 }

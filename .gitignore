@@ -9,6 +9,10 @@ json/
 *.dylib
 *templ.go
 
+*.pem
+*.crt
+*.key
+
 *.test
 *.out
 go.work

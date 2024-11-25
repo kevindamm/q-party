@@ -24,16 +24,14 @@ package service
 
 import (
 	"fmt"
-	"io/fs"
 	"log"
 	"net/http"
-	"os"
-	"strconv"
 	"sync"
 	"time"
 
 	_ "github.com/joho/godotenv/autoload"
-	qparty "github.com/kevindamm/q-party"
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 )
 
 type Server struct {
@@ -41,18 +39,13 @@ type Server struct {
 	Rooms map[RoomID]*RoomState
 
 	port     int
-	jarchive *qparty.JArchiveIndex
-	jsonFS   fs.FS
-	staticFS fs.FS
+	jarchive *JArchiveIndex
 
+	echo *echo.Echo
 	lock sync.Mutex
 }
 
-func NewServer(jarchive *qparty.JArchiveIndex, jsonFS fs.FS, staticFS fs.FS) *Server {
-	port, err := strconv.Atoi(os.Getenv("QPARTY_PORT"))
-	if err != nil {
-		port = 80
-	}
+func NewServer(port int) *Server {
 	qps := new(Server)
 	qps.port = port
 	log.Printf("Listening on port %d", port)
@@ -64,10 +57,25 @@ func NewServer(jarchive *qparty.JArchiveIndex, jsonFS fs.FS, staticFS fs.FS) *Se
 		WriteTimeout: 30 * time.Second,
 	}
 	qps.Server = &server
-	qps.jarchive = jarchive
-	qps.jsonFS = jsonFS
-	qps.staticFS = staticFS
-	qps.Handler = qps.RegisterRoutes()
+
+	qps.echo = echo.New()
+	qps.echo.Use(middleware.Logger())
+	qps.echo.Use(middleware.Recover())
+	//qps.echo.Pre(middleware.HTTPSRedirect())
+	//qps.echo.Pre(middleware.RemoveTrailingSlash())
+
+	qps.echo.Renderer = NewRenderer()
+	qps.Handler = qps.echo
 
 	return qps
+}
+
+func (server *Server) Serve(port int) error {
+	url := fmt.Sprintf(":%d", port)
+	return server.echo.Start(url)
+}
+
+func (server *Server) ServeTLS(crt_path, key_path string) error {
+	url := "q-party.kevindamm.com"
+	return server.echo.StartTLS(url, crt_path, key_path)
 }

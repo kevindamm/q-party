@@ -32,22 +32,17 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func TestLanding(t *testing.T) {
+func TestSingleFile(t *testing.T) {
 	e := echo.New()
 	request := httptest.NewRequest(http.MethodGet, "/", nil)
 	response := httptest.NewRecorder()
 	ctx := e.NewContext(request, response)
-	server := new(Server)
 
-	server.staticFS = fstest.MapFS{
+	staticFS := fstest.MapFS{
 		"index.html": {Data: []byte("<html><body><p>Hello, World!</p></body></html>")},
 	}
-	server.jsonFS = fstest.MapFS{
-		"json/1234.json": {},
-		"jarchive.json":  {},
-	}
 
-	handler := server.RouteLandingPage()
+	handler := SingleFileHandler(staticFS, "index.html", "text/html")
 	if err := handler(ctx); err != nil {
 		t.Errorf("handler() error = %v", err)
 		return

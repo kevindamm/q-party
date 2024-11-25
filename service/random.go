@@ -24,7 +24,6 @@ package service
 
 import (
 	"encoding/json"
-	"log"
 	"math/rand/v2"
 	"net/http"
 
@@ -62,10 +61,6 @@ func (server *Server) RouteRandomChallenges() func(echo.Context) error {
 }
 
 func (server *Server) NewRandomBoard() func(ctx echo.Context) error {
-	if server.jsonFS == nil {
-		log.Fatal("embedded json files absent when setting up route for random categories")
-	}
-
 	cat_names := make([]string, 0, len(server.jarchive.Categories))
 	i := 0
 	for key := range server.jarchive.Categories {
