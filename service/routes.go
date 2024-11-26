@@ -77,8 +77,9 @@ func (server *Server) RouteStaticFiles(staticFS fs.FS) {
 		SingleFileHandler(staticFS, "static/index.html", "text/html"))
 	server.echo.GET("/about",
 		SingleFileHandler(staticFS, "static/about.html", "text/html"))
-	server.echo.GET("/*",
-		echo.WrapHandler(EmbedFSHandler(staticFS)))
+	server.echo.GET("/legal",
+		SingleFileHandler(staticFS, "static/legal.html", "text/html"))
+	server.echo.GET("/*", echo.WrapHandler(EmbedFSHandler(staticFS)))
 
 	// Retrieve the season, episode and category indices as subsets of the index.
 	// Served separately because they are often used independently and can be

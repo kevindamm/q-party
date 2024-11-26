@@ -60,15 +60,15 @@ h1.title {
 #centered {
   display: flex;
   flex-direction: column;
-/*  gap: 3em; */
   align-content: stretch;
 }
 
 #centered > div {
   display: flex;
   flex-direction: column;
-  padding-top: 14vh;
-  gap: 1.6em;
+  padding-top: 12vh;
+  padding-bottom: 5em;
+  gap: 1.4em;
   justify-content: center;
   align-items: center;
 }
@@ -92,8 +92,8 @@ h1.title {
   line-height: 1;
   list-style: none;
   overflow: hidden;
-  padding-left: 16px;
-  padding-right: 16px;
+  padding-left: 20px;
+  padding-right: 20px;
   position: relative;
   text-align: left;
   text-decoration: none;

@@ -13,41 +13,39 @@
   <h1 class="title michroma-regular">?-Party</h1>
 
 <div>
-<form id="menu" method="post" action="join">
-  <button class="menuitem" type="submit" onClick="joinButton">
-Join Room
-  <input id="room-input" class="hidden" type="text" placeholder="Room ID">
-  </button>
-</form>
+  <button id="join-room" class="menuitem">Join Room</button>
+  <form id="room-form" method="post" action="join">
+    <input type="text" id="room-input" class="hidden" value="TESTROOM"
+     placeholder="Room ID">
+  </form>
 
 <script>
   var buttonHidden = true;
-  function joinButton(event) {
-    el = document.getElementById("room-input")
+  var joinButton = document.getElementById("join-room");
+  var roomInput = document.getElementById("room-input");
+
+  joinButton.addEventListener("click", function(event) {
     if (buttonHidden === true) {
       // un-hide the text input for room name
-      el.class = "";
+      roomInput.class = "";
+      roomInput.display = "block";
       event.preventDefault();
-      event.stopPropagation();
-      el.focus();
+      roomInput.focus();
       buttonHidden = false;
     } else {
-      if (el.value === "") {
+      if (roomInput.value === "") {
         // ignore if empty
         event.preventDefault();
-        event.stopPropagation();
-      } else {
-        // TODO submit form if room name is not empty
       }
     }
-  }
+  });
 </script>
 
-<form method="get" action="/about">
+<form action="/about">
   <button class="menuitem" >About</button>
 </form>
-
 </div>
+
 <footer>
   <p><a href="/legal">License & Terms</a></p>
   <p>Copyright &copy; 2024 Kevin Damm</p>

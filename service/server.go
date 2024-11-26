@@ -76,6 +76,6 @@ func (server *Server) Serve(port int) error {
 }
 
 func (server *Server) ServeTLS(crt_path, key_path string) error {
-	url := "q-party.kevindamm.com"
+	url := "q-party.kevindamm.com:443"
 	return server.echo.StartTLS(url, crt_path, key_path)
 }
