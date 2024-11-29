@@ -1,0 +1,32 @@
+<html>
+<head>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bakbak+One&family=Libre+Caslon+Text:ital,wght@0,400;0,700;1,400&family=Michroma&family=Oxanium:wght@200..800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body><table>
+
+  <thead>
+    <tr>
+      {{ range $category := .Categories}}
+      <th scope="col">{{$category.Title}}</th>
+      {{ end }}
+    </tr>
+  </thead>
+  
+  <tbody>
+    {{ range $row := .Rows }}
+      {{ range $challenge := $row.Challenges }}
+      <td>
+        <span class="score">{{$challenge.Value}}</span>
+        <span class="clue">{{$challenge.Clue}}</span>
+      </td>
+      {{ end }}
+    {{ end }}
+  </tbody>
+  
+</table>
+</body>
+</html>
