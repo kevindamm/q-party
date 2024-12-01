@@ -30,11 +30,10 @@ import (
 )
 
 type EpisodeMetadata struct {
-	ShowNumber `json:"show_number"` // cue:">0"
-	ShowTitle  string               `json:"show_title"`
+	Show      ShowNumber `json:"show_number"`
+	ShowTitle string     `json:"show_title"`
 
 	EpisodeID `json:"episode_id,omitempty"`
-	SeasonID  `json:"season,omitempty"`
 	Aired     ShowDate `json:"aired,omitempty"`
 	Taped     ShowDate `json:"taped,omitempty"`
 }
@@ -62,12 +61,15 @@ type FullEpisode struct {
 
 // Unique numeric identifier for episodes in the archive.
 // May be different than the sequential show number used in display.
-type ShowNumber uint
+type ShowNumber struct {
+	Season SeasonID // empty string indicates regular-season play.
+	Number uint     // cue:">0"
+}
 
 func (show *ShowNumber) UnmarshalJSON(json_bytes []byte) error {
-	var intVal int
+	var intVal uint
 	if err := json.Unmarshal(json_bytes, &intVal); err != nil {
-		*show = ShowNumber(intVal)
+		show.Number = intVal
 	} else {
 		var stringVal string
 		if err := json.Unmarshal(json_bytes, &stringVal); err != nil {
@@ -75,7 +77,10 @@ func (show *ShowNumber) UnmarshalJSON(json_bytes []byte) error {
 			if err != nil {
 				return err
 			}
-			*show = ShowNumber(number)
+			if number < 1 {
+				return fmt.Errorf("expected positive integer for show number")
+			}
+			show.Number = uint(number)
 		}
 	}
 	return nil
@@ -84,8 +89,8 @@ func (show *ShowNumber) UnmarshalJSON(json_bytes []byte) error {
 // Show numbers are unique within regular seasons but a new sequence is created
 // for non-regular seasons also.  Thus the JSON name uses both season and show
 // number, even though this leads to some number-hyphen-number naming.
-func (show ShowNumber) JSON(season SeasonID) string {
-	return fmt.Sprintf("%s-%d.json", string(season), show)
+func (show ShowNumber) JSON() string {
+	return fmt.Sprintf("%s-%d.json", string(show.Season), show)
 }
 
 // Parses the numeric value from a string.
@@ -95,7 +100,10 @@ func MustParseShowNumber(numeric string) ShowNumber {
 	if err != nil {
 		log.Fatalf("failed to parse Show Number from string '%s'\n%s", numeric, err)
 	}
-	return ShowNumber(id)
+	if id < 1 {
+		log.Fatalf("expected positive integer for show number, got '%s'", numeric)
+	}
+	return ShowNumber{"", uint(id)}
 }
 
 // Unique ID which J-Archive uses to identify its episodes.

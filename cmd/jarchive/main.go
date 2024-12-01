@@ -97,8 +97,8 @@ func main() {
 
 	season_episodes := make(map[qparty.SeasonID][]qparty.EpisodeID)
 	for jeid, episode := range jarchive.Episodes {
-		season_episodes[episode.SeasonID] = append(
-			season_episodes[episode.SeasonID], jeid)
+		season_episodes[episode.Show.Season] = append(
+			season_episodes[episode.Show.Season], jeid)
 	}
 
 	// Read per-season episode list (seasons/[seasonid].json)
@@ -112,7 +112,7 @@ func main() {
 
 			episode := LoadEpisode(filepath)
 			episode.EpisodeID = jeid
-			episode.SeasonID = jsid
+			episode.Show.Season = jsid
 
 			err := write_episode(*episode)
 			if err != nil {
@@ -202,7 +202,7 @@ func LoadEpisode(html_path string) *qparty.FullEpisode {
 
 func WriteEpisodeJSON(json_path string) func(qparty.FullEpisode) error {
 	return func(episode qparty.FullEpisode) error {
-		filepath := path.Join(json_path, episode.ShowNumber.JSON(episode.SeasonID))
+		filepath := path.Join(json_path, episode.Show.JSON())
 		writer, err := os.Create(filepath)
 		if err != nil {
 			return fmt.Errorf("failed to create file %s\n%s", filepath, err)

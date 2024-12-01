@@ -64,7 +64,7 @@ func main() {
 	log.Println("graceful shutdown complete")
 }
 
-//go:embed json/*
+//go:embed json/*.json
 var jsonFS embed.FS
 
 //go:embed static/*
