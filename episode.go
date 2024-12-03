@@ -90,7 +90,7 @@ func (show *ShowNumber) UnmarshalJSON(json_bytes []byte) error {
 // for non-regular seasons also.  Thus the JSON name uses both season and show
 // number, even though this leads to some number-hyphen-number naming.
 func (show ShowNumber) JSON() string {
-	return fmt.Sprintf("%s-%d.json", string(show.Season), show)
+	return fmt.Sprintf("%s-%d.json", string(show.Season), show.Number)
 }
 
 // Parses the numeric value from a string.
