@@ -235,8 +235,8 @@ func parseIntoMarkdown(root *html.Node) (string, []qparty.Media) {
 
 					// represent as Media and as markdown within the prompt.
 					media_asset := MakeMedia(href)
+					prompt += fmt.Sprintf("%s [%d] ", text, len(media))
 					media = append(media, media_asset)
-					prompt += fmt.Sprintf(" [%s](%s) ", text, media_asset.MediaURL)
 				} else if child.Data == "u" {
 					// Recursively collect the text and media of the prompt.
 					prompt += " _"

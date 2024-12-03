@@ -158,7 +158,7 @@ func TestParseImageChallenge(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	expected_prompt := "A Veronica is a movement done in [this](/media/2004-07-19_DJ_11.jpg) sport, popular in Mexico"
+	expected_prompt := "A Veronica is a movement done in this [0] sport, popular in Mexico"
 	if challenge.Clue != expected_prompt {
 		t.Errorf("incorrect prompt, got\n%s\n%s\nexpected", challenge.Clue, expected_prompt)
 	}
@@ -218,7 +218,7 @@ func TestParseAudioWageringChallenge(t *testing.T) {
 	if challenge.Value.String() != "$-1900" {
 		t.Errorf("incorrect dollar value string '%s'", challenge.Value.String())
 	}
-	expected_text := "*\"I dream of Jeanie with the light brown hair / Borne, like a vapor...\"*\n\nWhat we call [this](/media/1984-10-02_DJ_09.mp3) singing _sans_ accompaniment:"
+	expected_text := "*\"I dream of Jeanie with the light brown hair / Borne, like a vapor...\"*\n\nWhat we call this [0] singing _sans_ accompaniment:"
 	if challenge.Clue != expected_text {
 		t.Errorf("incorrect prompt '%s' !=\n'%s'", challenge.Clue, expected_text)
 	}
@@ -265,7 +265,7 @@ func TestParseVideoChallenge(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	expected_prompt := "( [Cheryl of the Clue Crew drags a mustache back onto Alex.](/media/2004-07-19_DJ_11.mp4) ) [Introduced](/media/2004-07-19_DJ_11.jpg) in 1990, it's the [program](/media/2004-07-19_DJ_11a.jpg) I'm using to create an [unusual image](/media/2004-07-19_DJ_11b.jpg)"
+	expected_prompt := "(Cheryl of the Clue Crew drags a mustache back onto Alex. [0] ) Introduced [1] in 1990, it's the program [2] I'm using to create an unusual image [3]"
 	if challenge.Clue != expected_prompt {
 		t.Errorf("incorrect prompt, got\n%s\n%s\nexpected", challenge.Clue, expected_prompt)
 	}
