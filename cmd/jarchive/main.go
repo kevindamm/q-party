@@ -39,8 +39,8 @@ import (
 func main() {
 	data_path := flag.String("data", ".data",
 		"path where converted and created games are written")
-	sqlite_path := flag.String("db", "jarchive.sqlite",
-		"path of the file (within `data` path) that represents the sqlite3 database")
+	//	sqlite_path := flag.String("db", "jarchive.sqlite",
+	//		"path of the file (within `data` path) that represents the sqlite3 database")
 	output_format := flag.String("out", "",
 		"(json|sqlite) encoding of the converted season or episode representation")
 
@@ -50,44 +50,23 @@ func main() {
 		fmt.Println("    command is either 'season' or 'episode'")
 		fmt.Println("    id# is the unique ID for the season or episode")
 		fmt.Println()
-		fmt.Println("Fetches the season or episode if absent, then converts it.")
+		fmt.Println("Fetches the season or episode if absent, then converts it " +
+			"and stores extracted data into the jarchive.sqlite database.")
 		fmt.Println()
 		flag.PrintDefaults()
 	}
 	flag.Parse()
 
-	// if flag.NArg() < 1 {
-	// 	flag.Usage()
-	// 	return
-	// }
-
-	var write_episode func(qparty.FullEpisode) error
-	var write_metadata func(*service.JArchiveIndex) error
-
-	switch *output_format {
-	case "":
-		write_episode = NoOpEpisode
-		//write_metadata = NoOpMetadata
-		write_metadata = WriteSeasonIndexJSON(*data_path)
-	case "json":
-		write_metadata = WriteSeasonIndexJSON(*data_path)
-		json_path := must_create_dir(*data_path, "json")
-		write_episode = WriteEpisodeJSON(json_path)
-	case "sqlite":
-		dbclient := must_open_db(*sqlite_path)
-		write_metadata = WriteMetadataDB(dbclient)
-		write_episode = WriteEpisodeDB(dbclient)
-	default:
-		log.Print("unrecognized output format ", *output_format)
+	if flag.NArg() < 1 {
 		flag.Usage()
 		return
 	}
-
 	jarchive_path := path.Join(*data_path, "jarchive.json")
 	jarchive_bytes, err := os.ReadFile(jarchive_path)
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	var jarchive service.JArchiveIndex
 	err = json.Unmarshal(jarchive_bytes, &jarchive)
 	if err != nil {
@@ -95,16 +74,62 @@ func main() {
 		log.Fatal(err)
 	}
 
+	switch flag.Arg(0) {
+	case "season":
+		if flag.NArg() < 2 {
+			log.Print("ERROR: expected season ID after `season` command")
+		}
+		LogSeasonDetails(flag.Arg(1))
+
+	case "episode":
+		if flag.NArg() < 2 {
+			log.Print("ERROR: expected episode ID after `episode` command")
+		}
+		LogEpisodeDetails(flag.Arg(1))
+
+	case "all":
+		WriteEpisodeMetadata(&jarchive, *data_path, *output_format)
+	}
+}
+
+func WriteEpisodeMetadata(
+	jarchive *service.JArchiveIndex,
+	data_path string,
+	output_format string) {
+
+	var write_episode func(qparty.FullEpisode) error
+	var write_metadata func(*service.JArchiveIndex) error
+
 	season_episodes := make(map[qparty.SeasonID][]qparty.EpisodeID)
 	for jeid, episode := range jarchive.Episodes {
 		season_episodes[episode.SeasonID] = append(
 			season_episodes[episode.SeasonID], jeid)
 	}
 
+	switch output_format {
+	case "":
+		write_episode = NoOpEpisode
+		//write_metadata = NoOpMetadata
+		write_metadata = WriteSeasonIndexJSON(data_path)
+	case "json":
+		write_metadata = WriteSeasonIndexJSON(data_path)
+		json_path := must_create_dir(data_path, "json")
+		write_episode = WriteEpisodeJSON(json_path)
+	case "sqlite":
+		sqlite_path := fmt.Sprintf("%s/jarchive.sqlite", data_path)
+		dbclient := must_open_db(sqlite_path)
+		write_metadata = WriteMetadataDB(dbclient)
+		write_episode = WriteEpisodeDB(dbclient)
+	default:
+		log.Print("unrecognized output format ", output_format)
+		flag.Usage()
+		return
+	}
+
 	// Read per-season episode list (seasons/[seasonid].json)
 	for jsid, season := range jarchive.Seasons {
 		for _, jeid := range season_episodes[jsid] {
-			filepath := path.Join(*data_path, "episodes", jeid.HTML())
+			filepath := path.Join(data_path, "episodes", jeid.HTML())
 			if _, err := os.Stat(filepath); os.IsNotExist(err) {
 				log.Print("HTML not found (fetch?) ", jeid.HTML())
 				continue
@@ -166,7 +191,7 @@ func main() {
 		}
 	}
 
-	err = write_metadata(&jarchive)
+	err := write_metadata(jarchive)
 	if err != nil {
 		log.Fatal("failed to write JArchive index\n", err)
 	}
@@ -264,4 +289,12 @@ func WriteMetadataDB(dbclient *ent.Client) func(*service.JArchiveIndex) error {
 	return func(*service.JArchiveIndex) error {
 		return nil
 	}
+}
+
+func LogSeasonDetails(season string) {
+
+}
+
+func LogEpisodeDetails(season string) {
+
 }
