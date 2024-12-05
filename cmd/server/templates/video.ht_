@@ -1,0 +1,4 @@
+<video controls width="100%">
+<source src=".MediaURL">
+<a href=".MediaURL">Download video</a>
+</video>

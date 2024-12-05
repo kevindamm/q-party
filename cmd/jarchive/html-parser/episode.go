@@ -65,7 +65,7 @@ func parseContent(content *html.Node, episode *qparty.FullEpisode) {
 			}
 
 			text, media := parseIntoMarkdown(nextChild)
-			episode.ShowNumber = parseShowNumber(text)
+			episode.Show.Number = parseShowNumber(text)
 			// derived from content, not <head>...</head>
 			episode.ShowTitle = text
 			if media != nil {
@@ -98,7 +98,7 @@ func parseContent(content *html.Node, episode *qparty.FullEpisode) {
 
 var reShowNumberMatcher = regexp.MustCompile(`#(\d+)`)
 
-func parseShowNumber(full_title string) qparty.ShowNumber {
+func parseShowNumber(full_title string) uint {
 	showNumMatch := reShowNumberMatcher.FindAllStringSubmatch(full_title, 2)
 	if showNumMatch == nil {
 		log.Fatal("title does not match expected format", full_title)
@@ -108,7 +108,10 @@ func parseShowNumber(full_title string) qparty.ShowNumber {
 	}
 	// By regex we know this to be a positive integer.
 	number, _ := strconv.Atoi(showNumMatch[0][1])
-	return qparty.ShowNumber(number)
+	if number < 1 {
+		log.Fatal("show number should be a positive number")
+	}
+	return uint(number)
 }
 
 func parseFinalRound(div *html.Node) (*qparty.FullChallenge, *qparty.FullChallenge) {

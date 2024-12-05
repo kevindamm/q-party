@@ -1,0 +1,35 @@
+<html>
+<head>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bakbak+One&family=Libre+Caslon+Text:ital,wght@0,400;0,700;1,400&family=Michroma&family=Oxanium:wght@200..800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+
+<script src="https://unpkg.com/htmx.org@2.0.3" integrity="sha384-0895/pl2MU10Hqc6jd4RvrthNlDiE9U1tWmX7WRESftEDRosgxNsQG/Ze9YMRzHq" crossorigin="anonymous"></script>
+</head>
+
+<body><table>
+
+  <thead>
+    <tr>
+      {{ range $category := .Categories}}
+      <th scope="col">{{$category.Title}}</th>
+      {{ end }}
+    </tr>
+  </thead>
+  
+  <tbody>
+    {{ range $row := .Rows }}
+      {{ range $challenge := $row.Challenges }}
+      <td
+       hx-get="/clue/{{$challenge.ChallengeID}}"
+       hx-trigger="click">
+        <span class="score">{{$challenge.Value}}</span>
+      </td>
+      {{ end }}
+    {{ end }}
+  </tbody>
+
+</table>
+</body>
+</html>

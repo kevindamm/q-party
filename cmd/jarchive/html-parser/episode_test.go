@@ -1574,9 +1574,9 @@ func TestJArchiveEpisode_parseContent(t *testing.T) {
 		t.Error("did not carry the episode show dates from metadata", episode.EpisodeID)
 	}
 
-	expected_show_number := 4857
-	if episode.ShowNumber != qparty.ShowNumber(expected_show_number) {
-		t.Errorf("incorrect show number %d (see div#game_title %d)", episode.ShowNumber, expected_show_number)
+	expected_show_number := uint(4857)
+	if episode.Show.Number != expected_show_number {
+		t.Errorf("incorrect show number %d (see div#game_title %d)", episode.Show.Number, expected_show_number)
 	}
 
 	expected_comments := "(Kelly: We're here in wonderful [Copenhagen](/media/2005-10-25_ComingUp.jpg) celebrating 200 years of Hans Christian Andersen. Join us, next on *Jeopardy!* )"
