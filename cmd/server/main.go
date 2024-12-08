@@ -14,6 +14,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/kevindamm/q-party/db"
 	"github.com/kevindamm/q-party/service"
 )
 
@@ -21,11 +22,20 @@ import (
 // Wraps the server in a signal listener that initiates a graceful shutdown.
 
 func main() {
+	initialize := flag.Bool("init", false, "initialize DB from embedded metadata")
 	cert_path := flag.String("cert_path", "",
 		"path where server.crt and server.key can be found (for this environment)")
 	port := flag.Int("port", 0,
 		"server port to listen on (0 uses default 80/443 ports)")
 	flag.Parse()
+
+	jarchive := db.JArchive()
+	if *initialize {
+		err := jarchive.Create()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
 
 	if *port == 0 {
 		*port = 80
