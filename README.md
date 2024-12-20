@@ -35,19 +35,25 @@ during gameplay whenever a challenge for fact-checking comes up.
 Some tools written in Go are provided
 in the `cmd/` directory of this repo:
 
-<ul>
-<li>
+### **editor**
 
-**editor** - CLI tool for creating a new board and/or episode, exports as JSON or writes into the challenges database
+CLI tool for creating a new board and/or episode, exports as JSON or writes into the challenges database.
 
-</li><li>
+[more details](./cmd/editor/README.md)
 
-**jarchive** - fetch a playable game from a single episode of the archive
+### **jarchive**
 
-</li><li>
+REPL for browsing and fetching from individual episodes of j-archive, presents
+a simplified UI for playing ad-hoc rounds.
+ 
+[more details](./cmd/jarchive/README.md)
 
-**server** - Serves HTML and JSON to hypermedia clients
+### **server**
 
-</li>
-</ul>
+Serves HTML and JSON to hypermedia clients, depends on a database being writable
+at a specified path.
+
+[more details](./cmd/server/README.md)
+
+
 
