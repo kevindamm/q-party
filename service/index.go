@@ -71,6 +71,12 @@ func (all_seasons JArchiveIndex) WriteSeasonIndexJSON(json_path string) error {
 	return nil
 }
 
+func (index JArchiveIndex) EpisodesBySeason(jsid qparty.SeasonID) []qparty.EpisodeMetadata {
+	episodes := make([]qparty.EpisodeMetadata, 0)
+
+	return episodes
+}
+
 // Handler for static JSON files representing parts of the index.
 func (server *Server) RouteIndexJSON(index_name string) func(echo.Context) error {
 	// Assumes the index will not change, preload the bytes to deliver.

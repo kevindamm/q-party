@@ -14,7 +14,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/kevindamm/q-party/db"
+	"github.com/kevindamm/q-party/ent"
 	"github.com/kevindamm/q-party/service"
 )
 
@@ -29,9 +29,9 @@ func main() {
 		"server port to listen on (0 uses default 80/443 ports)")
 	flag.Parse()
 
-	jarchive := db.JArchive()
+	jarchive := ent.NewClient()
 	if *initialize {
-		err := jarchive.Create()
+		err := jarchive.Schema.Create(context.Background())
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -74,16 +74,10 @@ func main() {
 	log.Println("graceful shutdown complete")
 }
 
-//go:embed json/*.json
-var jsonFS embed.FS
-
 //go:embed static/*
 var staticFS embed.FS
 
-// Calls the server's [Shutdown()] when
-// Runs in a goroutine alongside the server handler, the [done] channel runs the
-// remainder of main() (after blocking on a channel following server startup).
-// This gives a convenient place to
+// Calls the server's [Shutdown()] when a SIGINT or SIGTERM signal is caught.
 func graceful_shutdown(https_server *http.Server, done chan<- bool, timeout_seconds int) {
 	// Listen for the interrupt signal or termination from the OS.
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
@@ -104,6 +98,8 @@ func graceful_shutdown(https_server *http.Server, done chan<- bool, timeout_seco
 	done <- true
 }
 
+// Reads the named file from the indicated filesystem.
+// (works for both embedded and system-local files)
 func must_read_file(fs fs.FS, filename string) []byte {
 	reader, err := fs.Open(filename)
 	if err != nil {
