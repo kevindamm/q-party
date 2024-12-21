@@ -23,6 +23,7 @@
 package main
 
 import (
+	"embed"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -37,27 +38,41 @@ import (
 )
 
 func main() {
-	data_path := flag.String("data", ".data",
+	data_path := flag.String("data-path", ".data",
 		"path where converted and created games are written")
-	//	sqlite_path := flag.String("db", "jarchive.sqlite",
-	//		"path of the file (within `data` path) that represents the sqlite3 database")
-	output_format := flag.String("out", "",
-		"(json|sqlite) encoding of the converted season or episode representation")
+	read_embed := flag.Bool("embed-init", false,
+		"seed the database from the embedded JSON data")
+	//write_db := flag.String("write-db", "",
+	//	"write fetched content to a local database at named file (empty string means not to write)")
+	//log_debug := flag.String("log-debug", "",
+	//	"writes logging output to a file (empty string means not to log any output)")
 
 	flag.Usage = func() {
-		fmt.Printf("%s command id# [flags]\n", path.Base(os.Args[0]))
-		fmt.Println("  where")
-		fmt.Println("    command is either 'season' or 'episode'")
-		fmt.Println("    id# is the unique ID for the season or episode")
+		fmt.Printf("%s [list|play]\n  where\n", path.Base(os.Args[0]))
+		fmt.Println("    *list* lists season or episode info")
+		fmt.Println("    *play* starts an interactive session")
 		fmt.Println()
-		fmt.Println("Fetches the season or episode if absent, then converts it " +
-			"and stores extracted data into the jarchive.sqlite database.")
+		fmt.Println("list takes arguments 'season' or 'episode' or no additional argument")
+		fmt.Println("  with no argument, it lists all seasons and count of available episodes")
+		fmt.Println("  with 'season' argument and season-ID it prints information about that season")
+		fmt.Println("  with 'episode' argument and 'season/show' ID, prints episode information")
+		fmt.Println()
+		fmt.Println("play takes arguments [season/show ID] (playing a selected show)")
+		fmt.Println("  or 'episode' or 'category' or 'challenge' (playing a random selection)")
+		fmt.Println()
+		fmt.Println("See README.md in the project's [source code](https://github.com/kevindamm/q-party)")
 		fmt.Println()
 		flag.PrintDefaults()
 	}
 	flag.Parse()
 
+	if *read_embed {
+		populate_tables_from_json(jsonFS)
+	}
+
 	if flag.NArg() < 1 {
+		fmt.Println("ERROR: expected at least one command-line argument")
+		fmt.Println()
 		flag.Usage()
 		return
 	}
@@ -67,30 +82,66 @@ func main() {
 		log.Fatal(err)
 	}
 
-	var jarchive service.JArchiveIndex
-	err = json.Unmarshal(jarchive_bytes, &jarchive)
+	jarchive := new(service.JArchiveIndex)
+	err = json.Unmarshal(jarchive_bytes, jarchive)
 	if err != nil {
 		log.Print("failed to unmarshal JArchive JSON")
 		log.Fatal(err)
 	}
 
 	switch flag.Arg(0) {
-	case "season":
+	case "list":
 		if flag.NArg() < 2 {
-			log.Print("ERROR: expected season ID after `season` command")
+			list_seasons(jarchive)
+			return
 		}
-		LogSeasonDetails(flag.Arg(1))
+		switch flag.Arg(1) {
+		case "season", "seasons":
+			if flag.NArg() == 2 {
+				list_seasons(jarchive)
+			}
+			list_season_id(jarchive, flag.Arg(2))
+		case "episode":
+			if flag.NArg() == 2 {
+				log.Fatal("expected third argument, an episode ID to list")
+			}
+			show_number, err := qparty.ParseShowNumber(flag.Arg(2))
+			if err != nil {
+				log.Fatal(err)
+			}
+			list_episode_id(jarchive, show_number)
+		}
 
-	case "episode":
+	case "play":
 		if flag.NArg() < 2 {
-			log.Print("ERROR: expected episode ID after `episode` command")
+			log.Fatal("expected a play version (season/show#, 'episode', 'category' or 'challenge')")
 		}
-		LogEpisodeDetails(flag.Arg(1))
+		switch flag.Arg(1) {
+		case "episode", "episodes":
+			// TODO
+		case "category", "categories":
+			// TODO
+		case "challenge", "challenges":
+			// TODO
+		default:
+			// TODO attempt to parse arg-1 as season name and show # separated by '/'.
+			show_number, err := qparty.ParseShowNumber(flag.Arg(1))
+			if err != nil {
+				log.Fatal(err)
+			}
+			// TODO load episode from show_number and play it
+			_ = show_number
+		}
 
-	case "all":
-		WriteEpisodeMetadata(&jarchive, *data_path, *output_format)
+	default:
+		fmt.Println("ERROR: expected ")
+		fmt.Println()
+		flag.Usage()
 	}
 }
+
+//go:embed json/*.json
+var jsonFS embed.FS
 
 func WriteEpisodeMetadata(
 	jarchive *service.JArchiveIndex,
@@ -197,6 +248,12 @@ func WriteEpisodeMetadata(
 	}
 }
 
+func populate_tables_from_json(jsonFiles embed.FS) error {
+	// TODO
+	_ = jsonFiles
+	return nil
+}
+
 // Convenience wrapper around MkDirAll that returns the created path.
 // If the directory cannot be created, it is treated as a fatal error.
 func must_create_dir(at_path, child_path string) string {
@@ -291,10 +348,50 @@ func WriteMetadataDB(dbclient *ent.Client) func(*service.JArchiveIndex) error {
 	}
 }
 
-func LogSeasonDetails(season string) {
+func list_seasons(jarchive *service.JArchiveIndex) {
+	for _, season := range jarchive.Seasons {
+		fmt.Println(season)
+	}
+}
+
+func list_season_id(jarchive *service.JArchiveIndex, season_id string) {
+	season, ok := jarchive.Seasons[qparty.SeasonID(season_id)]
+	if !ok {
+		log.Fatalf("season '%s' not a known Season ID", season_id)
+	}
+
+	// TODO
+	_ = season
+}
+
+func list_episode_id(jarchive *service.JArchiveIndex, show *qparty.ShowNumber) []qparty.EpisodeMetadata {
+	season, ok := jarchive.Seasons[qparty.SeasonID(show.Season)]
+	if !ok {
+		log.Fatalf("season '%s' not a known Season ID", show.Season)
+	}
+	season_id := season.SeasonID
+	return jarchive.EpisodesBySeason(season_id)
+}
+
+func play_episode(jarchive *service.JArchiveIndex, show *qparty.ShowNumber) {
+	season, ok := jarchive.Seasons[qparty.SeasonID(show.Season)]
+	if !ok {
+		log.Fatalf("season '%s' not a known Season ID", show.Season)
+	}
+
+	// TODO
+	_ = season
 
 }
 
-func LogEpisodeDetails(season string) {
+func play_random_episode(jarchive *service.JArchiveIndex) {
+	log.Fatal("TBD (work in progress)")
+}
 
+func play_random_categories(jarchive *service.JArchiveIndex) {
+	log.Fatal("TBD (work in progress)")
+}
+
+func play_random_challenges(jarchive *service.JArchiveIndex) {
+	log.Fatal("TBD (work in progress)")
 }

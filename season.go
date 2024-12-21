@@ -53,7 +53,7 @@ func (id SeasonID) RegularSeason() int {
 	return number
 }
 
-func (id SeasonID) Prefix() string {
+func (id SeasonID) prefix() string {
 	prefix := prefixes[string(id)]
 
 	if len(prefix) == 0 {
