@@ -38,36 +38,23 @@ import (
 )
 
 func main() {
-	data_path := flag.String("data-path", ".data",
+	data_path := flag.String("data-path", "./.data",
 		"path where converted and created games are written")
-	read_embed := flag.Bool("embed-init", false,
-		"seed the database from the embedded JSON data")
-	//write_db := flag.String("write-db", "",
-	//	"write fetched content to a local database at named file (empty string means not to write)")
-	//log_debug := flag.String("log-debug", "",
+	db_path := flag.String("db-path", "", "path of the SQLite database file (don't write if empty)")
+	seed_db := flag.Bool("seed-db", false,
+		"initialize the local DB file with the initial metadata, using content in embedded JSON files")
+	//log_path := flag.String("log-path", "",
 	//	"writes logging output to a file (empty string means not to log any output)")
 
-	flag.Usage = func() {
-		fmt.Printf("%s [list|play]\n  where\n", path.Base(os.Args[0]))
-		fmt.Println("    *list* lists season or episode info")
-		fmt.Println("    *play* starts an interactive session")
-		fmt.Println()
-		fmt.Println("list takes arguments 'season' or 'episode' or no additional argument")
-		fmt.Println("  with no argument, it lists all seasons and count of available episodes")
-		fmt.Println("  with 'season' argument and season-ID it prints information about that season")
-		fmt.Println("  with 'episode' argument and 'season/show' ID, prints episode information")
-		fmt.Println()
-		fmt.Println("play takes arguments [season/show ID] (playing a selected show)")
-		fmt.Println("  or 'episode' or 'category' or 'challenge' (playing a random selection)")
-		fmt.Println()
-		fmt.Println("See README.md in the project's [source code](https://github.com/kevindamm/q-party)")
-		fmt.Println()
-		flag.PrintDefaults()
-	}
+	flag.Usage = usage
 	flag.Parse()
 
-	if *read_embed {
-		populate_tables_from_json(jsonFS)
+	var client *ent.Client
+	if *db_path != "" {
+		client = must_open_db(*db_path)
+		if *seed_db {
+			populate_tables_from_json(client, jsonFS)
+		}
 	}
 
 	if flag.NArg() < 1 {
@@ -76,16 +63,12 @@ func main() {
 		flag.Usage()
 		return
 	}
-	jarchive_path := path.Join(*data_path, "jarchive.json")
-	jarchive_bytes, err := os.ReadFile(jarchive_path)
-	if err != nil {
-		log.Fatal(err)
-	}
 
-	jarchive := new(service.JArchiveIndex)
-	err = json.Unmarshal(jarchive_bytes, jarchive)
+	if *data_path == "" {
+		*data_path = "."
+	}
+	jarchive, err := read_json_data(*data_path)
 	if err != nil {
-		log.Print("failed to unmarshal JArchive JSON")
 		log.Fatal(err)
 	}
 
@@ -143,6 +126,32 @@ func main() {
 //go:embed json/*.json
 var jsonFS embed.FS
 
+func usage() {
+	fmt.Printf("%s [list|play]\n  where\n", path.Base(os.Args[0]))
+	fmt.Println("    *list* lists season or episode info")
+	fmt.Println("    *play* starts an interactive session")
+	fmt.Println()
+	fmt.Println("list takes arguments 'season' or 'episode' or no additional argument")
+	fmt.Println("  with no argument, it lists all seasons and count of available episodes")
+	fmt.Println("  with 'season' argument and season-ID it prints information about that season")
+	fmt.Println("  with 'episode' argument and 'season/show' ID, prints episode information")
+	fmt.Println()
+	fmt.Println("play takes arguments [season/show ID] (playing a selected show)")
+	fmt.Println("  or 'episode' or 'category' or 'challenge' (playing a random selection)")
+	fmt.Println()
+	fmt.Println("See README.md in the project's [source code](https://github.com/kevindamm/q-party)")
+	fmt.Println()
+	flag.PrintDefaults()
+}
+
+//
+
+//
+
+//
+
+//
+
 func WriteEpisodeMetadata(
 	jarchive *service.JArchiveIndex,
 	data_path string,
@@ -159,9 +168,8 @@ func WriteEpisodeMetadata(
 
 	switch output_format {
 	case "":
-		write_episode = NoOpEpisode
-		//write_metadata = NoOpMetadata
-		write_metadata = WriteSeasonIndexJSON(data_path)
+		write_episode = func(qparty.FullEpisode) error { return nil }
+		write_metadata = func(*service.JArchiveIndex) error { return nil }
 	case "json":
 		write_metadata = WriteSeasonIndexJSON(data_path)
 		json_path := must_create_dir(data_path, "json")
@@ -247,27 +255,6 @@ func WriteEpisodeMetadata(
 		log.Fatal("failed to write JArchive index\n", err)
 	}
 }
-
-func populate_tables_from_json(jsonFiles embed.FS) error {
-	// TODO
-	_ = jsonFiles
-	return nil
-}
-
-// Convenience wrapper around MkDirAll that returns the created path.
-// If the directory cannot be created, it is treated as a fatal error.
-func must_create_dir(at_path, child_path string) string {
-	new_path := path.Join(at_path, child_path)
-	err := os.MkdirAll(new_path, 0755)
-	if err != nil {
-		log.Fatal("failed to create directory", new_path)
-	}
-	return new_path
-}
-
-func NoOpEpisode(qparty.FullEpisode) error      { return nil }
-func NoOpMetadata(*service.JArchiveIndex) error { return nil }
-
 func LoadEpisode(html_path string) *qparty.FullEpisode {
 	// Parse the episode's HTML to get the show and challenge details.
 	reader, err := os.Open(html_path)

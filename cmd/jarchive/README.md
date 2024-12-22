@@ -24,9 +24,12 @@ play takes arguments [season/show ID] (playing a selected show)
   or 'episode' or 'category' or 'challenge' (playing a random selection)
 
   -data-path string
-        path where converted and created games are written (default ".data")
-  -embed-init
-        seed the database from the embedded JSON data
+        path where converted and created games are written (default "./.data")
+  -db-path
+        path of the SQLite database file, relative to -data-path
+        (do not write to Db if "")
+  -seed-db
+        create & populate tables, and write all new category and challenge content to a local DB
 ```
 
 
@@ -35,7 +38,7 @@ play takes arguments [season/show ID] (playing a selected show)
 Create the database tables and write the initial metadata.
 
 ```console
-$ ./jarchive -embed-init -write_db=jarchive.sqlite
+$ ./jarchive -seed-db -db-path=jarchive.sqlite
 ```
 
 This will use the default data path (`./.data` from cwd) and will write the
@@ -70,7 +73,7 @@ of service for j-archive.com if persisting the contents of this database.
 
 ## Debug output
 
-If making changes to the code, use `-log_debug=debug.log` (with any file path)
+If making changes to the code, use `-log_path=debug.log` (with any file path)
 to save the verbose log to a file.  Pass "-" as a filename to print to STDOUT.
 
 
