@@ -1,2 +1,7 @@
-episodes/
+*.jsonl
 jarchive.json
+episodes/
+
+*.pem
+*.crt
+*.key

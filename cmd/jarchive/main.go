@@ -24,7 +24,6 @@ package main
 
 import (
 	"embed"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
@@ -32,7 +31,8 @@ import (
 	"path"
 
 	qparty "github.com/kevindamm/q-party"
-	"github.com/kevindamm/q-party/cmd/jarchive/html-parser"
+	"github.com/kevindamm/q-party/encoding/html"
+	"github.com/kevindamm/q-party/encoding/json"
 	"github.com/kevindamm/q-party/ent"
 	"github.com/kevindamm/q-party/service"
 )
@@ -41,19 +41,26 @@ func main() {
 	data_path := flag.String("data-path", "./.data",
 		"path where converted and created games are written")
 	db_path := flag.String("db-path", "", "path of the SQLite database file (don't write if empty)")
-	seed_db := flag.Bool("seed-db", false,
+	init_db := flag.Bool("init-db", false,
 		"initialize the local DB file with the initial metadata, using content in embedded JSON files")
+	write_jsonl := flag.Bool("write-jsonl", true,
+		"write the updates and new data to JSONL files in $data-path")
 	//log_path := flag.String("log-path", "",
 	//	"writes logging output to a file (empty string means not to log any output)")
 
-	flag.Usage = usage
+	flag.Usage = cli_usage
 	flag.Parse()
 
 	var client *ent.Client
 	if *db_path != "" {
 		client = must_open_db(*db_path)
-		if *seed_db {
+		if *init_db {
+			must_drop_existing_tables(client)
 			populate_tables_from_json(client, jsonFS)
+		}
+	} else {
+		if *init_db {
+			log.Fatal("must set -db-path if -init-db is true")
 		}
 	}
 
@@ -92,7 +99,12 @@ func main() {
 			if err != nil {
 				log.Fatal(err)
 			}
-			list_episode_id(jarchive, show_number)
+			episode := list_episode_id(jarchive, show_number)
+			fmt.Println(episode)
+			if *write_jsonl {
+				// TODO
+				json.WriteEpisodeMetadata(*data_path, episode)
+			}
 		}
 
 	case "play":
@@ -117,7 +129,7 @@ func main() {
 		}
 
 	default:
-		fmt.Println("ERROR: expected ")
+		fmt.Println("ERROR: expected command (list | play | serve | build)")
 		fmt.Println()
 		flag.Usage()
 	}
@@ -126,7 +138,7 @@ func main() {
 //go:embed json/*.json
 var jsonFS embed.FS
 
-func usage() {
+func cli_usage() {
 	fmt.Printf("%s [list|play]\n  where\n", path.Base(os.Args[0]))
 	fmt.Println("    *list* lists season or episode info")
 	fmt.Println("    *play* starts an interactive session")
@@ -171,12 +183,11 @@ func WriteEpisodeMetadata(
 		write_episode = func(qparty.FullEpisode) error { return nil }
 		write_metadata = func(*service.JArchiveIndex) error { return nil }
 	case "json":
-		write_metadata = WriteSeasonIndexJSON(data_path)
+		write_metadata = json.WriteSeasonIndex(data_path)
 		json_path := must_create_dir(data_path, "json")
-		write_episode = WriteEpisodeJSON(json_path)
+		write_episode = json.WriteEpisode(json_path)
 	case "sqlite":
-		sqlite_path := fmt.Sprintf("%s/jarchive.sqlite", data_path)
-		dbclient := must_open_db(sqlite_path)
+		dbclient := must_open_db(data_path)
 		write_metadata = WriteMetadataDB(dbclient)
 		write_episode = WriteEpisodeDB(dbclient)
 	default:
@@ -194,7 +205,7 @@ func WriteEpisodeMetadata(
 				continue
 			}
 
-			episode := LoadEpisode(filepath)
+			episode := html.LoadEpisodeHTML(filepath)
 			episode.EpisodeID = jeid
 			episode.Show.Season = jsid
 
@@ -255,63 +266,6 @@ func WriteEpisodeMetadata(
 		log.Fatal("failed to write JArchive index\n", err)
 	}
 }
-func LoadEpisode(html_path string) *qparty.FullEpisode {
-	// Parse the episode's HTML to get the show and challenge details.
-	reader, err := os.Open(html_path)
-	if err != nil {
-		// Unlikely, we know the file exists at this point, but state changes...
-		log.Print("ERROR: ", err)
-		return nil
-	}
-	defer reader.Close()
-
-	episode := html.ParseEpisode(reader)
-	return episode
-}
-
-func WriteEpisodeJSON(json_path string) func(qparty.FullEpisode) error {
-	return func(episode qparty.FullEpisode) error {
-		filepath := path.Join(json_path, episode.Show.JSON())
-		writer, err := os.Create(filepath)
-		if err != nil {
-			return fmt.Errorf("failed to create file %s\n%s", filepath, err)
-		}
-		defer writer.Close()
-
-		bytes, err := json.MarshalIndent(episode, "", "  ")
-		if err != nil {
-			return fmt.Errorf("failed to marshal index into json\n%s", err)
-		}
-
-		_, err = writer.Write(bytes)
-		if err != nil {
-			return fmt.Errorf("failed to write bytes\n%s", err)
-		}
-		return nil
-	}
-}
-
-func WriteSeasonIndexJSON(data_path string) func(*service.JArchiveIndex) error {
-	return func(jarchive *service.JArchiveIndex) error {
-		filepath := path.Join(data_path, "jarchive.json")
-		writer, err := os.Create(filepath)
-		if err != nil {
-			return fmt.Errorf("failed to create file %s\n%s", filepath, err)
-		}
-		defer writer.Close()
-
-		bytes, err := json.MarshalIndent(jarchive, "", "  ")
-		if err != nil {
-			return fmt.Errorf("failed to marshal index into json\n%s", err)
-		}
-
-		_, err = writer.Write(bytes)
-		if err != nil {
-			return fmt.Errorf("failed to write bytes\n%s", err)
-		}
-		return nil
-	}
-}
 
 func must_open_db(sqlite_path string) *ent.Client {
 	client, err := ent.Open("sqlite3", "file:"+sqlite_path+"?cache=shared&_fk=1")
@@ -319,6 +273,11 @@ func must_open_db(sqlite_path string) *ent.Client {
 		log.Fatal("failed to open DB\n", err)
 	}
 	return client
+}
+
+func must_drop_existing_tables(client *ent.Client) {
+	// TODO
+
 }
 
 func WriteEpisodeDB(dbclient *ent.Client) func(qparty.FullEpisode) error {
@@ -347,17 +306,17 @@ func list_season_id(jarchive *service.JArchiveIndex, season_id string) {
 		log.Fatalf("season '%s' not a known Season ID", season_id)
 	}
 
-	// TODO
-	_ = season
+	fmt.Println("# %s (%s)", season.Title, season.SeasonID)
+	for _, episode := range jarchive.EpisodesBySeason(season.SeasonID) {
+		fmt.Println(episode)
+	}
+	fmt.Println()
 }
 
-func list_episode_id(jarchive *service.JArchiveIndex, show *qparty.ShowNumber) []qparty.EpisodeMetadata {
-	season, ok := jarchive.Seasons[qparty.SeasonID(show.Season)]
-	if !ok {
-		log.Fatalf("season '%s' not a known Season ID", show.Season)
-	}
-	season_id := season.SeasonID
-	return jarchive.EpisodesBySeason(season_id)
+func list_episode_id(jarchive *service.JArchiveIndex, show *qparty.ShowNumber) qparty.EpisodeMetadata {
+	episode := jarchive.GetShowEpisode(*show)
+	fmt.Println(episode)
+	return episode
 }
 
 func play_episode(jarchive *service.JArchiveIndex, show *qparty.ShowNumber) {

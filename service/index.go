@@ -73,8 +73,14 @@ func (all_seasons JArchiveIndex) WriteSeasonIndexJSON(json_path string) error {
 
 func (index JArchiveIndex) EpisodesBySeason(jsid qparty.SeasonID) []qparty.EpisodeMetadata {
 	episodes := make([]qparty.EpisodeMetadata, 0)
+	// TODO
 
 	return episodes
+}
+
+func (index JArchiveIndex) GetShowEpisode(show qparty.ShowNumber) qparty.EpisodeMetadata {
+	// TODO
+	return qparty.EpisodeMetadata{}
 }
 
 // Handler for static JSON files representing parts of the index.
