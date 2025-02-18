@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS "DataQuality" (
 );
 
 -- Questions/Qlues
-CREATE TABLE IF NOT EXISTS "Q" (
+CREATE TABLE IF NOT EXISTS "Qs" (
     "qID"           INTEGER
       PRIMARY KEY
 
@@ -57,14 +57,14 @@ CREATE TABLE IF NOT EXISTS "Q" (
 );
 
 CRAETE INDEX IF NOT EXISTS "Q__Aired"
-  ON Q (aired_date)
+  ON Qs (aired_date)
   ;
 CREATE INDEX IF NOT EXISTS "Q__Updated"
-  ON Q (updated)
+  ON Qs (updated)
   WHERE (updated IS NOT NULL)
   ;
 CREATE INDEX IF NOT EXISTS "Q__DataQuality"
-  ON Q (data_quality)
+  ON Qs (data_quality)
   ;
 
 -- Category Names
@@ -85,7 +85,7 @@ CREATE INDEX IF NOT EXISTS "Category__Title"
 CREATE TABLE IF NOT EXISTS "CategoryMembership" (
   "qID"        INTEGER
     NOT NULL
-    REFERENCES   Q (qID)
+    REFERENCES   Qs (qID)
     ON DELETE    CASCADE
 
   "catID"      INTEGER
@@ -138,7 +138,7 @@ CREATE TABLE IF NOT EXISTS "RoundKey" (
 CREATE TABLE IF NOT EXISTS "Position" (
     "qID"          INTEGER
       PRIMARY KEY
-      REFERENCES     Q (qID)
+      REFERENCES     Qs (qID)
 
   , "season"     INTEGER
       NOT NULL
