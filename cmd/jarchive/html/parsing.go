@@ -31,11 +31,26 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"os"
 	"strings"
 
 	qparty "github.com/kevindamm/q-party"
 	"golang.org/x/net/html"
 )
+
+func LoadEpisodeHTML(html_path string) *qparty.FullEpisode {
+	// Parse the episode's HTML to get the show and challenge details.
+	reader, err := os.Open(html_path)
+	if err != nil {
+		// Unlikely, we know the file exists at this point, but state changes...
+		log.Print("ERROR: ", err)
+		return nil
+	}
+	defer reader.Close()
+
+	episode := ParseEpisode(reader)
+	return episode
+}
 
 func ParseEpisode(html_reader io.Reader) *qparty.FullEpisode {
 	episode := new(qparty.FullEpisode)
