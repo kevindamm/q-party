@@ -109,6 +109,8 @@ CREATE TABLE IF NOT EXISTS "Seasons" (
       PRIMARY KEY
   , "title"     TEXT
       NOT NULL    CHECK (title <> "")
+
+  , "air_date"  TEXT  -- YYYY/MM/DD, or NULL if this is a private season
   , "notes"     TEXT
 );
 
