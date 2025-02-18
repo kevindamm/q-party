@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS "DataQuality" (
 );
 
 -- Questions/Qlues
-CREATE TABLE IF NOT EXISTS "Qs" (
+CREATE TABLE IF NOT EXISTS "Q" (
     "qID"           INTEGER
       PRIMARY KEY
 
