@@ -46,14 +46,7 @@ CREATE TABLE IF NOT EXISTS "Qs" (
 
   , "challenge"     TEXT
       NOT NULL        CHECK (challenge <> "")
-  , "answer"        TEXT
-      NOT NULL        CHECK (answer <> "")
-  , "aired_date"      TEXT -- YYYY/MM/DD
-
-  , "data_quality"  INTEGER
-      NOT NULL        DEFAULT 0
-      REFERENCES      
-  , "updated"       TEXT -- YYYY/MM/DD
+  , "aired_date"    TEXT -- YYYY/MM/DD
 );
 
 CRAETE INDEX IF NOT EXISTS "Q__Aired"
@@ -66,6 +59,19 @@ CREATE INDEX IF NOT EXISTS "Q__Updated"
 CREATE INDEX IF NOT EXISTS "Q__DataQuality"
   ON Qs (data_quality)
   ;
+
+CREATE TABLE IF NOT EXISTS "As" (
+    "qID"         INTEGER
+      NOT NULL      CHECK (qID <> 0)
+      REFERENCES    Qs (qID)
+
+  , "answer"      TEXT
+      NOT NULL      CHECK (answer <> "")
+  , "data_quality"  INTEGER
+      NOT NULL        DEFAULT 0
+      REFERENCES      DataQuality (dqID)
+  , "updated"       TEXT -- YYYY/MM/DD
+);
 
 -- Category Names
 CREATE TABLE IF NOT EXISTS "Categories" (
@@ -122,7 +128,7 @@ CREATE TABLE IF NOT EXISTS "RoundType" (
   , "describe"    TEXT
 );
 
-CREATE TABLE IF NOT EXISTS "RoundKey" (
+CREATE TABLE IF NOT EXISTS "Contests" (
     "season"      INTEGER
       NOT NULL      CHECK (season > 0)
       REFERENCES    Seasons (seasonID)
@@ -135,7 +141,27 @@ CREATE TABLE IF NOT EXISTS "RoundKey" (
   PRIMARY KEY ("season", "episode", "round")
 ) WITHOUT ROWID;
 
-CREATE TABLE IF NOT EXISTS "Position" (
+ALTER TABLE Contestant
+  ADD CONSTRAINT "contestant_fk_season"
+  FOREIGN KEY        (seasonID)
+  REFERENCES Seasons (seasonID)
+  ;
+
+ALTER TABLE Contestant
+  ADD CONSTRAINT "contestant_fk_round"
+  FOREIGN KEY         (round)
+  REFERENCES Contests (round)
+  ;
+
+ALTER TABLE Contestant
+  ADD CONSTRAINT "contestant_fk_contest"
+  FOREIGN KEY
+    (seasonID, episode, round)
+  REFERENCES Contests
+    (seasonID, episode, round)
+  ;
+
+CREATE TABLE IF NOT EXISTS "BoardPosition" (
     "qID"          INTEGER
       PRIMARY KEY
       REFERENCES     Qs (qID)
@@ -156,7 +182,7 @@ CREATE TABLE IF NOT EXISTS "Position" (
 
   , FOREIGN KEY
       ("season", "episode", "round")
-    REFERENCES RoundKey
+    REFERENCES Contests
       ("season", "episode", "round")
 );
 
@@ -179,7 +205,7 @@ CREATE TABLE IF NOT EXISTS "MediaClue" (
 CREATE TABLE IF NOT EXISTS "MediaLinks" (
     "qID"       INTEGER
       NOT NULL
-      REFERENCES  Position (qID)
+      REFERENCES  BoardPosition (qID)
   , "mediaID"   INTEGER
       NOT NULL
       REFERENCES  MediaClue (mediaID)

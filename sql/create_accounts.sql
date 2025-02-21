@@ -110,5 +110,22 @@ CREATE TABLE IF NOT EXISTS "User_Tokens" (
   , "token"        TEXT
       NOT NULL
   , "refresh"      TEXT
-      NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS "Contestant" (
+    "appearanceID"  INTEGER
+      PRIMARY KEY
+
+  , "accountID"     INTEGER
+      REFERENCES      UserAccounts (accountID)
+  , "seasonID"      INTEGER
+  , "episode"       INTEGER
+  , "round"         INTEGER
+
+  , "is_returning"  BOOLEAN
+      NOT NULL        DEFAULT FALSE
+);
+
+CREATE INDEX IF NOT EXISTS "Contestant__Account"
+  ON Contestant (accountID)
+  ;
