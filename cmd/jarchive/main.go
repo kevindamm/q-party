@@ -31,18 +31,17 @@ import (
 	"path"
 
 	qparty "github.com/kevindamm/q-party"
-	"github.com/kevindamm/q-party/encoding/html"
+	"github.com/kevindamm/q-party/cmd/jarchive/html"
 	"github.com/kevindamm/q-party/encoding/json"
-	"github.com/kevindamm/q-party/ent"
 	"github.com/kevindamm/q-party/service"
 )
 
 func main() {
 	data_path := flag.String("data-path", "./.data",
 		"path where converted and created games are written")
-	db_path := flag.String("db-path", "", "path of the SQLite database file (don't write if empty)")
-	init_db := flag.Bool("init-db", false,
-		"initialize the local DB file with the initial metadata, using content in embedded JSON files")
+	//db_path := flag.String("db-path", "", "path of the SQLite database file (don't write if empty)")
+	//init_db := flag.Bool("init-db", false,
+	//	"initialize the local DB file with the initial metadata, using content in embedded JSON files")
 	write_jsonl := flag.Bool("write-jsonl", true,
 		"write the updates and new data to JSONL files in $data-path")
 	//log_path := flag.String("log-path", "",
@@ -50,19 +49,6 @@ func main() {
 
 	flag.Usage = cli_usage
 	flag.Parse()
-
-	var client *ent.Client
-	if *db_path != "" {
-		client = must_open_db(*db_path)
-		if *init_db {
-			must_drop_existing_tables(client)
-			populate_tables_from_json(client, jsonFS)
-		}
-	} else {
-		if *init_db {
-			log.Fatal("must set -db-path if -init-db is true")
-		}
-	}
 
 	if flag.NArg() < 1 {
 		fmt.Println("ERROR: expected at least one command-line argument")
@@ -135,7 +121,7 @@ func main() {
 	}
 }
 
-//go:embed json/*.json
+//go:embed .data/json/*.json
 var jsonFS embed.FS
 
 func cli_usage() {
@@ -188,8 +174,8 @@ func WriteEpisodeMetadata(
 		write_episode = json.WriteEpisode(json_path)
 	case "sqlite":
 		dbclient := must_open_db(data_path)
-		write_metadata = WriteMetadataDB(dbclient)
-		write_episode = WriteEpisodeDB(dbclient)
+		//write_metadata = WriteMetadataDB(dbclient)
+		//write_episode = WriteEpisodeDB(dbclient)
 	default:
 		log.Print("unrecognized output format ", output_format)
 		flag.Usage()
@@ -267,27 +253,22 @@ func WriteEpisodeMetadata(
 	}
 }
 
-func must_open_db(sqlite_path string) *ent.Client {
-	client, err := ent.Open("sqlite3", "file:"+sqlite_path+"?cache=shared&_fk=1")
+func must_open_db(sqlite_path string) interface{} {
+	client, err := struct{}{}, &struct{}{} // .Open("sqlite3", "file:"+sqlite_path+"?cache=shared&_fk=1")
 	if err != nil {
 		log.Fatal("failed to open DB\n", err)
 	}
 	return client
 }
 
-func must_drop_existing_tables(client *ent.Client) {
-	// TODO
-
-}
-
-func WriteEpisodeDB(dbclient *ent.Client) func(qparty.FullEpisode) error {
+func WriteEpisodeDB(dbclient *any) func(qparty.FullEpisode) error {
 	log.Fatal("TODO (NYI)")
 	return func(qparty.FullEpisode) error {
 		return nil
 	}
 }
 
-func WriteMetadataDB(dbclient *ent.Client) func(*service.JArchiveIndex) error {
+func WriteMetadataDB(dbclient *any) func(*service.JArchiveIndex) error {
 	log.Fatal("TODO (NYI)")
 	return func(*service.JArchiveIndex) error {
 		return nil
