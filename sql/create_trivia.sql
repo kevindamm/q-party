@@ -61,17 +61,24 @@ CREATE INDEX IF NOT EXISTS "Q__DataQuality"
   ;
 
 CREATE TABLE IF NOT EXISTS "As" (
-    "qID"         INTEGER
-      NOT NULL      CHECK (qID <> 0)
-      REFERENCES    Qs (qID)
+    "qID"           INTEGER
+      NOT NULL        CHECK (qID <> 0)
+      REFERENCES      Qs (qID)
+      ON DELETE       CASCADE
+      ON UPDATE       RESTRICT
 
-  , "answer"      TEXT
-      NOT NULL      CHECK (answer <> "")
+  , "answer"        TEXT
+      NOT NULL        CHECK (answer <> "")
   , "data_quality"  INTEGER
       NOT NULL        DEFAULT 0
       REFERENCES      DataQuality (dqID)
+      ON DELETE       RESTRICT
+      ON UPDATE       RESTRICT
   , "updated"       TEXT -- YYYY/MM/DD
 );
+
+CREATE INDEX IF NOT EXISTS "A__Q"
+  ON "As" (qID)
 
 -- Category Names
 CREATE TABLE IF NOT EXISTS "Categories" (
@@ -89,16 +96,15 @@ CREATE INDEX IF NOT EXISTS "Category__Title"
 
 -- Category that a Q can be found in (many-to-many relation).
 CREATE TABLE IF NOT EXISTS "CategoryMembership" (
-  "qID"        INTEGER
-    NOT NULL
-    REFERENCES   Qs (qID)
-    ON DELETE    CASCADE
+    "qID"        INTEGER
+      NOT NULL
+      REFERENCES   Qs (qID)
+      ON DELETE    CASCADE
+  , "catID"      INTEGER
+      NOT NULL
+      REFERENCES   Category (catID)
+      ON DELETE    CASCADE
 
-  "catID"      INTEGER
-    NOT NULL
-    REFERENCES   Category (catID)
-    ON DELETE    CASCADE
-  
   PRIMARY KEY (qID, catID)
 ) WITHOUT ROWID;
 
