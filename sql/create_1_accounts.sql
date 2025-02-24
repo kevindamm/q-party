@@ -21,33 +21,32 @@
 -- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 -- SOFTWARE.
 --
--- github:kevindamm/q-party/sql/create_accounts.sql
+-- github:kevindamm/q-party/sql/create_1_accounts.sql
 
--- Sometimes we know the contestant's name and background but they aren't
--- registered as an account here; sometimes there is an account here that has
--- only played games on the server and has never been a contestant.  I will be
--- very excited if the intersection of those two sets ever becomes non-null :)
 --
 -- ACCOUNTS
 --
 --    [--------------]
 --    | UserAccounts |---[ Account__Username ]
 --    [--------------]
---         |    |        [---------------] 
+--         |    |        [---------------] + fullname
 --         |    '--------| User_Profiles | + occupation
 --         |             [---------------] + residence
 --         |
---         |        [-------------]
---         |--------| User_Banned |
---         |        [-------------]
---         |                          [-------------]
---         |--------------------------| User_Tokens |
---         |                          [-------------]
---         |     [--------------]
---         '-----| User_Avatars |
---               [--------------]
+--         |         [-------------]
+--         |---------| User_Banned |
+--         |         [-------------]
+--         |       [--------------]
+--         |-------| User_Avatars |
+--         |       [--------------]
+--         |     [-------------]
+--         '-----| User_Tokens |
+--               [-------------]
 
-
+-- Sometimes we know the contestant's name and background but they aren't
+-- registered as an account here; sometimes there is an account here that has
+-- only played games on the server and has never been a contestant.  I will be
+-- very excited if the intersection of those two sets ever becomes non-null :)
 CREATE TABLE IF NOT EXISTS "UserAccounts" (
     "accountID"    INTEGER
       PRIMARY KEY
@@ -56,13 +55,22 @@ CREATE TABLE IF NOT EXISTS "UserAccounts" (
       NOT NULL       CHECK (username <> "")
       UNIQUE         ON CONFLICT ROLLBACK
 
-  , "email"        TEXT  -- checked as valid email string before saved
-  , "email_date"   TEXT  -- date YYYY/MM/DD or NULL if not yet validated
+  -- The email address for this account, only used for game invites and updates.
+  -- (optional, may be NULL)
+  , "email"        TEXT  -- valid email format 'user@example.com'
+
+  -- If NULL, a verification code has not been emailed yet.
+  , "email_sent"   TEXT  -- YYYY/MM/DD
+      CHECK (email_sent <> "")
+
+  -- If NULL, the email address has not yet been validated.
+  , "email_valid"  TEXT  -- YYYY/MM/DD
+      CHECK (email_valid <> "")
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS "User__Active"
   ON UserAccounts (username)
-  WHERE (date_banned is NULL)
+  WHERE (email_valid IS NOT NULL)
   ;
 
 CREATE TABLE IF NOT EXISTS "User_Banned" (
@@ -111,21 +119,3 @@ CREATE TABLE IF NOT EXISTS "User_Tokens" (
       NOT NULL
   , "refresh"      TEXT
 );
-
-CREATE TABLE IF NOT EXISTS "Contestant" (
-    "appearanceID"  INTEGER
-      PRIMARY KEY
-
-  , "accountID"     INTEGER
-      REFERENCES      UserAccounts (accountID)
-  , "seasonID"      INTEGER
-  , "episode"       INTEGER
-  , "round"         INTEGER
-
-  , "is_returning"  BOOLEAN
-      NOT NULL        DEFAULT FALSE
-);
-
-CREATE INDEX IF NOT EXISTS "Contestant__Account"
-  ON Contestant (accountID)
-  ;

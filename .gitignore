@@ -1,5 +1,7 @@
 .data/
 .env
+.wrangler/
+node_modules/
 
 *.exe
 *.exe~
