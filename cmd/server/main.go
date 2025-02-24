@@ -14,7 +14,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/kevindamm/q-party/ent"
 	"github.com/kevindamm/q-party/service"
 )
 
@@ -29,12 +28,12 @@ func main() {
 		"server port to listen on (0 uses default 80/443 ports)")
 	flag.Parse()
 
-	jarchive := ent.NewClient()
+	//jarchive := ent.NewClient()
 	if *initialize {
-		err := jarchive.Schema.Create(context.Background())
-		if err != nil {
-			log.Fatal(err)
-		}
+		//	err := jarchive.Schema.Create(context.Background())
+		//	if err != nil {
+		//		log.Fatal(err)
+		//	}
 	}
 
 	if *port == 0 {

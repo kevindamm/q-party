@@ -27,7 +27,6 @@ package main
 import (
 	"bufio"
 	"bytes"
-	"embed"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -35,7 +34,6 @@ import (
 	"path"
 
 	qparty "github.com/kevindamm/q-party"
-	"github.com/kevindamm/q-party/ent"
 	"github.com/kevindamm/q-party/service"
 )
 
@@ -133,14 +131,6 @@ func scan_json_lines[T any](byteslice []byte) <-chan *T {
 	}()
 
 	return json_chan
-}
-
-// Create database tables and populate with the minimal index from embedded FS.
-func populate_tables_from_json(client *ent.Client, jsonFiles embed.FS) error {
-	// TODO
-	_ = client
-	_ = jsonFiles
-	return nil
 }
 
 // Convenience wrapper around MkDirAll that returns the created path.

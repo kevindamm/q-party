@@ -32,7 +32,6 @@ import (
 
 	qparty "github.com/kevindamm/q-party"
 	"github.com/kevindamm/q-party/cmd/jarchive/html"
-	"github.com/kevindamm/q-party/encoding/json"
 	"github.com/kevindamm/q-party/service"
 )
 
@@ -89,7 +88,7 @@ func main() {
 			fmt.Println(episode)
 			if *write_jsonl {
 				// TODO
-				json.WriteEpisodeMetadata(*data_path, episode)
+				//WriteEpisodeMetadata(*data_path, episode, "json")
 			}
 		}
 
@@ -168,12 +167,14 @@ func WriteEpisodeMetadata(
 	case "":
 		write_episode = func(qparty.FullEpisode) error { return nil }
 		write_metadata = func(*service.JArchiveIndex) error { return nil }
-	case "json":
-		write_metadata = json.WriteSeasonIndex(data_path)
-		json_path := must_create_dir(data_path, "json")
-		write_episode = json.WriteEpisode(json_path)
+	//case "html":
+	//  ...
+	//case "json":
+	//	write_metadata = json.WriteSeasonIndex(data_path)
+	//	json_path := must_create_dir(data_path, "json")
+	//	write_episode = json.WriteEpisode(json_path)
 	case "sqlite":
-		dbclient := must_open_db(data_path)
+		//dbclient := must_open_db(data_path)
 		//write_metadata = WriteMetadataDB(dbclient)
 		//write_episode = WriteEpisodeDB(dbclient)
 	default:
