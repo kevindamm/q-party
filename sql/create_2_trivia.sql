@@ -42,17 +42,19 @@ CREATE TABLE IF NOT EXISTS "DataQuality" (
 --
 -- Qs and Answers and Categories
 --
+--   [----] + challenge
+--   | Qs | + index[aired_date]
 --   [----]
---   | Qs |--- +index[aired_date, updated, data_quality]
---   [----]
---      A 
---      |             [---------]
---      |             | Answers |
---      |             [---------]
---      |                A
---      |     UNIQUE     |
---      '----[ Q_A ]-----/
---
+--     A A             [---------]
+--     | |             | Answers |
+--     | |             [---------]
+--     | |                A
+--     | |                |    [-----------] + filetype
+--     | |    UNIQUE      |    | MediaClue | + media_url
+--     | '----[ Q_A ]-----/    [-----------] + notes
+--     |                         A           + data_quality
+--     |    UNIQUE               |
+--     '----[ Q_Media ]----------/
 
 -- Qs contain just the challenge part of the challenge/answer pair.
 -- Category inclusion is normed out to its own table, and the answers
@@ -119,6 +121,50 @@ CREATE INDEX IF NOT EXISTS "Answer__Q"
   ON Q_Answer (qID)
   ;
 
+-- Qs may have a movie, audio or image to assist in the clue.
+CREATE TABLE IF NOT EXISTS "MediaClue" (
+    "mediaID"    INTEGER
+      PRIMARY KEY
+  , "filetype"   TEXT
+      NOT NULL     CHECK (filetype IN ("JPEG"
+                                     , "PNG"
+                                     , "SVG"
+                                     , "MP3"
+                                     , "MP4"
+                                     , "MOV"
+                         ))
+  , "media_url"  TEXT  -- URL encoded
+      NOT NULL     CHECK (media_url <> "")
+
+  , "notes"      TEXT -- (optional, may be NULL)
+);
+
+CREATE TABLE IF NOT EXISTS "Q_Media" (
+    "qID"       INTEGER
+      NOT NULL
+      REFERENCES  BoardPosition (qID)
+      ON DELETE   RESTRICT
+  , "mediaID"   INTEGER
+      NOT NULL
+      REFERENCES  MediaClue (mediaID)
+      ON DELETE   CASCADE
+
+  , "data_quality"  INTEGER
+      NOT NULL        DEFAULT 0
+      REFERENCES      DataQuality (dqID)
+      ON DELETE       RESTRICT
+      ON UPDATE       RESTRICT
+ 
+  , PRIMARY KEY ("qID", "mediaID")
+) WITHOUT ROWID;
+
+CREATE INDEX IF NOT EXISTS "Media__Q"
+  ON Q_Media (qID)
+  ;
+CREATE INDEX IF NOT EXISTS "Q__Media"
+  ON Q_Media (mediaID)
+  ;
+
 
 --
 -- Category Titles
@@ -171,10 +217,20 @@ CREATE INDEX IF NOT EXISTS "Q__Category"
 --
 -- Matches and MatchRounds
 --
---   [---------]
---   | Matches |
---   [---------]
--- 
+--   [---------] + (season, episode)
+--   | Matches | + (jeid) episode ID
+--   [---------] + (jaid) jarchive ID
+--         A
+--         |    [-------------]
+--         '----| MatchRounds |
+--              [-------------]
+--                  A  A
+--                  |  |    [----------------------]
+--                  '--+----| MatchRound_Positions |
+--                     |    [----------------------]
+--                     |       [------------------------]
+--                     '-------| MatchRound_Contestants |
+--                             [------------------------]
 
 -- Enum table for consistent tracking of the mechanics of different round types
 -- (single, double, final, tiebreaker) having different questions and Q values.
@@ -188,8 +244,6 @@ CREATE TABLE IF NOT EXISTS "RoundEnum" (
   -- (optional, may be NULL)
 );
 
--- TODO populate RoundEnum values
-
 CREATE TABLE IF NOT EXISTS "DifficultyEnum" (
     "difficulty"   INTEGER
       PRIMARY KEY
@@ -200,9 +254,8 @@ CREATE TABLE IF NOT EXISTS "DifficultyEnum" (
   -- (optional, may be NULL)
 );
 
--- TODO populate DifficultyEnum values
-
-
+-- A match is a series of rounds with each player seeing the same questions.
+-- Matches are traditionally played synchronously but may be played async.
 CREATE TABLE IF NOT EXISTS "Matches" (
     "matchID"     INTEGER
       PRIMARY KEY
@@ -218,7 +271,7 @@ CREATE TABLE IF NOT EXISTS "Matches" (
   -- (optional, may be NULL, must be UNIQUE)
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS "Matches__Season"
+CREATE INDEX IF NOT EXISTS "Matches__Season"
   ON Matches ("season")
   WHERE (season IS NOT NULL)
   ;
@@ -257,7 +310,8 @@ CREATE INDEX IF NOT EXISTS "MatchRound__Difficulty"
   WHERE (difficulty <> 0)
   ;
 
-CREATE TABLE IF NOT EXISTS "MatchRound_Contestant" (
+-- There are usually three contestants per (match, round), but there may be any.
+CREATE TABLE IF NOT EXISTS "MatchRound_Contestants" (
     "matchID"       INTEGER
       NOT NULL        CHECK (matchID > 0)
   , "round"         INTEGER
@@ -278,7 +332,8 @@ CREATE TABLE IF NOT EXISTS "MatchRound_Contestant" (
   , PRIMARY KEY ("matchID", "round", "contestant")
 ) WITHOUT ROWID;
 
-CREATE TABLE IF NOT EXISTS "MatchRound_Position" (
+-- There are as many positions as the round type can have (usually max 30 or 1).
+CREATE TABLE IF NOT EXISTS "MatchRound_Positions" (
     "matchID"      INTEGER
       NOT NULL
       REFERENCES     Matches (matchID)
@@ -300,40 +355,4 @@ CREATE TABLE IF NOT EXISTS "MatchRound_Position" (
   , FOREIGN KEY            ("matchID", "round")
     REFERENCES MatchRounds ("matchID", "round")
   , PRIMARY KEY            ("matchID", "round")
-);
-
-CREATE TABLE IF NOT EXISTS "MediaClue" (
-    "mediaID"    INTEGER
-      PRIMARY KEY
-  , "filetype"   TEXT
-      NOT NULL     CHECK (filetype IN ("JPEG"
-                                     , "PNG"
-                                     , "SVG"
-                                     , "MP3"
-                                     , "MP4"
-                                     , "MOV"
-                         ))
-  , "media_url"  TEXT  -- URL encoded
-      NOT NULL     CHECK (media_url <> "")
-  , "notes"      TEXT
-);
-
-CREATE TABLE IF NOT EXISTS "MediaLinks" (
-    "qID"       INTEGER
-      NOT NULL
-      REFERENCES  BoardPosition (qID)
-      ON DELETE   RESTRICT
-  , "mediaID"   INTEGER
-      NOT NULL
-      REFERENCES  MediaClue (mediaID)
-      ON DELETE   CASCADE
-  
-  , PRIMARY KEY ("qID", "mediaID")
 ) WITHOUT ROWID;
-
-CREATE INDEX IF NOT EXISTS "Media__Q"
-  ON MediaLinks (qID)
-  ;
-CREATE INDEX IF NOT EXISTS "Q__Media"
-  ON MediaLinks (mediaID)
-  ;
