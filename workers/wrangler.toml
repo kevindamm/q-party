@@ -1,0 +1,12 @@
+name = "q-party"
+main = "homepage.ts"
+compatibility_date = "2025-02-12"
+compatibility_flags = ["nodejs_compat"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "trivia"
+database_id = "0b8f912a-9ab6-4b58-a959-fbdfd630a35f"
+
+[assets]
+directory = "./public"
