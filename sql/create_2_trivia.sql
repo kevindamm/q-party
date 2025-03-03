@@ -30,12 +30,15 @@ CREATE TABLE IF NOT EXISTS "DataQuality" (
       PRIMARY KEY
 
   , "quality"  TEXT
-      CHECK (quality IN ("Unknown"
-                       , "Incorrect"
-                       , "Needs Minor Change"
-                       , "Disagreement"
-                       , "Correct"
-            ))
+      CHECK (quality IN ( "Needs Review"
+                        , "Entirely Incorrect"
+                        , "Recently Incorrect"
+                        , "Suspected Outdated"
+                        , "Needs Minor Change"
+                        , "Disagreement"
+                        , "Correct"
+                        , "Confirmed Correct"
+            )           )
   , "summary"  TEXT
       NOT NULL
 );

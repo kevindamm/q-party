@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS "RoundEnum" (
 
   , "title"       TEXT
       NOT NULL      CHECK (title <> "")
-  , "describe"    TEXT
+  , "notes"       TEXT
   -- (optional, may be NULL)
 );
 
@@ -59,7 +59,7 @@ CREATE TABLE IF NOT EXISTS "DifficultyEnum" (
 
   , "title"        TEXT
       NOT NULL       CHECK (title <> "")
-  , "describe"     TEXT
+  , "notes"        TEXT
   -- (optional, may be NULL)
 );
 
