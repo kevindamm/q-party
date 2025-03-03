@@ -23,8 +23,8 @@
 --
 -- github:kevindamm/q-party/sql/create_1_accounts.sql
 
---
--- ACCOUNTS
+-------------------------------------------------------------------------------
+-- UserAccounts and related properties
 --
 --    [--------------]
 --    | UserAccounts |---[ Account__Username ]

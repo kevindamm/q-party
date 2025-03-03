@@ -23,6 +23,7 @@
 --
 -- github:kevindamm/q-party/sql/create_2_trivia.sql
 
+-------------------------------------------------------------------------------
 -- Enum Table representing the correctness of a Q entry.
 CREATE TABLE IF NOT EXISTS "DataQuality" (
     "dqID"     INTEGER
@@ -39,7 +40,7 @@ CREATE TABLE IF NOT EXISTS "DataQuality" (
       NOT NULL
 );
 
---
+-------------------------------------------------------------------------------
 -- Qs and Answers and Categories
 --
 --   [----] + challenge
@@ -165,8 +166,7 @@ CREATE INDEX IF NOT EXISTS "Q__Media"
   ON Q_Media (mediaID)
   ;
 
-
---
+-------------------------------------------------------------------------------
 -- Category Titles
 --
 --   [----]                              [------------]
@@ -213,146 +213,3 @@ CREATE INDEX IF NOT EXISTS "Category__Q"
 CREATE INDEX IF NOT EXISTS "Q__Category"
   ON CategoryMembership (catID)
   ;
-
---
--- Matches and MatchRounds
---
---   [---------] + (season, episode)
---   | Matches | + (jeid) episode ID
---   [---------] + (jaid) jarchive ID
---         A
---         |    [-------------]
---         '----| MatchRounds |
---              [-------------]
---                  A  A
---                  |  |    [----------------------]
---                  '--+----| MatchRound_Positions |
---                     |    [----------------------]
---                     |       [------------------------]
---                     '-------| MatchRound_Contestants |
---                             [------------------------]
-
--- Enum table for consistent tracking of the mechanics of different round types
--- (single, double, final, tiebreaker) having different questions and Q values.
-CREATE TABLE IF NOT EXISTS "RoundEnum" (
-    "round"       INTEGER
-      PRIMARY KEY
-
-  , "title"       TEXT
-      NOT NULL      CHECK (title <> "")
-  , "describe"    TEXT
-  -- (optional, may be NULL)
-);
-
-CREATE TABLE IF NOT EXISTS "DifficultyEnum" (
-    "difficulty"   INTEGER
-      PRIMARY KEY
-
-  , "title"        TEXT
-      NOT NULL       CHECK (title <> "")
-  , "describe"     TEXT
-  -- (optional, may be NULL)
-);
-
--- A match is a series of rounds with each player seeing the same questions.
--- Matches are traditionally played synchronously but may be played async.
-CREATE TABLE IF NOT EXISTS "Matches" (
-    "matchID"     INTEGER
-      PRIMARY KEY
-
-  , "season"      TEXT
-  -- (optional, may be NULL)
-  , "episode"     INTEGER
-  -- (optional, may be NULL, unique per season)
-
-  , "jeid"        INTEGER  -- enumerated episode ID
-  -- (optional, may be NULL, must be UNIQUE)
-  , "jaid"        INTEGER  -- jarchive unique ID
-  -- (optional, may be NULL, must be UNIQUE)
-);
-
-CREATE INDEX IF NOT EXISTS "Matches__Season"
-  ON Matches ("season")
-  WHERE (season IS NOT NULL)
-  ;
-CREATE UNIQUE INDEX IF NOT EXISTS "Matches__SeasonEpisode"
-  ON Matches ("season", "episode")
-  WHERE (season IS NOT NULL AND episode IS NOT NULL)
-  ;
-CREATE UNIQUE INDEX IF NOT EXISTS "Matches__JEID"
-  ON Matches ("jeid")
-  WHERE (jeid IS NOT NULL)
-  ;
-CREATE UNIQUE INDEX IF NOT EXISTS "Matches__JAID"
-  ON Matches ("jaid")
-  WHERE (jaid IS NOT NULL)
-  ;
-
--- The segment of a single board (a collection of one or more Qs)
--- where Contestants are consistent (note: contestants may change
--- within a single episode, though that has been exceptionally rare).
-CREATE TABLE IF NOT EXISTS "MatchRounds" (
-    "matchID"     INTEGER
-      NOT NULL      CHECK (matchID > 0)
-  , "round"       INTEGER
-      NOT NULL      DEFAULT 0
-      REFERENCES    RoundEnum (round)
-
-  , "difficulty"  INTEGER
-      NOT NULL      DEFAULT 0
-      REFERENCES    DifficultyEnum (difficulty)
-
-  , PRIMARY KEY ("matchID", "round")
-) WITHOUT ROWID;
-
-CREATE INDEX IF NOT EXISTS "MatchRound__Difficulty"
-  ON MatchRounds (difficulty)
-  WHERE (difficulty <> 0)
-  ;
-
--- There are usually three contestants per (match, round), but there may be any.
-CREATE TABLE IF NOT EXISTS "MatchRound_Contestants" (
-    "matchID"       INTEGER
-      NOT NULL        CHECK (matchID > 0)
-  , "round"         INTEGER
-      NOT NULL        DEFAULT 0
-      REFERENCES      RoundEnum (round)
-      ON DELETE       RESTRICT
-  , "contestant"    INTEGER
-      NOT NULL        CHECK (contestant <> 0)
-      REFERENCES      UserAccounts (accountID)
-      ON DELETE       CASCADE
-
-  , "is_returning"  BOOLEAN
-      NOT NULL        DEFAULT FALSE
-
-  , FOREIGN KEY            ("matchID", "round")
-    REFERENCES MatchRounds ("matchID", "round")
-
-  , PRIMARY KEY ("matchID", "round", "contestant")
-) WITHOUT ROWID;
-
--- There are as many positions as the round type can have (usually max 30 or 1).
-CREATE TABLE IF NOT EXISTS "MatchRound_Positions" (
-    "matchID"      INTEGER
-      NOT NULL
-      REFERENCES     Matches (matchID)
-  , "round"        INTEGER
-      NOT NULL
-      REFERENCES     RoundEnum (round)
-
-  , "across"       INTEGER
-      NOT NULL       CHECK (across > 0 AND across <= 6)
-  , "down"         INTEGER
-      NOT NULL       CHECK (down > 0 AND down <= 5)
-  , "qID"          INTEGER
-      NOT NULL
-      REFERENCES     Qs (qID)
-      ON DELETE      CASCADE
-  , "special"      BOOLEAN
-      NOT NULL       DEFAULT FALSE
-
-  , FOREIGN KEY            ("matchID", "round")
-    REFERENCES MatchRounds ("matchID", "round")
-  , PRIMARY KEY            ("matchID", "round")
-) WITHOUT ROWID;
