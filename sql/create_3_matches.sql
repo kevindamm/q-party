@@ -53,8 +53,8 @@ CREATE TABLE IF NOT EXISTS "RoundEnum" (
   -- (optional, may be NULL)
 );
 
-CREATE TABLE IF NOT EXISTS "DifficultyEnum" (
-    "difficulty"   INTEGER
+CREATE TABLE IF NOT EXISTS "MatchDifficultyEnum" (
+    "match_difficulty"   INTEGER
       PRIMARY KEY
 
   , "title"        TEXT

@@ -79,6 +79,14 @@ CREATE INDEX IF NOT EXISTS "Q__Aired"
   WHERE (aired_date IS NOT NULL)
   ;
 
+CREATE TABLE IF NOT EXISTS "ChallengeDifficultyEnum" (
+    "difficulty"   INTEGER
+      PRIMARY KEY
+
+  , "title"        TEXT
+      NOT NULL       CHECK (title <> "")
+);
+
 -- There may be many Answers for a Qs.qID, all equally acceptable.
 -- No distinction is made between Answers with the same text answer,
 -- and in the interest of de-duplicating the same answer given on

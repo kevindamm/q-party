@@ -48,17 +48,30 @@ INSERT INTO RoundEnum
        , ( 4, "Tie-Breaker", "To resolve any ties at the end of the Final round (format is same as final)")
        ;
                   
-INSERT INTO DifficultyEnum
-    ("difficulty", "title",                   "notes")
-  VALUES (      0, "UNKNOWN",                 NULL)
-       , (      1, "Teen Tournament",         "")
-       , (      2, "Celebrity Match",         "")
-       , (      3, "College Championship",    "")
-       , (      4, "Seniors Tournament",      "")
-       , (      5, "Standard Competition",    "")
-       , (      6, "Tournament of Champions", "")
-       , (      7, "Masters Tournament",      "")
-       , (      8, "Greatest of All Time",    "")
+INSERT INTO MatchDifficultyEnum
+    ("match_difficulty", "title",                   "notes")
+  VALUES (            0, "UNKNOWN",                 NULL)
+       , (            1, "Teen Tournament",         "")
+       , (            2, "Celebrity Match",         "")
+       , (            3, "College Championship",    "")
+       , (            4, "Seniors Tournament",      "")
+       , (            5, "Standard Competition",    "")
+       , (            6, "Tournament of Champions", "")
+       , (            7, "Masters Tournament",      "")
+       , (            8, "Greatest of All Time",    "")
+       ;
+
+-- These values were calculated from aggregate correct-response measurements
+-- for challenges at each value level.  There is a slight difference between
+-- single & double, they've been combined here because the difference is small.
+INSERT INTO ChallengeDifficultyEnum
+    ("difficulty", "rating")
+  VALUES (      0, "UNKNOWN")
+       , (      1, "70%")
+       , (      2, "60%")
+       , (      3, "50%")
+       , (      4, "41%")
+       , (      5, "34%")
        ;
 
 --
