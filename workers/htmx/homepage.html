@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bakbak+One&family=Libre+Caslon+Text:ital,wght@0,400;0,700;1,400&family=Michroma&family=Oxanium:wght@200..800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+
+<body>
+
+<div id="centered">
+  <h1 class="title michroma-regular">?-Party</h1>
+
+<div>
+  <button id="join-room" class="menuitem">Join Room</button>
+  <form id="room-form" method="post" action="join">
+    <input type="text" id="room-input" class="hidden" value="TESTROOM"
+     placeholder="Room ID">
+  </form>
+
+<script>
+  var buttonHidden = true;
+  var joinButton = document.getElementById("join-room");
+  var roomInput = document.getElementById("room-input");
+
+  joinButton.addEventListener("click", function(event) {
+    if (buttonHidden === true) {
+      // un-hide the text input for room name
+      roomInput.class = "";
+      roomInput.display = "block";
+      event.preventDefault();
+      roomInput.focus();
+      buttonHidden = false;
+    } else {
+      if (roomInput.value === "") {
+        // ignore if empty
+        event.preventDefault();
+      }
+    }
+  });
+</script>
+
+<form action="/about">
+  <button class="menuitem" >About</button>
+</form>
+</div>
+
+<footer>
+  <p><a href="/legal">License & Terms</a></p>
+  <p>Copyright &copy; 2025 Kevin Damm</p>
+</footer>
+</body>
+</html>

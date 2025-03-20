@@ -1,12 +1,41 @@
-name = "q-party"
-main = "homepage.ts"
-compatibility_date = "2025-02-12"
+name = "q-party-worker"
+main = "src/router.ts"
+compatibility_date = "2025-03-10"
 compatibility_flags = ["nodejs_compat"]
+
+[assets]
+directory = "../public"
+
+[observability]
+enabled = true
+
+[ai]
+binding = "WHISPER"
 
 [[d1_databases]]
 binding = "DB"
 database_name = "trivia"
 database_id = "0b8f912a-9ab6-4b58-a959-fbdfd630a35f"
 
-[assets]
-directory = "./public"
+# for media (images, videos, audio) clues
+[[r2_buckets]]
+binding = "MEDIA"
+bucket_name = "triviamedia"
+
+# DurableObject bindings
+[durable_objects]
+bindings = [
+  {name = "LOBBIES", class_name = "LobbyServer" },
+  {name = "GAMEPLAY", class_name = "GameplayServer" }
+]
+
+# DurableObject classnames
+[[migrations]]
+tag = "v1"
+new_classes = ["LobbyServer", "ContestantServer"]
+
+[vars]
+BASE_URL = "https://q-party.kevindamm.com"
+
+[vars.dev]
+BASE_URL = "https://localhost"

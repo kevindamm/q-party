@@ -1,0 +1,22 @@
+{
+	"name": "q-party-server",
+	"version": "0.0.2",
+	"scripts": {
+		"format": "prettier --cache --write .",
+		"dev": "wrangler dev",
+		"deploy": "wrangler deploy --minify"
+	},
+	"dependencies": {
+		"hono": "^4.7.4"
+	},
+	"devDependencies": {
+		"@types/node": "^22.13.10",
+		"prettier": "^3.5.3",
+		"wrangler": "^4.2.0"
+	},
+	"overrides": {
+		"wrangler": {
+			"esbuild": "^0.25.1"
+		}
+	}
+}
