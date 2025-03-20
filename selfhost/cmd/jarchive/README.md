@@ -23,6 +23,7 @@ list takes arguments 'season' or 'episode' or no additional argument
 play takes arguments [season/show ID] (playing a selected show)
   or 'episode' or 'category' or 'challenge' (playing a random selection)
 
+other flags:
   -data-path string
         path where converted and created games are written (default "./.data")
   -db-path
@@ -32,13 +33,12 @@ play takes arguments [season/show ID] (playing a selected show)
         create & populate tables, and write all new category and challenge content to a local DB
 ```
 
-
 ## Example commands
 
 Create the database tables and write the initial metadata.
 
-```console
-$ ./jarchive -seed-db -db-path=jarchive.sqlite
+```sh
+./jarchive -seed-db -db-path=jarchive.sqlite
 ```
 
 This will use the default data path (`./.data` from cwd) and will write the
@@ -46,7 +46,6 @@ embedded index to a sqlite file in that directory.  Further interactions may
 require additional fetches, the command takes care of rate-limiting these
 fetches to be considerate to the original hosts, and only the bare minimum of
 external pages will be fetched to populate a local board or two.
-
 
 ### List available seasons
 
@@ -57,13 +56,11 @@ Season 02 (s02) [179 episodes]
 ...
 ```
 
-
 ### List episodes in a season
 
 ```console
-$ ./jarchive list superjeopardy
+./jarchive list superjeopardy
 ```
-
 
 ## Local cache
 
@@ -75,5 +72,3 @@ of service for j-archive.com if persisting the contents of this database.
 
 If making changes to the code, use `-log_path=debug.log` (with any file path)
 to save the verbose log to a file.  Pass "-" as a filename to print to STDOUT.
-
-
