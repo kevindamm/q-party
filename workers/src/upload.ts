@@ -32,6 +32,13 @@
 
 import { WorkerContext } from '../types/workers'
 
+/**
+ * Stores in an R2 bucket the audio attached as FormData of the request.
+ * 
+ * @method POST
+ * @param c the request context
+ * @returns success (and the object storage key) or failure (with message).
+ */
 export default async function post(c: WorkerContext): Promise<Response> {
   const body = await c.req.parseBody()
   const audio = body['file']

@@ -28,34 +28,20 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 // 
-// github:kevindamm/q-party/workers/src/transcribe.ts
+// github:kevindamm/q-party/workers/src/challenge.ts
 
-import { WorkerContext } from '../types/workers'
+import { WorkerContext } from "../types/workers";
 
 /**
- * Uses ASR (automated speech recognition) to get text from an audio file.
+ * Retrieves the challenge details for the requested challenge ID.
  * 
- * @method POST
- * @param c the request context
- * @returns a Hono response indicating success (with transcription) or failure.
+ * @method GET
+ * @param c the request context (with URL param for challenge_id)
  */
-export default async function post(c: WorkerContext): Promise<Response> {
-  const body = await c.req.parseBody()
-  const audio = body['file']
-  if (!audio || typeof(audio) === 'string') {
-    reportError('could not parse audio file attachment')
-    return new Response('could not find audio file attachment')
-  }
+export async function get(c: WorkerContext): Promise<Response> {
+  const challenge_id = c.req.param('challenge_id')
+  const challenge = c.env.DB.prepare(`SELECT *
+    FROM Qs WHERE qID = ?`).bind(challenge_id)
 
-  try {
-    const response = await c.env.WHISPER.run('@cf/openai/whisper', {
-      audio: [...new Uint8Array(await audio.arrayBuffer())],
-    })
-    return new Response(response.text);
-  } catch (err) {
-    console.error('Error transcribing audio:', err)
-    return new Response('failed to transcribe audio, please try again', {
-      status: 500,
-    })
-  }
+  return new Response((await challenge.run()).results.join('\n'))
 }
