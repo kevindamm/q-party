@@ -28,7 +28,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 // 
-// github:kevindamm/q-party/workers/src/transcribe.ts
+// github:kevindamm/q-party/workers/src/upload.ts
 
 import { WorkerContext } from '../types/workers'
 
@@ -40,15 +40,8 @@ export default async function post(c: WorkerContext): Promise<Response> {
     return new Response('could not find audio file attachment')
   }
 
-  try {
-    const response = await c.env.WHISPER.run('@cf/openai/whisper', {
-      audio: [...new Uint8Array(await audio.arrayBuffer())],
-    })
-    return new Response(response.text);
-  } catch (err) {
-    console.error('Error transcribing audio:', err)
-    return new Response('failed to transcribe audio, please try again', {
-      status: 500,
-    })
-  }
+  const obj = await c.env.MEDIA.put(`spoken/${audio.name}`, audio)
+  const uploaded: string = obj?.key || '';
+
+  return new Response(uploaded)
 }
