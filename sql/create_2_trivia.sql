@@ -69,7 +69,10 @@ CREATE TABLE IF NOT EXISTS "Qs" (
 
   , "challenge"     TEXT
       NOT NULL        CHECK (challenge <> "")
-  
+  , "difficulty"    INTEGER
+      REFERENCES      ChallengeDifficultyEnum (difficulty)
+
+
   , "aired_date"    TEXT -- YYYY/MM/DD
   --  (optional, may be NULL)
 );
@@ -80,11 +83,13 @@ CREATE INDEX IF NOT EXISTS "Q__Aired"
   ;
 
 CREATE TABLE IF NOT EXISTS "ChallengeDifficultyEnum" (
-    "difficulty"   INTEGER
+    "difficulty"    INTEGER
       PRIMARY KEY
 
-  , "title"        TEXT
-      NOT NULL       CHECK (title <> "")
+  , "base_value"    INTEGER
+      NOT NULL        CHECK (base_value >= 0)
+  , "success_rate"  TEXT 
+      NOT NULL        DEFAULT "UNKNOWN"
 );
 
 -- There may be many Answers for a Qs.qID, all equally acceptable.
@@ -205,7 +210,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS "Category__Title"
   ;
 
 -- Category that a Q can be found in (many-to-many relation).
-CREATE TABLE IF NOT EXISTS "CategoryMembership" (
+CREATE TABLE IF NOT EXISTS "Category_Qs" (
     "qID"        INTEGER
       NOT NULL
       REFERENCES   Qs (qID)
@@ -219,8 +224,8 @@ CREATE TABLE IF NOT EXISTS "CategoryMembership" (
 ) WITHOUT ROWID;
 
 CREATE INDEX IF NOT EXISTS "Category__Q"
-  ON CategoryMembership (qID)
+  ON Category_Qs (qID)
   ;
 CREATE INDEX IF NOT EXISTS "Q__Category"
-  ON CategoryMembership (catID)
+  ON Category_Qs (catID)
   ;

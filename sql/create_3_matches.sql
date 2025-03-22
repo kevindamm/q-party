@@ -80,19 +80,19 @@ CREATE TABLE IF NOT EXISTS "Matches" (
   -- (optional, may be NULL, must be UNIQUE)
 );
 
-CREATE INDEX IF NOT EXISTS "Matches__Season"
+CREATE INDEX IF NOT EXISTS "Match__Season"
   ON Matches ("season")
   WHERE (season IS NOT NULL)
   ;
-CREATE UNIQUE INDEX IF NOT EXISTS "Matches__SeasonEpisode"
+CREATE UNIQUE INDEX IF NOT EXISTS "Match__SeasonEpisode"
   ON Matches ("season", "episode")
   WHERE (season IS NOT NULL AND episode IS NOT NULL)
   ;
-CREATE UNIQUE INDEX IF NOT EXISTS "Matches__JEID"
+CREATE UNIQUE INDEX IF NOT EXISTS "Match__JEID"
   ON Matches ("jeid")
   WHERE (jeid IS NOT NULL)
   ;
-CREATE UNIQUE INDEX IF NOT EXISTS "Matches__JAID"
+CREATE UNIQUE INDEX IF NOT EXISTS "Match__JAID"
   ON Matches ("jaid")
   WHERE (jaid IS NOT NULL)
   ;
@@ -109,7 +109,7 @@ CREATE TABLE IF NOT EXISTS "MatchRounds" (
 
   , "difficulty"  INTEGER
       NOT NULL      DEFAULT 0
-      REFERENCES    DifficultyEnum (difficulty)
+      REFERENCES    MatchDifficultyEnum (match_difficulty)
 
   , PRIMARY KEY ("matchID", "round")
 ) WITHOUT ROWID;

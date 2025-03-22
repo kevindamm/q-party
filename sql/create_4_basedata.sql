@@ -24,12 +24,13 @@
 -- github:kevindamm/q-party/sql/create_4_basedata.sql
 
 --
--- Define enum tables (constants).
+-- ENUM TABLES
 --
 
 INSERT INTO DataQuality
-    ("dqID", "quality",                 "summary")
-  VALUES (0, "Needs Review",       "Some votes are needed to determine the accuracy of this answer.")
+    ("dqID", "quality",            "summary")
+  VALUES
+         (0, "Needs Review",       "Some votes are needed to determine the accuracy of this answer.")
        , (1, "Entirely Incorrect", "The answer is incorrect and was never correct.")
        , (2, "Recently Incorrect", "This answer was correct when it was made but ")
        , (3, "Suspected Outdated", "The challenge was written a long time ago or the field has seen recent changes, but accuracy has not been checked.")
@@ -39,54 +40,57 @@ INSERT INTO DataQuality
        , (7, "Confirmed Correct",  "Multiple 'correct' votes and no supported 'incorrect' votes.")
        ;
 
+-- The tie-breakers are extremely rare, perhaps only a handful on record.
+-- We could use other final questions instead.
 INSERT INTO RoundEnum
     ("round", "title",       "notes")
-  VALUES ( 0, "UNKNOWN",     NULL)
+  VALUES
+         ( 0, "UNKNOWN",     NULL)
        , ( 1, "Single",      "The first of three rounds")
        , ( 2, "Double",      "Second round, double values")
        , ( 3, "Final",       "Third and final round, single question with bidding")
        , ( 4, "Tie-Breaker", "To resolve any ties at the end of the Final round (format is same as final)")
        ;
-                  
+
+-- These difficulty values are approximately ordered but there is considerable overlap.
 INSERT INTO MatchDifficultyEnum
     ("match_difficulty", "title",                   "notes")
-  VALUES (            0, "UNKNOWN",                 NULL)
-       , (            1, "Teen Tournament",         "")
+  VALUES
+         (            0, "UNKNOWN",                 NULL)
+       , (            1, "Teen Tournament",         "younger players")
        , (            2, "Celebrity Match",         "")
        , (            3, "College Championship",    "")
        , (            4, "Seniors Tournament",      "")
        , (            5, "Standard Competition",    "")
-       , (            6, "Tournament of Champions", "")
+       , (            6, "Tournament of Champions", "returning champions")
        , (            7, "Masters Tournament",      "")
-       , (            8, "Greatest of All Time",    "")
+       , (            8, "Watson vs Humans",        "")
+       , (            9, "Greatest of All Time",    "")
        ;
 
 -- These values were calculated from aggregate correct-response measurements
 -- for challenges at each value level.  There is a slight difference between
 -- single & double, they've been combined here because the difference is small.
 INSERT INTO ChallengeDifficultyEnum
-    ("difficulty", "rating")
-  VALUES (      0, "UNKNOWN")
-       , (      1, "70%")
-       , (      2, "60%")
-       , (      3, "50%")
-       , (      4, "41%")
-       , (      5, "34%")
+    ( "difficulty", "base_value", "success_rate")
+  VALUES
+         (       0,            0,      "UNKNOWN")
+       , (       1,          100,          "70%")
+       , (       2,          200,          "60%")
+       , (       3,          300,          "50%")
+       , (       4,          400,          "41%")
+       , (       5,          500,          "34%")
        ;
 
 --
--- Define unknown records (sentinels).
+-- UNKNOWNS
 --
 
 INSERT INTO Qs
-     ("qID", "challenge")
-  VALUES (0, "UNKNOWN")
-  ;
+     ("qID", "challenge") VALUES (0, "UNKNOWN");
 
 INSERT INTO Categories
-    ("catID", "title")
-  VALUES ( 0, "UNKNOWN")
-  ;
+    ("catID", "title") VALUES ( 0, "UNKNOWN");
 
 INSERT INTO Matches
     ("matchID",  "season", "jeid", "jaid")

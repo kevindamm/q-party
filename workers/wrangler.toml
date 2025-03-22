@@ -1,4 +1,4 @@
-name = "q-party-worker"
+name = "q-party-website"
 main = "src/router.ts"
 compatibility_date = "2025-03-10"
 compatibility_flags = ["nodejs_compat"]
@@ -14,8 +14,8 @@ binding = "WHISPER"
 
 [[d1_databases]]
 binding = "DB"
-database_name = "trivia"
-database_id = "0b8f912a-9ab6-4b58-a959-fbdfd630a35f"
+database_name = "q-party-db"
+database_id = "b806fe22-c685-40b2-98ea-808c4bba193f"
 
 # for media (images, videos, audio) clues
 [[r2_buckets]]
