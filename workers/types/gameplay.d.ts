@@ -1,6 +1,6 @@
 // Copyright (c) 2025, Kevin Damm
 // All Rights Reserved.
-// BSD 3-Clause License
+// BSD 3-Clause License:
 // 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -28,24 +28,12 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 // 
-// github:kevindamm/cratedig/worker/router.ts
+// github:kevindamm/q-party/workers/types/gameplay.d.ts
 
-import { Context } from 'hono'
+import { DurableObject } from 'cloudflare:workers'
+import { WorkerContext } from "./bindings"
 
-export interface WorkerEnv {
-  // Trivia challenges and categories, game and match histories, etc.
-  DB: D1Database
-
-  // Performs speech-to-text via Workers AI using whisper model.
-  WHISPER: Ai
-
-  // Durable objects which facilitate websocket connections.
-  LOBBIES: DurableObjectNamespace<LobbyServer>
-  GAMEPLAY: DurableObjectNamespace<GameplayServer>
-
-  // For storing and retrieving media such as audio and video,
-  // used in supplementing the text of a trivia challenge.
-  MEDIA: R2Bucket
+export interface GameplayServer extends DurableObject {
+  constructor(state: DurableObjectState, env: WorkerContext)
+  async fetch(request: Request): Promise<Response>
 }
-
-export type WorkerContext = Context<{ Bindings: WorkerEnv}>

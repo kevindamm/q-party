@@ -28,20 +28,13 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 // 
-// github:kevindamm/q-party/workers/src/challenge.ts
+// github:kevindamm/q-party/workers/types/lobby.d.ts
 
-import { WorkerContext } from "../types";
+import { DurableObject } from "cloudflare:workers"
+import { WorkerContext } from "./bindings"
 
-/**
- * Retrieves the challenge details for the requested challenge ID.
- * 
- * @method GET
- * @param c the request context (with URL param for challenge_id)
- */
-export async function get(c: WorkerContext): Promise<Response> {
-  const challenge_id = c.req.param('challenge_id')
-  const challenge = c.env.DB.prepare(`SELECT *
-    FROM Qs WHERE qID = ?`).bind(challenge_id)
-
-  return new Response((await challenge.run()).results.join('\n'))
+// Stub representation for the time being.
+export interface LobbyServer extends DurableObject {
+  constructor(state: DurableObjectState, env: WorkerContext)
+  async fetch(request: Request): Promise<Response>
 }

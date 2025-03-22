@@ -1,6 +1,6 @@
 // Copyright (c) 2025, Kevin Damm
 // All Rights Reserved.
-// BSD 3-Clause License:
+// BSD 3-Clause License
 // 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -28,20 +28,26 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 // 
-// github:kevindamm/q-party/workers/src/challenge.ts
+// github:kevindamm/q-party/workers/types/bindings.d.ts
 
-import { WorkerContext } from "../types";
+import { Context } from 'hono'
+import { LobbyServer } from './lobby'
+import { GameplayServer } from './gameplay'
 
-/**
- * Retrieves the challenge details for the requested challenge ID.
- * 
- * @method GET
- * @param c the request context (with URL param for challenge_id)
- */
-export async function get(c: WorkerContext): Promise<Response> {
-  const challenge_id = c.req.param('challenge_id')
-  const challenge = c.env.DB.prepare(`SELECT *
-    FROM Qs WHERE qID = ?`).bind(challenge_id)
+export interface WorkerEnv {
+  // Trivia challenges and categories, game and match histories, etc.
+  DB: D1Database
 
-  return new Response((await challenge.run()).results.join('\n'))
+  // Performs speech-to-text via Workers AI using whisper model.
+  WHISPER: Ai
+
+  // Durable objects which facilitate websocket connections.
+  LOBBIES: DurableObjectNamespace<LobbyServer>
+  GAMEPLAY: DurableObjectNamespace<GameplayServer>
+
+  // For storing and retrieving media such as audio and video,
+  // used in supplementing the text of a trivia challenge.
+  MEDIA: R2Bucket
 }
+
+export type WorkerContext = Context<{ Bindings: WorkerEnv}>

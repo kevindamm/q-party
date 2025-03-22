@@ -30,7 +30,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 // 
-// github:kevindamm/q-party/worker/filetypes.d.ts
+// github:kevindamm/q-party/workers/types/files.d.ts
 
 declare module '*.html' {
   const value: string;

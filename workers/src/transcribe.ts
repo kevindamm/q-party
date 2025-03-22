@@ -30,7 +30,12 @@
 // 
 // github:kevindamm/q-party/workers/src/transcribe.ts
 
-import { WorkerContext } from '../types/workers'
+import { WorkerContext } from '../types'
+
+export async function AudioUI(c: WorkerContext): Promise<Response> {
+
+  return new Response('TODO audio ui HTML')
+}
 
 /**
  * Uses ASR (automated speech recognition) to get text from an audio file.
@@ -39,7 +44,7 @@ import { WorkerContext } from '../types/workers'
  * @param c the request context
  * @returns a Hono response indicating success (with transcription) or failure.
  */
-export default async function post(c: WorkerContext): Promise<Response> {
+export async function TranscribeAudio(c: WorkerContext): Promise<Response> {
   const body = await c.req.parseBody()
   const audio = body['file']
   if (!audio || typeof(audio) === 'string') {

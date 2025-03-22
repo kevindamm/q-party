@@ -31,7 +31,7 @@
 // github:kevindamm/q-party/workers/src/gameplay.ts
 
 import { DurableObject } from 'cloudflare:workers'
-import { WorkerContext } from "../types/workers"
+import { WorkerContext } from "../types"
 
 // Stub representation for the time being.
 export class GameplayServer extends DurableObject {

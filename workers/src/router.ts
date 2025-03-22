@@ -28,19 +28,41 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 // 
-// github:kevindamm/q-party/workers/router.ts
+// github:kevindamm/q-party/workers/src/router.ts
 
 import { Hono } from 'hono'
 import { aboutpage, homepage, legalpage } from './homepage'
-import { WorkerEnv } from '../types/workers'
+import { downgrade_protection } from './middleware/tls'
+import { WorkerEnv } from '../types'
+import { logger } from 'hono/logger'
+
+import { RoomForm, JoinRoom } from './lobby'
+import { AudioUI, TranscribeAudio } from './transcribe'
 
 export { GameplayServer } from './gameplay'
 export { LobbyServer } from './lobby'
 
 const app = new Hono<{Bindings: WorkerEnv}>()
 
+app.use('*', logger())
+app.use('*', downgrade_protection)
+
 app.get('/', homepage)
 app.get('/about', aboutpage)
 app.get('/legal', legalpage)
+
+// DEBUGGING [
+app.get('/speak', AudioUI)
+app.post('/speak', TranscribeAudio)
+// ]
+
+app.get('/join', RoomForm)
+app.put('/join/:userid', JoinRoom)
+//app.post('/join/:roomid', PostMessage)
+//app.delete('/join/:roomid/:userid', LeaveRoom)
+
+app.get('/lobby/:roomid')
+
+app.get('/play/:roomid')
 
 export default app

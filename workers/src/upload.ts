@@ -30,7 +30,7 @@
 // 
 // github:kevindamm/q-party/workers/src/upload.ts
 
-import { WorkerContext } from '../types/workers'
+import { WorkerContext } from "../types"
 
 /**
  * Stores in an R2 bucket the audio attached as FormData of the request.
@@ -39,7 +39,7 @@ import { WorkerContext } from '../types/workers'
  * @param c the request context
  * @returns success (and the object storage key) or failure (with message).
  */
-export default async function post(c: WorkerContext): Promise<Response> {
+export async function UploadAudio(c: WorkerContext): Promise<Response> {
   const body = await c.req.parseBody()
   const audio = body['file']
   if (!audio || typeof(audio) === 'string') {

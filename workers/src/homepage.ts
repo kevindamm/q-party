@@ -33,7 +33,8 @@
 import ABOUT_HTML from '../htmx/about.html'
 import LEGAL_HTML from '../htmx/legal.html'
 import HOMEPAGE_HTML from '../htmx/homepage.html'
-import { WorkerContext } from '../types/workers'
+
+import { WorkerContext } from '../types'
 
 export async function homepage(c: WorkerContext): Promise<Response> {
   return c.html(HOMEPAGE_HTML)

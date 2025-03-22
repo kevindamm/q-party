@@ -9,20 +9,21 @@
       "ESNext"
     ],
     "types": [
-      "./types/workers.d.ts",
-      "./types/files.d.ts",
-      "@cloudflare/workers-types"
+      "@types/node",
+      "@cloudflare/workers-types",
+      "./types"
     ],
     "jsx": "react-jsx",
     "jsxImportSource": "hono/jsx"
   },
   "exclude": [
     "node_modules",
+    "types/**/*.ts",
     "test/**/*.ts",
+    "e2e/**/*.ts",
     "**/*.test.ts"
   ],
   "include": [
-    "types/**/*.d.ts",
     "htmx/**/*.html",
     "src/**/*.ts"
   ]

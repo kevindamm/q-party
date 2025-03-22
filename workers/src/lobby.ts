@@ -30,8 +30,10 @@
 // 
 // github:kevindamm/q-party/workers/src/lobby.ts
 
-import { DurableObject } from 'cloudflare:workers'
-import { WorkerContext } from "../types/workers"
+import ROOM_FORM_HTML from '../htmx/room_form.html'
+
+import { DurableObject } from "cloudflare:workers"
+import { WorkerContext } from "../types"
 
 // Stub representation for the time being.
 export class LobbyServer extends DurableObject {
@@ -48,4 +50,21 @@ export class LobbyServer extends DurableObject {
   }
 
   // TODO getters and setters for persisted storage
+}
+
+/**
+ * 
+ * @method GET
+ */
+export async function RoomForm(c: WorkerContext): Promise<Response> {
+  // TODO check headers for resuming ongoing session
+
+  return new Response(ROOM_FORM_HTML)
+}
+
+
+export async function JoinRoom(c: WorkerContext): Promise<Response> {
+  // TODO validate room name and add user to the websocket/buzzer/UI-test
+
+  return new Response('Room does not exist.', { status: 404 })
 }
