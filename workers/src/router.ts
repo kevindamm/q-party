@@ -31,11 +31,11 @@
 // github:kevindamm/q-party/workers/src/router.ts
 
 import { Hono } from 'hono'
-import { aboutpage, homepage, legalpage } from './homepage'
 import { downgrade_protection } from './middleware/tls'
 import { WorkerEnv } from '../types'
 import { logger } from 'hono/logger'
 
+import { GameForm, JoinGame } from './gameplay'
 import { RoomForm, JoinRoom } from './lobby'
 import { AudioUI, TranscribeAudio } from './transcribe'
 
@@ -46,10 +46,6 @@ const app = new Hono<{Bindings: WorkerEnv}>()
 
 app.use('*', logger())
 app.use('*', downgrade_protection)
-
-app.get('/', homepage)
-app.get('/about', aboutpage)
-app.get('/legal', legalpage)
 
 // DEBUGGING [
 app.get('/speak', AudioUI)

@@ -30,6 +30,8 @@
 // 
 // github:kevindamm/q-party/workers/src/gameplay.ts
 
+import READY_FORM_HTML from '../htmx/ready_form.html'
+
 import { DurableObject } from 'cloudflare:workers'
 import { WorkerContext } from "../types"
 
@@ -48,4 +50,14 @@ export class GameplayServer extends DurableObject {
   }
 
   // TODO getters and setters for persisted storage
+}
+
+export async function GameForm(c: WorkerContext): Promise<Response> {
+
+  return new Response(READY_FORM_HTML)
+}
+
+export async function JoinGame(c: WorkerContext): Promise<Response> {
+
+  return new Response('Game does not exist', { status: 404 })
 }
