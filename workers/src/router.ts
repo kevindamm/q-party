@@ -44,8 +44,8 @@ export { LobbyServer } from './lobby'
 
 const app = new Hono<{Bindings: WorkerEnv}>()
 
-app.use('*', logger())
-app.use('*', downgrade_protection)
+app.use(logger())
+app.use(downgrade_protection)
 
 // DEBUGGING [
 app.get('/speak', AudioUI)
