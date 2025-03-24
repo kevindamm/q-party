@@ -41,6 +41,8 @@ lerna-debug.log*
 *.out
 go.work
 tmp/
+about/.vitepress/cache
+about/.vitepress/dist
 
 # misc
 .DS_Store
