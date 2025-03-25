@@ -54,12 +54,14 @@ CREATE TABLE IF NOT EXISTS "RoundEnum" (
 );
 
 CREATE TABLE IF NOT EXISTS "MatchDifficultyEnum" (
-    "match_difficulty"   INTEGER
+    "match_difficulty"  INTEGER
       PRIMARY KEY
 
-  , "title"        TEXT
-      NOT NULL       CHECK (title <> "")
-  , "notes"        TEXT
+  , "title"             TEXT
+      NOT NULL            CHECK (title <> "")
+  , "season_prefix"     TEXT
+      NOT NULL            CHECK (season_prefix <> "")
+  , "notes"             TEXT
   -- (optional, may be NULL)
 );
 

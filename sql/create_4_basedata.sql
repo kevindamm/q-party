@@ -54,18 +54,18 @@ INSERT INTO RoundEnum
 
 -- These difficulty values are approximately ordered but there is considerable overlap.
 INSERT INTO MatchDifficultyEnum
-    ("match_difficulty", "title",                   "notes")
+    ("match_difficulty", "title",                    "season_prefix", "notes")
   VALUES
-         (            0, "UNKNOWN",                 NULL)
-       , (            1, "Teen Tournament",         "younger players")
-       , (            2, "Celebrity Match",         "")
-       , (            3, "College Championship",    "")
-       , (            4, "Seniors Tournament",      "")
-       , (            5, "Standard Competition",    "")
-       , (            6, "Tournament of Champions", "returning champions")
-       , (            7, "Masters Tournament",      "")
-       , (            8, "Watson vs Humans",        "")
-       , (            9, "Greatest of All Time",    "")
+         (            0, "UNKNOWN",                  "unk",              NULL)
+       , (            1, "Teen Tournament",          "teen",          "younger players")
+       , (            2, "Celebrity Match",          "celeb",         "")
+       , (            3, "College Championship",     "college",       "")
+       , (            4, "Seniors Tournament",       "seniors",       "")
+       , (            5, "Standard Competition",     "season",        "")
+       , (            6, "Tournament of Champions",  "champ",         "returning champions")
+       , (            7, "Masters Tournament",       "masters",       "")
+       , (            8, "Watson vs Humans",         "watson",        "")
+       , (            9, "Greatest of All Time",     "goat",          "")
        ;
 
 -- These values were calculated from aggregate correct-response measurements
