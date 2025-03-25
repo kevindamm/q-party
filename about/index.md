@@ -1,14 +1,12 @@
 ---
 # https://vitepress.dev/reference/default-theme-home-page
 layout: home
+title: Documentation
 
 hero:
   name: "About ?-Party"
-  text: ""
   tagline: "a trivial side project"
 ---
-
-# Documentation
 
 ## Environment and Dependencies
 
@@ -31,4 +29,4 @@ TODO more details
 
 Check back later!
 
-TODO mermaid diagram
+TODO system diagram
