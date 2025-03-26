@@ -16,41 +16,44 @@ export default defineConfig({
     // https://vitepress.dev/reference/default-theme-config
     nav: [
       { text: 'Questions', link: '/questions' },
-      { text: 'Categories', link: '/category' },
-      { text: 'Calendar', link: '/catwhen' },
-      { text: 'Matches', link: '/match' },
+      { text: 'Categories', link: '/category/' },
+      { text: 'Editor', link: '/editor' },
       { text: 'About', link: '/' }
     ],
 
     sidebar: [
       {
         text: 'Gameplay',
+        link: '/gameplay/',
         items: [
-          { text: 'lobby', link: '/lobby' },
-          { text: 'match', link: '/match' },
-          { text: 'live', link: '/live' },
-          { text: 'async', link: '/async' },
-          { text: 'solo', link: '/solo' }]},
+          { text: 'lobby', link: '/gameplay/lobby' },
+          { text: 'match', link: '/gameplay/match' },
+          { text: 'live', link: '/gameplay/live' },
+          { text: 'async', link: '/gameplay/async' },
+          { text: 'solo', link: '/gameplay/solo' }]},
       {
         text: 'Roles',
+        link: '/roles/',
         items: [
-          { text: 'host', link: '/host' },
-          { text: 'contestant', link: '/contestant' },
-          { text: 'spectator', link: '/spectator' }]},
+          { text: 'host', link: '/roles/host' },
+          { text: 'contestant', link: '/roles/contestant' },
+          { text: 'spectator', link: '/roles/spectator' }]},
       {
-        text: 'Tech',
+        text: 'System',
+        link: '/system/',
         items: [
-          { text: 'chat', link: '/chat' },
-          { text: 'buzzer', link: '/buzzer' },
-          { text: 'speak', link: '/speak' },
-          { text: 'check', link: '/check' }]},
+          { text: 'chat', link: '/system/chat' },
+          { text: 'buzzer', link: '/system/buzzer' },
+          { text: 'speak', link: '/system/speak' },
+          { text: 'judge', link: '/system/judge' },
+          { text: 'quality', link: '/system/quality' }]},
       {
         text: 'Thanks',
+        link: '/thanks/',
         items: [
           { text: 'invite', link: '/invite' },
           { text: 'support', link: '/support' },
-          { text: 'contribute', link: '/contribute' },
-          { text: 'contact', link: '/contact' }]}
+          { text: 'contribute', link: '/contribute' }]}
     ],
 
     socialLinks: [
