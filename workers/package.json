@@ -7,7 +7,9 @@
 		"deploy": "wrangler deploy --minify"
 	},
 	"dependencies": {
-		"hono": "^4.7.4"
+		"chanfana": "^2.7.2",
+		"hono": "^4.7.5",
+		"zod": "^3.24.2"
 	},
 	"devDependencies": {
 		"@cloudflare/workers-types": "^4.20250320.0",
@@ -17,6 +19,7 @@
 	},
 	"overrides": {
 		"wrangler": {
+			"cookie": "^0.7.0",
 			"esbuild": "^0.25.1"
 		}
 	}
