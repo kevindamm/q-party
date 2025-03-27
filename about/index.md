@@ -6,7 +6,13 @@ title: Documentation
 hero:
   name: "About ?-Party"
   tagline: "a trivial side project"
+
+prev: false
+next: false
 ---
+
+TODO system diagram at the top
+(workers, durable objects, D1 (data), R2 (media), AI (whisper),  )
 
 ## Environment and Dependencies
 

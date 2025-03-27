@@ -15,9 +15,9 @@ export default defineConfig({
   themeConfig: {
     // https://vitepress.dev/reference/default-theme-config
     nav: [
-      { text: 'Questions', link: '/questions' },
-      { text: 'Categories', link: '/category/' },
-      { text: 'Editor', link: '/editor' },
+      { text: '?-Party', link: '/../' },
+      { text: 'Schedule', link: '/schedule' },
+      { text: 'Self-Host', link: '/self-host' },
       { text: 'About', link: '/' }
     ],
 
