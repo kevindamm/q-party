@@ -28,56 +28,30 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 // 
-// github:kevindamm/q-party/workers/src/router.ts
+// github:kevindamm/q-party/workers/src/match.ts
 
-import { Hono } from 'hono'
-import { fromHono } from 'chanfana'
-import { downgrade_protection } from './middleware/tls'
-import { auth_required } from './middleware/auth'
-import { WorkerEnv } from '../types'
-import { logger } from 'hono/logger'
+import { z } from 'zod'
+import { WorkerContext, WorkerEnv } from "../types"
+import { OpenAPIRoute } from "chanfana";
 
-import { ChallengeForm, InitChallenge, JoinGame } from './gameplay'
-import { RoomForm, JoinRoom, PostMessage, LeaveRoom } from './lobby'
-import { AudioUI, TranscribeAudio } from './transcribe'
-import { CategoryIndex, DateRangeCategoryList, DescribeCategory, SeasonCategoryList } from './category'
+class SeasonMatchSummary extends OpenAPIRoute {
+  schema = {
+    tags: ['Category'],
+    summary: 'Get a summary of the entire category index',
 
-export { GameplayServer } from './gameplay'
-export { LobbyServer } from './lobby'
+    response: {
+      "200": {
+        description: 'all GET requests will succeed with category listing',
+        content: {
+          "text/html": z.string(),
+        }
+      }
+    }
+  }
 
-const app = new Hono<{Bindings: WorkerEnv}>()
-const api = fromHono(app)
+  async handle(c: WorkerContext) {
+    // list of seasons and list of recent category names are small enough
+    // to fetch on first request and cache for ~ hours
+  }
+}
 
-app.use(logger())
-app.use(downgrade_protection)
-
-// DEBUGGING [
-app.get('/speak', AudioUI)
-app.post('/speak', TranscribeAudio)
-// ]
-
-// Gameplay routes
-
-app.get('/join', RoomForm)
-app.put('/join/:userid', JoinRoom)
-app.post('/lobby/:roomid', PostMessage)
-app.delete('/lobby/:roomid/:userid', LeaveRoom)
-
-app.get('/challenge', ChallengeForm)
-app.post('/challenge', InitChallenge)
-app.post('/play/:roomid', JoinGame)
-
-// API methods
-
-api.get('/category', CategoryIndex)
-api.get('/category/:catname', DescribeCategory)
-
-api.get('/catseas/', SeasonCategoryList)
-api.get('/catseas/:season', SeasonCategoryList)
-
-api.get('/catwhen', DateRangeCategoryList)
-api.get('/catwhen/:year', DateRangeCategoryList)
-api.get('/catwhen/:year/:month', DateRangeCategoryList)
-api.get('/catwhen/:year/:month/:day', DateRangeCategoryList)
-
-export default api

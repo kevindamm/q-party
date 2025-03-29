@@ -28,56 +28,19 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 // 
-// github:kevindamm/q-party/workers/src/router.ts
+// github:kevindamm/q-party/workers/src/middleware/rooms.ts
 
-import { Hono } from 'hono'
-import { fromHono } from 'chanfana'
-import { downgrade_protection } from './middleware/tls'
-import { auth_required } from './middleware/auth'
-import { WorkerEnv } from '../types'
-import { logger } from 'hono/logger'
+import { createMiddleware } from "hono/factory"
+import { WorkerEnv } from "../../types"
 
-import { ChallengeForm, InitChallenge, JoinGame } from './gameplay'
-import { RoomForm, JoinRoom, PostMessage, LeaveRoom } from './lobby'
-import { AudioUI, TranscribeAudio } from './transcribe'
-import { CategoryIndex, DateRangeCategoryList, DescribeCategory, SeasonCategoryList } from './category'
-
-export { GameplayServer } from './gameplay'
-export { LobbyServer } from './lobby'
-
-const app = new Hono<{Bindings: WorkerEnv}>()
-const api = fromHono(app)
-
-app.use(logger())
-app.use(downgrade_protection)
-
-// DEBUGGING [
-app.get('/speak', AudioUI)
-app.post('/speak', TranscribeAudio)
-// ]
-
-// Gameplay routes
-
-app.get('/join', RoomForm)
-app.put('/join/:userid', JoinRoom)
-app.post('/lobby/:roomid', PostMessage)
-app.delete('/lobby/:roomid/:userid', LeaveRoom)
-
-app.get('/challenge', ChallengeForm)
-app.post('/challenge', InitChallenge)
-app.post('/play/:roomid', JoinGame)
-
-// API methods
-
-api.get('/category', CategoryIndex)
-api.get('/category/:catname', DescribeCategory)
-
-api.get('/catseas/', SeasonCategoryList)
-api.get('/catseas/:season', SeasonCategoryList)
-
-api.get('/catwhen', DateRangeCategoryList)
-api.get('/catwhen/:year', DateRangeCategoryList)
-api.get('/catwhen/:year/:month', DateRangeCategoryList)
-api.get('/catwhen/:year/:month/:day', DateRangeCategoryList)
-
-export default api
+// Checks that the :roomid in the URL path is an available room.
+//
+// To keep things simple at first, there is only one valid room
+// and it is indicated in the env secrets for the (production or local) worker.
+// In the future, an allow-list and block-list for (room, user) pairs in D1.
+export const available_room = createMiddleware<{ Bindings: WorkerEnv }>(
+  async (c, next) => {
+    const roomid = c.req.param('roomid')
+    if (c.env.SECRET_ROOM != roomid)
+    await next()
+  }) 

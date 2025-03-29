@@ -30,15 +30,25 @@
 // 
 // github:kevindamm/q-party/workers/src/category.ts
 
-import { OpenAPIRoute } from 'chanfana';
-import { WorkerContext } from '../types';
+import { z } from 'zod'
+import { OpenAPIRoute } from 'chanfana'
+import { WorkerContext } from '../types'
 
+/**
+ * GET /category
+ */ 
 export class CategoryIndex extends OpenAPIRoute {
   schema = {
-    request: {
-    },
+    tags: ['Category'],
+    summary: 'Get a summary of the entire category index',
+
     response: {
-      "200": { description: 'all GET requests will succeed with category listing' }
+      "200": {
+        description: 'all GET requests should succeed with category listing',
+        content: {
+          "text/html": z.string(),
+        }
+      }
     }
   }
 
@@ -48,11 +58,16 @@ export class CategoryIndex extends OpenAPIRoute {
   }
 }
 
+/**
+ * GET /category/:catname
+ */
 export class DescribeCategory extends OpenAPIRoute {
   schema = {
     request: {
+      params: z.object({
+        catname: z.string().nonempty(),
+      })},
 
-    },
     responses: {
       "200": { description: 'details for the category being named' },
       "404": { description: 'a category by that name was not found' },
@@ -60,17 +75,24 @@ export class DescribeCategory extends OpenAPIRoute {
   }
 
   async handle(c: WorkerContext) {
+    const { catname } = (await this.getValidatedData<typeof this.schema>()).params
+
     // TODO read from cache the category/:catname page
 
     // TODO lookup category named by the url path
   }
 }
 
+/**
+ * GET /catseas/:season
+ */
 export class SeasonCategoryList extends OpenAPIRoute {
   schema = {
     request: {
+      params: z.object({
+        season: z.string().nonempty(),
+      })},
 
-    },
     responses: {
       "200": { description: 'listing of categories that appeared during a season' },
       "404": { description: 'a season by that name was not found' }
@@ -78,8 +100,20 @@ export class SeasonCategoryList extends OpenAPIRoute {
   }
 
   async handle(c: WorkerContext) {
+    const { season } = (await this.getValidatedData<typeof this.schema>()).params
+
     // TODO read from cache when this season's categories have been fetched recently
 
     // TODO lookup season's category index
   }
+}
+
+/**
+ * (locally) /catwhen#${from_YYYY[MM[DD]]}-${until_YYYY[MM[DD]]}
+ * GET /catwhen/
+ * GET /catwhen/:year
+ * GET /catwhen/:year/:month
+ */
+export class DateRangeCategoryList extends OpenAPIRoute {
+
 }

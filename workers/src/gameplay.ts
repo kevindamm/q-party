@@ -30,34 +30,84 @@
 // 
 // github:kevindamm/q-party/workers/src/gameplay.ts
 
-import READY_FORM_HTML from '../htmx/ready_form.html'
+import CHALLENGE_FORM_HTML from '../htmx/challenge_form.html'
 
 import { DurableObject } from 'cloudflare:workers'
-import { WorkerContext } from "../types"
+import { WorkerContext, WorkerEnv } from "../types"
 
 // Stub representation for the time being.
 export class GameplayServer extends DurableObject {
-  // TODO properties of the runtime state
+  host = [] as WebSocket[]
+  players = [] as WebSocket[]
+  viewers = [] as WebSocket[]
 
   constructor(state: DurableObjectState, env: WorkerContext) {
     super(state, env)
-    // TODO state initialization
+
+    state.blockConcurrencyWhile(async () => {
+      // The websockets are tagged with their roles in the game.
+      this.host = state.getWebSockets('host')
+      this.players = state.getWebSockets('player')
+      this.viewers = state.getWebSockets('viewer')
+    })
   }
 
-  async fetch(request: Request): Promise<Response> {
-    // TODO construct message
-    return new Response()
+  async webSocketMessage(ws: WebSocket, message: ArrayBuffer | string) {
+    ws.send(
+      `{\n  "ack": ${message},\n  hosted: ${this.host.length > 0},\n  count_players: ${this.players.length},\n  count_viewers: ${this.players.length}\n}`,
+    );
   }
 
-  // TODO getters and setters for persisted storage
+  async webSocketClose(
+    ws: WebSocket,
+    code: number,
+    /* reason: string, */
+    /* wasClean: boolean, */
+  ) {
+    // If the client closes the connection, the runtime will invoke the webSocketClose() handler.
+    ws.close(code, "Durable Object is closing WebSocket");
+  }
 }
 
-export async function GameForm(c: WorkerContext): Promise<Response> {
+export async function ChallengeForm(c: WorkerContext): Promise<Response> {
+  // TODO base page for picking out categories & constraints (date range, difficulty, etc.)
+  return new Response(CHALLENGE_FORM_HTML)
+}
 
-  return new Response(READY_FORM_HTML)
+export async function InitChallenge(c: WorkerContext): Promise<Response> {
+  // TODO /join/:roomid or /host/:roomid depending on whether a host exists yet.
+  return new Response()
 }
 
 export async function JoinGame(c: WorkerContext): Promise<Response> {
+  const roomname = c.req.param('roomid')
+  if (c.env.SECRET_ROOM !== roomname) {
+    return new Response('Game does not exist', { status: 404 })
+  }
 
-  return new Response('Game does not exist', { status: 404 })
+  return new Response('TODO game board grid as HTML response, opaque')
+}
+
+export async function HostGame(c: WorkerContext): Promise<Response> {
+  const roomname = c.req.param('roomid')
+  if (c.env.SECRET_ROOM !== roomname) {
+    return new Response('Game does not exist', { status: 404 })
+  }
+
+  return new Response('TODO game board grid plus host controls')
+}
+
+export async function WatchGame(c: WorkerContext): Promise<Response> {
+  // TODO check valid room
+  // TODO stream updates with SSE, no websockets
+
+  return new Response('TODO game board with simplified controls (mute/fullscreen), no buzzer')
+}
+
+export async function ResignGame(c: WorkerContext): Promise<Response> {
+  // TODO check valid room
+  // TODO check user in room
+  // TODO check user is a contestant
+
+  return new Response('TODO game over, forward to spectate & summary')
 }

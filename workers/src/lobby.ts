@@ -53,7 +53,7 @@ export class LobbyServer extends DurableObject {
 }
 
 /**
- * 
+ * /join
  * @method GET
  */
 export async function RoomForm(c: WorkerContext): Promise<Response> {
@@ -62,9 +62,33 @@ export async function RoomForm(c: WorkerContext): Promise<Response> {
   return new Response(ROOM_FORM_HTML)
 }
 
-
+/**
+ * /join
+ * @method POST
+ * @param jsonBody with { username, roomid, CSRF nonce }
+ */
 export async function JoinRoom(c: WorkerContext): Promise<Response> {
   // TODO validate room name and add user to the websocket/buzzer/UI-test
 
   return new Response('Room does not exist.', { status: 404 })
+}
+
+/**
+ * /lobby/:roomid 
+ * @method POST
+ * @param jsonBody with { username, message, CSRF nonce }
+ */
+export async function PostMessage(c: WorkerContext): Promise<Response> {
+  // TODO handle message via HTTP, open SSE for streaming messages
+  return new Response()
+}
+
+/**
+ * /lobby/:roomid
+ * @method DELETE
+ * @params formdata with username, CSRF nonce
+ */
+export async function LeaveRoom(c: WorkerContext): Promise<Response> {
+  // TODO 
+  return new Response()
 }

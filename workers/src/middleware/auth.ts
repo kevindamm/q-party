@@ -28,56 +28,27 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 // 
-// github:kevindamm/q-party/workers/src/router.ts
+// github:kevindamm/q-party/workers/src/middleware/auth.ts
 
-import { Hono } from 'hono'
-import { fromHono } from 'chanfana'
-import { downgrade_protection } from './middleware/tls'
-import { auth_required } from './middleware/auth'
-import { WorkerEnv } from '../types'
-import { logger } from 'hono/logger'
+import { createMiddleware } from "hono/factory"
+import { WorkerEnv } from "../../types"
 
-import { ChallengeForm, InitChallenge, JoinGame } from './gameplay'
-import { RoomForm, JoinRoom, PostMessage, LeaveRoom } from './lobby'
-import { AudioUI, TranscribeAudio } from './transcribe'
-import { CategoryIndex, DateRangeCategoryList, DescribeCategory, SeasonCategoryList } from './category'
+export const auth_required = createMiddleware<{ Bindings: WorkerEnv }>(
+  async (c, next) => {
+    if (new URL(c.req.url).pathname != "/") {
+      const token = c.req.header('QParty-Token')
+      if (c.env.VALID_TOKEN !== token) {
+        c.res = new Response('Request not authorized', { status: 401 })
+        return
+      }
+    }
+    await next()
+  }) 
 
-export { GameplayServer } from './gameplay'
-export { LobbyServer } from './lobby'
+export const admin_required = createMiddleware<{ Bindings: WorkerEnv }>(
+  async (c, next) => {
+    // TODO obtain username via JWT assertion
+    // TODO confirm user is in admin list
 
-const app = new Hono<{Bindings: WorkerEnv}>()
-const api = fromHono(app)
-
-app.use(logger())
-app.use(downgrade_protection)
-
-// DEBUGGING [
-app.get('/speak', AudioUI)
-app.post('/speak', TranscribeAudio)
-// ]
-
-// Gameplay routes
-
-app.get('/join', RoomForm)
-app.put('/join/:userid', JoinRoom)
-app.post('/lobby/:roomid', PostMessage)
-app.delete('/lobby/:roomid/:userid', LeaveRoom)
-
-app.get('/challenge', ChallengeForm)
-app.post('/challenge', InitChallenge)
-app.post('/play/:roomid', JoinGame)
-
-// API methods
-
-api.get('/category', CategoryIndex)
-api.get('/category/:catname', DescribeCategory)
-
-api.get('/catseas/', SeasonCategoryList)
-api.get('/catseas/:season', SeasonCategoryList)
-
-api.get('/catwhen', DateRangeCategoryList)
-api.get('/catwhen/:year', DateRangeCategoryList)
-api.get('/catwhen/:year/:month', DateRangeCategoryList)
-api.get('/catwhen/:year/:month/:day', DateRangeCategoryList)
-
-export default api
+    await next()
+  })
