@@ -1,4 +1,4 @@
-name = "q-party-website"
+name = "q-party-workers"
 main = "src/router.ts"
 compatibility_date = "2025-03-10"
 compatibility_flags = ["nodejs_compat"]

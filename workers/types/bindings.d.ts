@@ -48,6 +48,10 @@ export interface WorkerEnv {
   // For storing and retrieving media such as audio and video,
   // used in supplementing the text of a trivia challenge.
   MEDIA: R2Bucket
+
+  // A simplification, for now... one valid room, one working token.
+  SECRET_ROOM: string
+  VALID_TOKEN: string
 }
 
 export type WorkerContext = Context<{ Bindings: WorkerEnv}>
