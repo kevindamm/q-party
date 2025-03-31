@@ -59,7 +59,7 @@ CREATE TABLE IF NOT EXISTS "MatchDifficultyEnum" (
 
   , "title"             TEXT
       NOT NULL            CHECK (title <> "")
-  , "season_prefix"     TEXT
+  , "season"            TEXT
       NOT NULL            CHECK (season_prefix <> "")
   , "notes"             TEXT
   -- (optional, may be NULL)

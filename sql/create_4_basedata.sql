@@ -53,16 +53,17 @@ INSERT INTO RoundEnum
        ;
 
 -- These difficulty values are approximately ordered but there is considerable overlap.
+-- The ordering and variance could be estimated more specifically from matches.
 INSERT INTO MatchDifficultyEnum
-    ("match_difficulty", "title",                         "season_prefix", "notes")
+    ("match_difficulty", "title",                         "season", "notes")
   VALUES
          (            0, "UNKNOWN",                       "unk",           NULL)
-         (            1, "Trebek Pilots",                 "pilot",         "")
+       , (            1, "Trebek Pilots",                 "pilot",         "")
        , (            2, "Teen Tournament",               "teen",          "younger players")
        , (            3, "Celebrity Match",               "celeb",         "")
        , (            4, "National College Championship", "ncc",           "")
        , (            5, "Seniors Tournament",            "seniors",       "")
-       , (            6, "Standard Competition",          "season",        "")
+       , (            6, "Standard Competition",          "s%02d",         "assume approximately equal difficulty")
        , (            7, "Battle of the Bay Area Brains", "bbab",          "")
        , (            8, "Tournament of Champions",       "champ",         "returning champions")
        , (            9, "Masters Tournament",            "masters",       "")
