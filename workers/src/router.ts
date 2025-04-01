@@ -42,14 +42,16 @@ import { RoomForm, JoinRoom, PostMessage, LeaveRoom } from './lobby'
 import { AudioUI, TranscribeAudio } from './transcribe'
 import { CategoryIndex, DateRangeCategoryList, DescribeCategory, SeasonCategoryList } from './category'
 
-export { GameplayServer } from './gameplay'
+export { RateLimiter } from './ratelimiter'
 export { LobbyServer } from './lobby'
+export { GameplayServer } from './gameplay'
 
 const app = new Hono<{Bindings: WorkerEnv}>()
 const api = fromHono(app)
 
 app.use(logger())
 app.use(downgrade_protection)
+app.use(auth_required)
 
 // DEBUGGING [
 app.get('/speak', AudioUI)

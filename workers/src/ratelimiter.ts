@@ -1,6 +1,6 @@
 // Copyright (c) 2025, Kevin Damm
 // All Rights Reserved.
-// BSD 3-Clause License
+// BSD 3-Clause License:
 // 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -28,32 +28,48 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 // 
-// github:kevindamm/q-party/workers/types/bindings.d.ts
+// github:kevindamm/q-party/workers/src/gameplay.ts
 
-import { Context } from 'hono'
-import { RateLimiter } from './ratelimiter'
-import { LobbyServer } from './lobby'
-import { GameplayServer } from './gameplay'
+import { DurableObject } from 'cloudflare:workers'
+import { WorkerContext } from '../types'
 
-export interface WorkerEnv {
-  // Trivia challenges and categories, game and match histories, etc.
-  DB: D1Database
+class Bucket {
+  count: number
 
-  // Performs speech-to-text via Workers AI using whisper model.
-  WHISPER: Ai
+  constructor(
+    readonly timestamp_s: number,
+    readonly window_size: number,
+    count: number) {
+    this.count = count || 0
+  }
 
-  // Durable objects which facilitate websocket connections.
-  THROTTLE: DurableObjectNamespace<RateLimiter>
-  LOBBIES: DurableObjectNamespace<LobbyServer>
-  GAMEPLAY: DurableObjectNamespace<GameplayServer>
+  Contains = (ts: number) => ts < (this.timestamp_s + this.window_size);
 
-  // For storing and retrieving media such as audio and video,
-  // used in supplementing the text of a trivia challenge.
-  MEDIA: R2Bucket
-
-  // A simplification, for now... one valid room, one working token.
-  SECRET_ROOM: string
-  VALID_TOKEN: string
+  AddCount = (delta: number) => { this.count += delta }
 }
 
-export type WorkerContext = Context<{ Bindings: WorkerEnv}>
+export class RateLimiter extends DurableObject {
+  // It's ok if this value occasionally gets reset, it won't happen often if the buckets are being filled
+  buckets: Bucket[] = []
+  capacity: number = 1000
+  lockUntil: number
+
+  static readonly millis_per_request = 5;
+  static readonly millis_of_grace = 5000;
+  
+  constructor(state: DurableObjectState, env: WorkerContext) {
+    super(state, env)
+    this.lockUntil = 0
+  }
+
+  async getMillisUntilNextRequest(): Promise<number> {
+    const now = Date.now()
+
+    this.lockUntil = Math.max(now, this.lockUntil)
+    this.lockUntil += RateLimiter.millis_per_request
+
+    const value = Math.max(0,
+      this.lockUntil - now - RateLimiter.millis_of_grace)
+    return value
+  }
+}

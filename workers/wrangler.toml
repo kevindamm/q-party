@@ -25,6 +25,7 @@ bucket_name = "triviamedia"
 # DurableObject bindings
 [durable_objects]
 bindings = [
+  {name = "THROTTLE", class_name = "RateLimiter" },
   {name = "LOBBIES", class_name = "LobbyServer" },
   {name = "GAMEPLAY", class_name = "GameplayServer" }
 ]
@@ -32,7 +33,7 @@ bindings = [
 # DurableObject classnames
 [[migrations]]
 tag = "v1"
-new_classes = ["LobbyServer", "ContestantServer"]
+new_classes = ["RateLimiter", "LobbyServer", "GameplayServer"]
 
 [vars]
 BASE_URL = "https://q-party.kevindamm.com"
