@@ -1,3 +1,0 @@
-<h1>
-{{define "home_copy"}}Hello, {{.name}}!{{end}}
-</h1>
