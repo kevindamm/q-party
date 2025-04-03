@@ -20,7 +20,7 @@
 //
 // github:kevindamm/q-party/cue/board.cue
 
-package qparty
+package schema
 
 // A board state, includes the minimum needed information for starting play.
 #Board: {

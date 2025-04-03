@@ -20,7 +20,7 @@
 //
 // github:kevindamm/q-party/cue/challenges.cue
 
-package qparty
+package schema
 
 // A unique identifier for the challenge and (optionally) its ID.
 // If value is undefined it did not have an associated monetary value.

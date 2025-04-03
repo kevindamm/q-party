@@ -20,7 +20,7 @@
 //
 // github:kevindamm/q-party/cue/episodes.cue
 
-package qparty
+package schema
 
 // Identifiers and statistics for each episode.
 #EpisodeMetadata: {

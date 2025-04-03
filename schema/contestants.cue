@@ -20,7 +20,7 @@
 //
 // github:kevindamm/q-party/cue/contestants.cue
 
-package qparty
+package schema
 
 // Uniquely identifies a contestant across episodes.
 #ContestantID: {
