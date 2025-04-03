@@ -21,7 +21,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-github:kevindamm/q-party/public/microphone.js
+github:kevindamm/q-party/htmx/microphone.html
 -->
 
 <!--
@@ -59,8 +59,13 @@ and sending via multipart/form-data.
 </div>
 
 <script>
+var micButton, recStatus;
+htmx.onLoad(function(content) {
+  micButton = document.getElementById("microphone");
+  recStatus = document.getElementById("recording-status");
+});
+
 const constraints = { audio: true };
-const micButton = document.getElementById("microphone")
 
 class AudioRecorder {
   constructor() {
@@ -84,8 +89,7 @@ class AudioRecorder {
     this.mr = microphone;
 
     micButton.onclick = this.recordingStart;
-    stopButton.onclick = this.recordingStop;
-    this.button = recButton;
+    recStatus.onclick = this.recordingStop;
   }
 
   // Start reading data through the browser's MediaRecorder.
