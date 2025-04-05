@@ -26,7 +26,6 @@ package schema
 #SeasonIndex: {
   version?: [...uint]
   seasons: [#SeasonID]: #SeasonMetadata
-  episodes: [#ShowNumber]: #EpisodeMetadata
 }
 
 // Unique identifier for the season and its episodes.
