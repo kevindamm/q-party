@@ -22,12 +22,17 @@
 
 package schema
 
+#Value: int
+
+#Wager: {
+  wager: #Value
+}
+
 // A unique identifier for the challenge and (optionally) its ID.
 // If value is undefined it did not have an associated monetary value.
 #ChallengeMetadata: {
   id!: uint & >=0
-  value?: #DollarValue
-  is_wager?: bool
+  value?: #Value | #Wager
   ...
 }
 
@@ -37,19 +42,17 @@ UnknownChallenge: #ChallengeMetadata & { id: 0 }
 
 // The challenge details, sans the correct answer.
 #Challenge: #ChallengeMetadata & {
-  value!: #DollarValue
+  value!: #Value
   clue!: string
 
-  media?: [...#Media]
+  media?: [...#MediaClue]
   category?: string
   comments?: string
 }
 
-#DollarValue: int
-
 // A link to the media accompaniment for a challenge
 // (or for the commentary of an episode).
-#Media: {
+#MediaClue: {
   mime: string & #MimeType
   url: string
 }
@@ -59,16 +62,16 @@ UnknownChallenge: #ChallengeMetadata & { id: 0 }
 
 // The host may see the correct answer while the contestants cannot.
 #HostChallenge: #Challenge & {
-  correct: string // excluding "what is..." preface
+  correct: [...string] // excluding "what is..." preface
 }
 
 // Before answering, sometimes a player must provide a wager value first.
-#PlayerWager: #ChallengeMetadata & {
-  value!: #DollarValue
+#PlayerWager: #ContestantID & #ChallengeMetadata & {
+  wager!: #Wager
   comments?: string
 }
 
 // The player's response for a challenge.
-#PlayerResponse: #ChallengeMetadata & {
+#PlayerResponse: #ContestantID & #ChallengeMetadata & {
   response?: string
 }

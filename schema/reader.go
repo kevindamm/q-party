@@ -1,4 +1,4 @@
-// Copyright (c) 2024 Kevin Damm
+// Copyright (c) 2025 Kevin Damm
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -18,30 +18,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-// github:kevindamm/q-party/cue/contestants.cue
+// github:kevindamm/q-party/schema/reader.go
 
 package schema
-
-// Uniquely identifies a contestant across episodes.
-#ContestantID: {
-  id!: uint64
-  name?: string
-  ...
-}
-
-// Additional details about the contestant.
-#Contestant: #ContestantID & {
-  name!: string
-  bio: string
-}
-
-// An appearance is the joining of a contestant and an episode.
-#Appearance: #ContestantID & {
-  episode: #ShowNumber
-}
-
-// The episodes that a contestant has appeared in and their total winnings.
-#Career: #ContestantID & {
-  episodes: [...#ShowNumber]
-  winnings: #Value
-}

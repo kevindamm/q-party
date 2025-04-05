@@ -22,6 +22,13 @@
 
 package schema
 
+// Unique identifier for an episode.
+#ShowNumber: uint64
+
+#EpisodeIndex: {
+  episodes: [#ShowNumber]: #EpisodeMetadata
+}
+
 // Identifiers and statistics for each episode.
 #EpisodeMetadata: {
   show_number!: #ShowNumber
@@ -32,7 +39,7 @@ package schema
 
   contestant_ids?: [#ContestantID, #ContestantID, #ContestantID]
   comments?: string
-  media?: [...#Media]
+  media?: [...#MediaClue]
   ...
 }
 
@@ -41,9 +48,6 @@ package schema
   double_count?: int
   triple_stumpers?: int
 }
-
-// Unique identifier for an episode.
-#ShowNumber: uint
 
 // Represents a (year, month, day) when a show was aired or taped.
 #ShowDate: {

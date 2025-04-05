@@ -18,30 +18,44 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-// github:kevindamm/q-party/cue/contestants.cue
+// github:kevindamm/q-party/cue/rounds.cue
 
 package schema
 
-// Uniquely identifies a contestant across episodes.
-#ContestantID: {
-  id!: uint64
-  name?: string
-  ...
-}
-
-// Additional details about the contestant.
-#Contestant: #ContestantID & {
-  name!: string
-  bio: string
-}
-
-// An appearance is the joining of a contestant and an episode.
-#Appearance: #ContestantID & {
+// A board state, includes the minimum needed information for starting play.
+#Board: {
   episode: #ShowNumber
+  round: int & >=0 & <len(_round_names)
+  round_name: _round_names[round]
+
+  columns: [...#Category]
+  missing?: [...#BoardPosition]
+  history?: [...#BoardSelection]
 }
 
-// The episodes that a contestant has appeared in and their total winnings.
-#Career: #ContestantID & {
-  episodes: [...#ShowNumber]
-  winnings: #Value
+// A board position is identified by its column and (row) index.
+#BoardPosition: {
+  column!: uint & <6
+  index!: uint & <5
 }
+
+// Represents the board position and challenge, without contestant performance.
+#BoardSelection: #BoardPosition & #ChallengeMetadata
+
+// A category instance must have a title and
+// may have any number of challenges (typically five).
+#Category: {
+  title!: string
+  comments?: string
+  challenges: [...#ChallengeMetadata]
+}
+
+// Display strings for the different rounds.
+_round_names: [...string] & [
+  "[UNKNOWN]",
+	"Single!",
+	"Double!",
+	"Final!",
+	"Tiebreaker!!",
+	"[printed media]",
+]

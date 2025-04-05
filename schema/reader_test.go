@@ -1,4 +1,4 @@
-// Copyright (c) 2024 Kevin Damm
+// Copyright (c) 2025 Kevin Damm
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -18,44 +18,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-// github:kevindamm/q-party/cue/board.cue
+// github:kevindamm/q-party/schema/reader_test.go
 
-package schema
-
-// A board state, includes the minimum needed information for starting play.
-#Board: {
-  episode: #ShowNumber
-  round: int & >=0 & <len(_round_names)
-  round_name: _round_names[round]
-
-  columns: [...#Category]
-  missing?: [...#Position]
-  history?: [...#Selection]
-}
-
-// A board position is identified by its column and (row) index.
-#Position: {
-  column!: uint & <6
-  index!: uint & <5
-}
-
-// Represents the board position and challenge, without contestant performance.
-#Selection: #Position & #ChallengeMetadata
-
-// A category instance must have a title and
-// may have any number of challenges (typically five).
-#Category: {
-  title!: string
-  commentary?: string
-  challenges: [...#ChallengeMetadata]
-}
-
-// Display strings for the different rounds.
-_round_names: [...string] & [
-  "[UNKNOWN]",
-	"Single!",
-	"Double!",
-	"Final!",
-	"Tiebreaker!!",
-	"[printed media]",
-]
+package schema_test
