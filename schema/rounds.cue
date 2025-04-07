@@ -22,15 +22,23 @@
 
 package schema
 
-// A board state, includes the minimum needed information for starting play.
-#Board: {
-  episode: #ShowNumber
-  round: int & >=0 & <len(_round_names)
-  round_name: _round_names[round]
+#RoundID: {
+  episode!: #MatchNumber
+  round!: int & >=0 & <len(_round_names)
+  round_name?: _round_names[round]
+  ...
+}
 
+// Board representation includes the minimum needed information for starting play.
+#Board: #RoundID & {
   columns: [...#Category]
   missing?: [...#BoardPosition]
-  history?: [...#BoardSelection]
+  ...
+}
+
+// Board state includes the player selection
+#BoardState: #Board & {
+  history: [...#BoardSelection]
 }
 
 // A board position is identified by its column and (row) index.
@@ -40,14 +48,23 @@ package schema
 }
 
 // Represents the board position and challenge, without contestant performance.
-#BoardSelection: #BoardPosition & #ChallengeMetadata
+#BoardSelection: #ContestantID & #ChallengeMetadata & #BoardPosition
+
+#CategoryMetadata: {
+  catID: string
+  title!: string
+  ...
+}
 
 // A category instance must have a title and
 // may have any number of challenges (typically five).
-#Category: {
-  title!: string
+#Category: #CategoryMetadata & {
   comments?: string
   challenges: [...#ChallengeMetadata]
+}
+
+#CategoryAired: #CategoryMetadata & {
+  aired: #ShowDate
 }
 
 // Display strings for the different rounds.
@@ -57,5 +74,17 @@ _round_names: [...string] & [
 	"Double!",
 	"Final!",
 	"Tiebreaker!!",
-	"[printed media]",
+	"[other]",
+]
+
+#CategoryTheme: string
+
+_cat_themes: [...#CategoryTheme] & [
+	"",
+	"Geography",
+	"Entertainment",
+	"History & Royalty",
+	"Art & Literature",
+	"Science & Nature",
+	"Sports & Leisure",
 ]
