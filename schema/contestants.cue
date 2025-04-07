@@ -37,11 +37,11 @@ package schema
 
 // An appearance is the joining of a contestant and an episode.
 #Appearance: #ContestantID & {
-  episode: #ShowNumber
+  episode: #ShowIndex
 }
 
 // The episodes that a contestant has appeared in and their total winnings.
 #Career: #ContestantID & {
-  episodes: [...#ShowNumber]
+  episodes: [...#ShowIndex]
   winnings: #Value
 }

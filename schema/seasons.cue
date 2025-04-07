@@ -34,7 +34,8 @@ package schema
 // Metadata for a single season, has identity and some statistics.
 #SeasonMetadata: {
   season: #SeasonID
-  name: string
+  title: string
+
   aired: {
     from: #ShowDate
     until: #ShowDate

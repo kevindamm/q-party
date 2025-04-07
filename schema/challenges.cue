@@ -31,16 +31,15 @@ package schema
 // A unique identifier for the challenge and (optionally) its ID.
 // If value is undefined it did not have an associated monetary value.
 #ChallengeMetadata: {
-  id!: uint & >=0
+  qid!: uint & >=0
   value?: #Value | #Wager
   ...
 }
 
-// Sentinel representation for any blank board cell.
-UnknownChallenge: #ChallengeMetadata & { id: 0 }
+// Sentinel representation for a blank board cell.
+UnknownChallenge: #ChallengeMetadata & { qid: 0 }
 
-
-// The challenge details, sans the correct answer.
+// The challenge details, except the correct answer(s).
 #Challenge: #ChallengeMetadata & {
   value!: #Value
   clue!: string
@@ -67,7 +66,7 @@ UnknownChallenge: #ChallengeMetadata & { id: 0 }
 
 // Before answering, sometimes a player must provide a wager value first.
 #PlayerWager: #ContestantID & #ChallengeMetadata & {
-  wager!: #Wager
+  value!: #Wager
   comments?: string
 }
 

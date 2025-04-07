@@ -23,17 +23,22 @@
 package schema
 
 // Unique identifier for an episode.
-#ShowNumber: uint64
+#ShowIndex: {
+  season: #SeasonID
+  episode: #MatchNumber
+  show_title: string
+}
+
+#MatchNumber: uint64 & >0
 
 #EpisodeIndex: {
-  episodes: [#ShowNumber]: #EpisodeMetadata
+  episodes: [#MatchNumber]: #EpisodeMetadata
 }
 
 // Identifiers and statistics for each episode.
-#EpisodeMetadata: {
-  show_number!: #ShowNumber
-  show_title: string
-  season?: #SeasonID
+#EpisodeMetadata: #ShowIndex & {
+  jaid?: uint
+
   aired?: #ShowDate
   taped?: #ShowDate
 
@@ -43,10 +48,14 @@ package schema
   ...
 }
 
+#BoardLayout: {
+  cat_bitmap: [...int]
+}
+
 #EpisodeStats: #EpisodeMetadata & {
   single_count?: int
   double_count?: int
-  triple_stumpers?: int
+  triple_stumpers?: [...#BoardPosition]
 }
 
 // Represents a (year, month, day) when a show was aired or taped.
@@ -54,4 +63,9 @@ package schema
   year: int & >1980
   month: int & >=1 & <=12
   day: int & >=1 & <=31
+}
+
+#ShowDateRange: {
+  from?: #ShowDate
+  until?: #ShowDate
 }

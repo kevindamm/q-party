@@ -18,6 +18,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-// github:kevindamm/q-party/schema/reader.go
+// github:kevindamm/q-party/schema/scanner.go
 
 package schema
+
+func LoadSeasonIndex(filepath string) (*SeasonIndex, error) {
+	seasons := new(SeasonIndex)
+
+	return seasons, nil
+}

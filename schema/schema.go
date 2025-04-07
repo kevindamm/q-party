@@ -33,7 +33,7 @@ const UNKNOWN_CHALLENGE = ChallengeID(0)
 type Value int
 
 type Wager struct {
-	Value
+	Value `json:"value"`
 }
 
 type ChallengeMetadata[T Wager | Value] struct {
@@ -42,8 +42,8 @@ type ChallengeMetadata[T Wager | Value] struct {
 }
 
 type Challenge struct {
-	ChallengeMetadata[Value]
-	Clue string `json:"clue"`
+	ChallengeMetadata[Value] `json:",inline"`
+	Clue                     string `json:"clue"`
 
 	Media    []MediaClue `json:"media"`
 	Category string      `json:"category"`
@@ -56,41 +56,71 @@ type MediaClue struct {
 }
 
 type HostChallenge struct {
-	Challenge
-	Correct []string `json:"correct"`
+	Challenge `json:",inline"`
+	Correct   []string `json:"correct"`
 }
 
 type PlayerWager struct {
-	BoardSelection[Wager]
+	BoardSelection[Wager] `json:",inline"`
 }
 
 type PlayerResponse struct {
-	ChallengeMetadata[Value]
-	Response string `json:"response,omitempty"`
+	ChallengeMetadata[Value] `json:",inline"`
+	Contestant               ContestantID `json:"contestant"`
+	Response                 string       `json:"response,omitempty"`
 }
 
 /*
  * ROUNDS
  */
 
+type RoundID struct {
+	Episode MatchNumber `json:"episode,omitempty"`
+	Round   RoundEnum   `json:"round,omitempty"`
+}
+
+type Board struct {
+	RoundID `json:",inline"`
+	Columns []Category      `json:"columns"`
+	Missing []BoardPosition `json:"missing,omitempty"`
+}
+
+type BoardState struct {
+	Board   `json:",inline"`
+	History []BoardSelection[Value] `json:"history"`
+}
+
+// An enum-like value for the different rounds.
 type RoundEnum int
 
 const (
-	UNKNOWN_ROUND    RoundEnum = 0
-	ROUND_SINGLE     RoundEnum = 1
-	ROUND_DOUBLE     RoundEnum = 2
-	ROUND_FINAL      RoundEnum = 3
-	ROUND_TIEBREAKER RoundEnum = 4
-	ROUND_OFFLINE    RoundEnum = 5
+	ROUND_UNKNOWN RoundEnum = iota
+	ROUND_SINGLE
+	ROUND_DOUBLE
+	ROUND_FINAL
+	ROUND_TIEBREAKER
+	PRINTED_MEDIA
+	MaxRoundEnum
 )
 
-type Board struct {
-	EpisodeID ShowNumber              `json:"episode"`
-	Round     RoundEnum               `json:"round"`
-	Columns   []Category              `json:"columns"`
-	Missing   []BoardPosition         `json:"missing,omitempty"`
-	History   []BoardSelection[Value] `json:"history,omitempty"`
+func (round RoundEnum) String() string {
+	if round >= MaxRoundEnum {
+		return round_names[0]
+	}
+	return round_names[round]
 }
+
+func (round RoundID) RoundName() string {
+	return round_names[round.Round]
+}
+
+var round_names = [6]string{
+	"[UNKNOWN]",
+	"Single!",
+	"Double!",
+	"Final!",
+	"Tiebreaker!!",
+	"[printed media]"}
 
 type BoardPosition struct {
 	Column uint `json:"column"`
@@ -98,21 +128,34 @@ type BoardPosition struct {
 }
 
 type BoardSelection[T Value | Wager] struct {
-	BoardPosition
-	ChallengeMetadata[T]
+	BoardPosition        `json:",inline"`
+	ChallengeMetadata[T] `json:",inline"`
 }
 
+type CategoryID uint64
+
 type Category struct {
-	Title      string                     `json:"title"`
-	Comments   string                     `json:"comments,omitempty"`
-	Challenges []ChallengeMetadata[Value] `json:"challenges"`
+	CategoryID   `json:"id"`
+	Title        string        `json:"title"`
+	Comments     string        `json:"comments,omitempty"`
+	ChallengeIDs []ChallengeID `json:"challenges,omitempty"`
 }
 
 /*
  * EPISODES
  */
 
-type ShowNumber uint64
+// Shows are numbered sequentially based on air date.
+// These are historic contests obtained piecemeal from jarchive.com
+type ShowIndex struct {
+	Season    SeasonID    `json:"season,omitempty"`
+	Episode   MatchNumber `json:"episode"`
+	ShowTitle string      `json:"show_title,omitempty"`
+}
+
+// A match identifier refers to the unique identifier of the ?-Party database.
+// These are not universally unique, they are only certain to be locally unique.
+type MatchNumber uint64
 
 type ShowDate struct {
 	Year  int `json:"year"`
@@ -121,15 +164,14 @@ type ShowDate struct {
 }
 
 type EpisodeIndex struct {
-	Episodes map[ShowNumber]EpisodeMetadata `json:"episodes"`
+	Episodes map[MatchNumber]EpisodeMetadata `json:"episodes"`
 }
 
 type EpisodeMetadata struct {
-	ShowNumber `json:"show_number"`
-	ShowTitle  string   `json:"show_title"`
-	Season     SeasonID `json:"season,omitempty"`
-	AiredDate  ShowDate `json:"aired,omitempty"`
-	TapedDate  ShowDate `json:"taped,omitempty"`
+	ShowIndex `json:"show"`
+	Season    SeasonID `json:"season,omitempty"`
+	AiredDate ShowDate `json:"aired,omitempty"`
+	TapedDate ShowDate `json:"taped,omitempty"`
 
 	Contestants []ContestantID `json:"contestant_ids,omitempty"`
 	Comments    string         `json:"comments,omitempty"`
@@ -152,21 +194,21 @@ type ContestantID struct {
 }
 
 type Contestant struct {
-	ContestantID
-	Occupation string `json:"occupation"`
-	Residence  string `json:"residence"`
-	Notes      string `json:"notes"`
+	ContestantID `json:",inline"`
+	Occupation   string `json:"occupation"`
+	Residence    string `json:"residence"`
+	Notes        string `json:"notes"`
 }
 
 type Appearance struct {
-	ContestantID
-	Episodes ShowNumber
+	ContestantID `json:",inline"`
+	Episode      ShowIndex
 }
 
 type Career struct {
-	ContestantID
-	Episodes []ShowNumber `json:"episodes"`
-	Winnings Value        `json:"winnings"`
+	ContestantID `json:",inline"`
+	Appearances  []ShowIndex `json:"appearances"`
+	Winnings     Value       `json:"winnings"`
 }
 
 /*
