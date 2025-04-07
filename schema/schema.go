@@ -132,13 +132,15 @@ type BoardSelection[T Value | Wager] struct {
 	ChallengeMetadata[T] `json:",inline"`
 }
 
-type CategoryID uint64
+type CategoryMetadata struct {
+	CategoryID uint64 `json:"catID"`
+	Title      string `json:"title"`
+}
 
 type Category struct {
-	CategoryID   `json:"id"`
-	Title        string        `json:"title"`
-	Comments     string        `json:"comments,omitempty"`
-	ChallengeIDs []ChallengeID `json:"challenges,omitempty"`
+	CategoryMetadata `json:",inline"`
+	Comments         string        `json:"comments,omitempty"`
+	ChallengeIDs     []ChallengeID `json:"challenges,omitempty"`
 }
 
 /*
