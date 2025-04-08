@@ -22,52 +22,77 @@
 
 package schema
 
+import "fmt"
+
 /*
  * CHALLENGES
  */
 
 type ChallengeID uint64
 
-const UNKNOWN_CHALLENGE = ChallengeID(0)
+const UNKNOWN_CHALLENGE_ID = ChallengeID(0)
 
+// Value and Wager are distinct operationally.
 type Value int
+type Wager int
 
-type Wager struct {
-	Value `json:"value"`
+type ChallengeMetadata struct {
+	ChallengeID `json:"qid"`
+	Value       `json:"value,omitempty"`
 }
 
-type ChallengeMetadata[T Wager | Value] struct {
-	ChallengeID `json:"id"`
-	Value       T `json:"value,omitempty"`
+type ChallengeData struct {
+	Clue string `json:"clue"`
+
+	Media    []MediaRef `json:"media,omitempty"`
+	Category string     `json:"category,omitempty"`
+	Comments string     `json:"comments,omitempty"`
 }
 
 type Challenge struct {
-	ChallengeMetadata[Value] `json:",inline"`
-	Clue                     string `json:"clue"`
-
-	Media    []MediaClue `json:"media"`
-	Category string      `json:"category"`
-	Comments string      `json:"comments,omitempty"`
+	ChallengeMetadata `json:",inline"`
+	ChallengeData     `json:",inline"`
+	Value             Value `json:"value"`
 }
 
-type MediaClue struct {
+type BiddingChallenge struct {
+	ChallengeMetadata `json:",inline"`
+	ChallengeData     `json:",inline"`
+	Wager             Wager `json:"wager"`
+}
+
+func UnknownChallenge() Challenge {
+	return Challenge{
+		ChallengeMetadata: ChallengeMetadata{
+			ChallengeID: UNKNOWN_CHALLENGE_ID}}
+}
+
+type MediaRef struct {
 	MimeType string `json:"mime"`
 	URL      string `json:"url"`
 }
 
 type HostChallenge struct {
 	Challenge `json:",inline"`
-	Correct   []string `json:"correct"`
+	Value     Value `json:"value,omitempty"`
+	Wager     Wager `json:"wager,omitempty"`
+
+	Correct []string `json:"correct"`
 }
 
 type PlayerWager struct {
-	BoardSelection[Wager] `json:",inline"`
+	ContestantID      `json:",inline"`
+	ChallengeMetadata `json:",inline"`
+
+	Wager    Wager  `json:"wager"`
+	Comments string `json:"comments,omitempty"`
 }
 
 type PlayerResponse struct {
-	ChallengeMetadata[Value] `json:",inline"`
-	Contestant               ContestantID `json:"contestant"`
-	Response                 string       `json:"response,omitempty"`
+	ContestantID      `json:",inline"`
+	ChallengeMetadata `json:",inline"`
+
+	Response string `json:"response,omitempty"`
 }
 
 /*
@@ -77,17 +102,6 @@ type PlayerResponse struct {
 type RoundID struct {
 	Episode MatchNumber `json:"episode,omitempty"`
 	Round   RoundEnum   `json:"round,omitempty"`
-}
-
-type Board struct {
-	RoundID `json:",inline"`
-	Columns []Category      `json:"columns"`
-	Missing []BoardPosition `json:"missing,omitempty"`
-}
-
-type BoardState struct {
-	Board   `json:",inline"`
-	History []BoardSelection[Value] `json:"history"`
 }
 
 // An enum-like value for the different rounds.
@@ -103,14 +117,18 @@ const (
 	MaxRoundEnum
 )
 
-func (round RoundEnum) String() string {
-	if round >= MaxRoundEnum {
-		return round_names[0]
+func (round RoundID) String() string {
+	round_name := round_names[0]
+	if round.Round < MaxRoundEnum {
+		round_name = round_names[round.Round]
 	}
-	return round_names[round]
+	return fmt.Sprintf("#%05d: %s", round.Episode, round_name)
 }
 
 func (round RoundID) RoundName() string {
+	if round.Round < 0 || round.Round >= MaxRoundEnum {
+		return round_names[0]
+	}
 	return round_names[round.Round]
 }
 
@@ -122,26 +140,72 @@ var round_names = [6]string{
 	"Tiebreaker!!",
 	"[printed media]"}
 
+type Board struct {
+	RoundID `json:",inline"`
+	Columns []CategoryMetadata `json:"columns"`
+	Missing []BoardPosition    `json:"missing,omitempty"`
+}
+
+type BoardState struct {
+	Board   `json:",inline"`
+	History []SelectionOutcome `json:"history"`
+}
+
 type BoardPosition struct {
 	Column uint `json:"column"`
 	Index  uint `json:"index"`
 }
 
-type BoardSelection[T Value | Wager] struct {
-	BoardPosition        `json:",inline"`
-	ChallengeMetadata[T] `json:",inline"`
+type BoardSelection struct {
+	ContestantID      `json:",inline"`
+	ChallengeMetadata `json:",inline"`
+	BoardPosition     `json:",inline"`
 }
 
+type SelectionOutcome struct {
+	BoardSelection `json:",inline"`
+	Correct        bool  `json:"correct"`
+	Delta          Value `json:"delta"`
+}
+
+/*
+ * CATEGORIES
+ */
+
+type CategoryName string
+
+type CategoryIndex map[CategoryName]CategoryAired
+
 type CategoryMetadata struct {
-	CategoryID uint64 `json:"catID"`
-	Title      string `json:"title"`
+	CategoryName `json:"title"`
+	CategoryID   uint64 `json:"catID"`
 }
 
 type Category struct {
 	CategoryMetadata `json:",inline"`
-	Comments         string        `json:"comments,omitempty"`
-	ChallengeIDs     []ChallengeID `json:"challenges,omitempty"`
+
+	ChallengeIDs []ChallengeID `json:"challenges"`
+	Media        []MediaRef    `json:"media,omitempty"`
+	Comments     string        `json:"comments,omitempty"`
 }
+
+type CategoryAired struct {
+	CategoryMetadata `json:",inline"`
+	Aired            ShowDate `json:"aired"`
+}
+
+type CategoryThemeEnum int
+type CategoryTheme string
+
+const (
+	UNKNOWN_CATEGORY CategoryThemeEnum = iota
+	CATEGORY_GEOGRAPHY
+	CATEGORY_ENTERTAINMENT
+	CATEGORY_HISTORY_ROYALTY
+	CATEGORY_ART_LITERATURE
+	CATEGORY_SCIENCE_NATURE
+	CATEGORY_SPORTS_LEISURE
+)
 
 /*
  * EPISODES
@@ -149,9 +213,9 @@ type Category struct {
 
 // Shows are numbered sequentially based on air date.
 // These are historic contests obtained piecemeal from jarchive.com
-type ShowIndex struct {
+type MatchID struct {
 	Season    SeasonID    `json:"season,omitempty"`
-	Episode   MatchNumber `json:"episode"`
+	Match     MatchNumber `json:"match"`
 	ShowTitle string      `json:"show_title,omitempty"`
 }
 
@@ -159,31 +223,40 @@ type ShowIndex struct {
 // These are not universally unique, they are only certain to be locally unique.
 type MatchNumber uint64
 
+type EpisodeIndex map[MatchNumber]EpisodeMetadata
+
+type EpisodeMetadata struct {
+	MatchID   `json:",inline"`
+	EpisodeID uint `json:"jaid,omitempty"`
+
+	AiredDate ShowDate `json:"aired,omitempty"`
+	TapedDate ShowDate `json:"taped,omitempty"`
+
+	Contestants []ContestantID `json:"contestants,omitempty"`
+	Media       []MediaRef     `json:"media,omitempty"`
+	Comments    string         `json:"comments,omitempty"`
+}
+
+type BoardLayout struct {
+	CategoryBitmaps []uint `json:"cat_bitmap"`
+}
+
+type EpisodeStats struct {
+	SingleCount int `json:"single_count,omitempty"`
+	DoubleCount int `json:"double_count,omitempty"`
+
+	TripleStumpers []BoardPosition `json:"triple_stumpers,omitempty"`
+}
+
 type ShowDate struct {
 	Year  int `json:"year"`
 	Month int `json:"month"`
 	Day   int `json:"day"`
 }
 
-type EpisodeIndex struct {
-	Episodes map[MatchNumber]EpisodeMetadata `json:"episodes"`
-}
-
-type EpisodeMetadata struct {
-	ShowIndex `json:"show"`
-	Season    SeasonID `json:"season,omitempty"`
-	AiredDate ShowDate `json:"aired,omitempty"`
-	TapedDate ShowDate `json:"taped,omitempty"`
-
-	Contestants []ContestantID `json:"contestant_ids,omitempty"`
-	Comments    string         `json:"comments,omitempty"`
-	Media       []MediaClue    `json:"media"`
-}
-
-type EpisodeStats struct {
-	SingleCount    int `json:"single_count,omitempty"`
-	DoubleCount    int `json:"double_count,omitempty"`
-	TripleStumpers int `json:"triple_stumpers,omitempty"`
+type ShowDateRange struct {
+	From  ShowDate `json:"from,omitempty"`
+	Until ShowDate `json:"until,omitempty"`
 }
 
 /*
@@ -191,26 +264,29 @@ type EpisodeStats struct {
  */
 
 type ContestantID struct {
-	PK   uint64 `json:"id"`
+	PK   uint64 `json:"cid"`
 	Name string `json:"name,omitempty"`
 }
 
 type Contestant struct {
 	ContestantID `json:",inline"`
-	Occupation   string `json:"occupation"`
-	Residence    string `json:"residence"`
-	Notes        string `json:"notes"`
+
+	Name       string     `json:"name"`
+	Occupation string     `json:"occupation,omitempty"`
+	Residence  string     `json:"residence,omitempty"`
+	Notes      string     `json:"notes,omitempty"`
+	Media      []MediaRef `json:"media,omitempty"`
 }
 
 type Appearance struct {
 	ContestantID `json:",inline"`
-	Episode      ShowIndex
+	Episode      MatchID `json:"episode"`
 }
 
 type Career struct {
 	ContestantID `json:",inline"`
-	Appearances  []ShowIndex `json:"appearances"`
-	Winnings     Value       `json:"winnings"`
+	Appearances  []MatchID `json:"appearances"`
+	Winnings     Value     `json:"winnings"`
 }
 
 /*
@@ -237,8 +313,32 @@ type SeasonMetadata struct {
 	TripStumpCount int `json:"tripstump_count,omitempty"`
 }
 
+type Season struct {
+	SeasonMetadata `json:",inline"`
+	EpisodeIndex   `json:",inline"`
+	CategoryIndex  `json:",inline"`
+}
+
 /*
- * EMBEDDED SCHEMA
+ * DATA QUALITY
+ */
+
+type DataQualityEnum uint8
+
+type DataQuality struct {
+	QualityID   DataQualityEnum `json:"dqID"`
+	QualityName string          `json:"quality"`
+}
+
+type DataQualityJudgement struct {
+	ChallengeMetadata `json:",inline"`
+
+	Quality  DataQualityEnum `json:"quality"`
+	Comments string          `json:"comments"`
+}
+
+/*
+ * EMBEDDED SCHEMA AS CUE
  */
 
 // go:embed challenges.cue
@@ -250,8 +350,8 @@ var schemaRounds string
 // go:embed episodes.cue
 var schemaEpisodes string
 
-// go:embed seasons.cue
-var schemaSeasons string
-
 // go:embed contestants.cue
 var schemaContestants string
+
+// go:embed seasons.cue
+var schemaSeasons string
