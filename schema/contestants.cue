@@ -18,13 +18,13 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-// github:kevindamm/q-party/cue/contestants.cue
+// github:kevindamm/q-party/schema/contestants.cue
 
 package schema
 
 // Uniquely identifies a contestant across episodes.
 #ContestantID: {
-  id!: uint64
+  cid!: uint64
   name?: string
   ...
 }
@@ -32,16 +32,19 @@ package schema
 // Additional details about the contestant.
 #Contestant: #ContestantID & {
   name!: string
-  bio: string
+  occupation?: string
+  residence?: string
+  notes?: string
+  media?: [...#MediaRef]
 }
 
 // An appearance is the joining of a contestant and an episode.
 #Appearance: #ContestantID & {
-  episode: #ShowIndex
+  episode: #MatchID
 }
 
 // The episodes that a contestant has appeared in and their total winnings.
 #Career: #ContestantID & {
-  episodes: [...#ShowIndex]
+  episodes: [...#MatchID]
   winnings: #Value
 }
