@@ -1,4 +1,4 @@
-// Copyright (c) 2024 Kevin Damm
+// Copyright (c) 2025 Kevin Damm
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -18,53 +18,34 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-// github:kevindamm/q-party/schema/episodes.cue
+// github:kevindamm/q-party/selfhost/cmd/jarchive/episodes.go
 
-package schema
+package jarchive
 
-// Unique identifier for an episode.
-#MatchID: {
-  season?: #SeasonID
-  match: #MatchNumber
-  show_title?: string
+import (
+	"fmt"
+
+	"github.com/kevindamm/q-party/schema"
+)
+
+type EpisodeID int
+
+func EpisodeURL(id EpisodeID) string {
+	return fmt.Sprintf("https://j-archive.com/showgame.php?game_id=%d", id)
 }
 
-#MatchNumber: uint64 & >0
+type EpisodeMatchNumber map[EpisodeID]schema.MatchNumber
+type MatchNumberEpisode map[schema.MatchNumber]EpisodeID
 
-#EpisodeIndex: [#MatchNumber]: #EpisodeMetadata
+// All details of the episode, including correct answers & the contestants' bios.
+type JarchiveEpisode struct {
+	schema.EpisodeMetadata `json:",inline"`
+	Comments               string             `json:"comments,omitempty"`
+	Media                  []schema.MediaClue `json:"media,omitempty"`
 
-// Identifiers and statistics for each episode.
-#EpisodeMetadata: #MatchID & {
-  jaid?: uint
-
-  aired?: #ShowDate
-  taped?: #ShowDate
-
-  contestants?: [...#ContestantID]
-  media?: [...#MediaRef]
-  comments?: string
-  ...
-}
-
-// A minified 
-#BoardLayout: {
-  cat_bitmap: [...uint]
-}
-
-#EpisodeStats: #EpisodeMetadata & {
-  single_count?: int
-  double_count?: int
-  triple_stumpers?: [...#BoardPosition]
-}
-
-// Represents a (year, month, day) when a show was aired or taped.
-#ShowDate: {
-  year: int & >1980
-  month: int & >=1 & <=12
-  day: int & >=1 & <=31
-}
-
-#ShowDateRange: {
-  from?: #ShowDate
-  until?: #ShowDate
+	// Due to absence of archival evidence, not every episode has both single & double rounds.
+	Single     *JarchiveBoard     `json:"single,omitempty"`
+	Double     *JarchiveBoard     `json:"double,omitempty"`
+	Final      *JarchiveChallenge `json:"final,omitempty"`
+	TieBreaker *JarchiveChallenge `json:"tiebreaker,omitempty"`
 }

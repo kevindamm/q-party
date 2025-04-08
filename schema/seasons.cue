@@ -18,9 +18,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-// github:kevindamm/q-party/cue/seasons.cue
+// github:kevindamm/q-party/schema/seasons.cue
 
 package schema
+
+// Unique identifier for the season and its episodes.
+#SeasonID: string
 
 // Schema for [seasons.json] containing season and episode metadata.
 #SeasonIndex: {
@@ -28,20 +31,16 @@ package schema
   seasons: [#SeasonID]: #SeasonMetadata
 }
 
-// Unique identifier for the season and its episodes.
-#SeasonID: string
-
 // Metadata for a single season, has identity and some statistics.
 #SeasonMetadata: {
   season: #SeasonID
-  title: string
+  name: string
+  aired: #ShowDateRange
 
-  aired: {
-    from: #ShowDate
-    until: #ShowDate
-  }
-
-  episode_count?: int
-  challenge_count?: int
-  tripstump_count?: int
+  episode_count?:   *0 | int & >=0
+  challenge_count?: *0 | int & >=0
+  tripstump_count?: *0 | int & >=0
+  ...
 }
+
+#Season: #SeasonMetadata & #EpisodeIndex & #CategoryIndex

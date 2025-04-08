@@ -18,53 +18,25 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-// github:kevindamm/q-party/schema/episodes.cue
+// github:kevindamm/q-party/media.go
 
-package schema
+package jarchive
 
-// Unique identifier for an episode.
-#MatchID: {
-  season?: #SeasonID
-  match: #MatchNumber
-  show_title?: string
+type MediaClue struct {
+	MimeType `json:"mime"`
+	MediaURL string `json:"url"`
 }
 
-#MatchNumber: uint64 & >0
+// This enumeration over available media types is modeled after its equivalent
+// MIME type such as image/jpeg, image/png, audio/mpeg, etc.  The default (its
+// zero value) is an empty string which implicitly represents an unknown media.
+type MimeType string
 
-#EpisodeIndex: [#MatchNumber]: #EpisodeMetadata
-
-// Identifiers and statistics for each episode.
-#EpisodeMetadata: #MatchID & {
-  jaid?: uint
-
-  aired?: #ShowDate
-  taped?: #ShowDate
-
-  contestants?: [...#ContestantID]
-  media?: [...#MediaRef]
-  comments?: string
-  ...
-}
-
-// A minified 
-#BoardLayout: {
-  cat_bitmap: [...uint]
-}
-
-#EpisodeStats: #EpisodeMetadata & {
-  single_count?: int
-  double_count?: int
-  triple_stumpers?: [...#BoardPosition]
-}
-
-// Represents a (year, month, day) when a show was aired or taped.
-#ShowDate: {
-  year: int & >1980
-  month: int & >=1 & <=12
-  day: int & >=1 & <=31
-}
-
-#ShowDateRange: {
-  from?: #ShowDate
-  until?: #ShowDate
-}
+const (
+	MediaImageJPG MimeType = "image/jpeg"
+	MediaImagePNG MimeType = "image/png"
+	MediaImageSVG MimeType = "image/svg+xml"
+	MediaAudioMP3 MimeType = "audio/mpeg"
+	MediaVideoMP4 MimeType = "video/mp4"
+	MediaVideoMOV MimeType = "video/quicktime"
+)

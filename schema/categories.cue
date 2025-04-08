@@ -18,53 +18,42 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-// github:kevindamm/q-party/schema/episodes.cue
+// github:kevindamm/q-party/schema/categories.cue
 
 package schema
 
-// Unique identifier for an episode.
-#MatchID: {
-  season?: #SeasonID
-  match: #MatchNumber
-  show_title?: string
-}
+#CategoryID: string
 
-#MatchNumber: uint64 & >0
+#CategoryIndex: [=~#CategoryID]: #CategoryAired
 
-#EpisodeIndex: [#MatchNumber]: #EpisodeMetadata
-
-// Identifiers and statistics for each episode.
-#EpisodeMetadata: #MatchID & {
-  jaid?: uint
-
-  aired?: #ShowDate
-  taped?: #ShowDate
-
-  contestants?: [...#ContestantID]
-  media?: [...#MediaRef]
-  comments?: string
+#CategoryMetadata: {
+  catID: #CategoryID
+  title!: string
   ...
 }
 
-// A minified 
-#BoardLayout: {
-  cat_bitmap: [...uint]
+// A category instance must have a title and
+// may have any number of challenges (typically five).
+#Category: #CategoryMetadata & {
+  challenges: [...#ChallengeMetadata]
+
+  media?: [...#MediaRef]
+  comments?: string
 }
 
-#EpisodeStats: #EpisodeMetadata & {
-  single_count?: int
-  double_count?: int
-  triple_stumpers?: [...#BoardPosition]
+#CategoryAired: #CategoryMetadata & {
+  aired: #ShowDate
 }
 
-// Represents a (year, month, day) when a show was aired or taped.
-#ShowDate: {
-  year: int & >1980
-  month: int & >=1 & <=12
-  day: int & >=1 & <=31
-}
+#CategoryThemeEnum: int & >=0
+#CategoryTheme: string
 
-#ShowDateRange: {
-  from?: #ShowDate
-  until?: #ShowDate
-}
+_cat_themes: [...#CategoryTheme] & [
+	"[UNKNOWN]",
+	"Geography",
+	"Entertainment",
+	"History & Royalty",
+	"Art & Literature",
+	"Science & Nature",
+	"Sports & Leisure",
+]

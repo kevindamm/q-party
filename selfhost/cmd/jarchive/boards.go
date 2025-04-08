@@ -1,4 +1,4 @@
-// Copyright (c) 2024 Kevin Damm
+// Copyright (c) 2025 Kevin Damm
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -18,53 +18,15 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-// github:kevindamm/q-party/schema/episodes.cue
+// github:kevindamm/q-party/selfhost/cmd/jarchive/boards.go
 
-package schema
+package jarchive
 
-// Unique identifier for an episode.
-#MatchID: {
-  season?: #SeasonID
-  match: #MatchNumber
-  show_title?: string
-}
+import (
+	"github.com/kevindamm/q-party/schema"
+)
 
-#MatchNumber: uint64 & >0
-
-#EpisodeIndex: [#MatchNumber]: #EpisodeMetadata
-
-// Identifiers and statistics for each episode.
-#EpisodeMetadata: #MatchID & {
-  jaid?: uint
-
-  aired?: #ShowDate
-  taped?: #ShowDate
-
-  contestants?: [...#ContestantID]
-  media?: [...#MediaRef]
-  comments?: string
-  ...
-}
-
-// A minified 
-#BoardLayout: {
-  cat_bitmap: [...uint]
-}
-
-#EpisodeStats: #EpisodeMetadata & {
-  single_count?: int
-  double_count?: int
-  triple_stumpers?: [...#BoardPosition]
-}
-
-// Represents a (year, month, day) when a show was aired or taped.
-#ShowDate: {
-  year: int & >1980
-  month: int & >=1 & <=12
-  day: int & >=1 & <=31
-}
-
-#ShowDateRange: {
-  from?: #ShowDate
-  until?: #ShowDate
+type JarchiveBoard struct {
+	schema.MatchNumber
+	Columns []schema.Category
 }

@@ -18,9 +18,13 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-// github:kevindamm/q-party/cue/rounds.cue
+// github:kevindamm/q-party/schema/rounds.cue
 
 package schema
+
+//
+// ROUNDS = BOARDS | FINAL
+//
 
 #RoundID: {
   episode!: #MatchNumber
@@ -29,62 +33,40 @@ package schema
   ...
 }
 
+// Display strings for the different rounds.
+_round_names: [...string] & [
+    "[UNKNOWN]",
+    "Single!",
+    "Double!",
+    "Final!",
+    "Tiebreaker!!",
+    "[other]",
+]
+
 // Board representation includes the minimum needed information for starting play.
 #Board: #RoundID & {
-  columns: [...#Category]
+  columns: [...#CategoryMetadata]
   missing?: [...#BoardPosition]
   ...
 }
 
 // Board state includes the player selection
 #BoardState: #Board & {
-  history: [...#BoardSelection]
+  history: [...#SelectionOutcome]
 }
 
-// A board position is identified by its column and (row) index.
+// A board position is identified by its column and (row) index.  These value
+// ranges may not need to be hard-coded, though the non-zero positive part will.
 #BoardPosition: {
-  column!: uint & <6
-  index!: uint & <5
+  column!: int & >0 // typically 1..6
+  index!: int & >0 // typically 1..5
+  ...
 }
 
 // Represents the board position and challenge, without contestant performance.
 #BoardSelection: #ContestantID & #ChallengeMetadata & #BoardPosition
 
-#CategoryMetadata: {
-  catID: string
-  title!: string
-  ...
+#SelectionOutcome: #BoardSelection & {
+  correct: bool
+  delta: #Value
 }
-
-// A category instance must have a title and
-// may have any number of challenges (typically five).
-#Category: #CategoryMetadata & {
-  comments?: string
-  challenges: [...#ChallengeMetadata]
-}
-
-#CategoryAired: #CategoryMetadata & {
-  aired: #ShowDate
-}
-
-// Display strings for the different rounds.
-_round_names: [...string] & [
-  "[UNKNOWN]",
-	"Single!",
-	"Double!",
-	"Final!",
-	"Tiebreaker!!",
-	"[other]",
-]
-
-#CategoryTheme: string
-
-_cat_themes: [...#CategoryTheme] & [
-	"",
-	"Geography",
-	"Entertainment",
-	"History & Royalty",
-	"Art & Literature",
-	"Science & Nature",
-	"Sports & Leisure",
-]

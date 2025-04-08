@@ -18,53 +18,29 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-// github:kevindamm/q-party/schema/episodes.cue
+// github:kevindamm/q-party/schema/dataqual.cue
 
 package schema
 
-// Unique identifier for an episode.
-#MatchID: {
-  season?: #SeasonID
-  match: #MatchNumber
-  show_title?: string
-}
+#DataQualityEnum: uint8
 
-#MatchNumber: uint64 & >0
+_dq_names: [...string] & [
+    "Needs Review",
+    "Entirely Incorrect",
+    "Recently Incorrect",
+    "Suspected Outdated",
+    "Needs Minor Change",
+    "Disagreement",
+    "Correct",
+    "Confirmed Correct",
+]
 
-#EpisodeIndex: [#MatchNumber]: #EpisodeMetadata
-
-// Identifiers and statistics for each episode.
-#EpisodeMetadata: #MatchID & {
-  jaid?: uint
-
-  aired?: #ShowDate
-  taped?: #ShowDate
-
-  contestants?: [...#ContestantID]
-  media?: [...#MediaRef]
-  comments?: string
+#DataQuality: {
+  dqID: #DataQualityEnum & <len(_dq_names)
+  quality: _dq_names[dqID]
   ...
 }
 
-// A minified 
-#BoardLayout: {
-  cat_bitmap: [...uint]
-}
-
-#EpisodeStats: #EpisodeMetadata & {
-  single_count?: int
-  double_count?: int
-  triple_stumpers?: [...#BoardPosition]
-}
-
-// Represents a (year, month, day) when a show was aired or taped.
-#ShowDate: {
-  year: int & >1980
-  month: int & >=1 & <=12
-  day: int & >=1 & <=31
-}
-
-#ShowDateRange: {
-  from?: #ShowDate
-  until?: #ShowDate
+#DataQualityJudgement: #ChallengeMetadata & #DataQuality & {
+  comments: string
 }

@@ -22,8 +22,22 @@
 
 package schema
 
-func LoadSeasonIndex(filepath string) (*SeasonIndex, error) {
+import "io"
+
+func LoadSeasonIndex(reader io.Reader) (*SeasonIndex, error) {
 	seasons := new(SeasonIndex)
 
 	return seasons, nil
+}
+
+func LoadSeason(reader io.Reader) (*Season, error) {
+	season := new(Season)
+
+	return season, nil
+}
+
+func LoadEpisode(reader io.Reader) (*EpisodeMetadata, error) {
+	episode := new(EpisodeMetadata)
+
+	return episode, nil
 }
