@@ -18,6 +18,36 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-// github:kevindamm/q-party/schema/schema.go
+// github:kevindamm/q-party/schema/seasons.go
 
 package schema
+
+import _ "embed"
+
+// go:embed season.cue
+var schemaSeasons string
+
+type SeasonSlug string
+
+type SeasonID struct {
+	Stub  SeasonSlug `json:"slug"`
+	Title string     `json:"title"`
+}
+
+type SeasonIndex map[SeasonSlug]*SeasonMetadata
+
+type SeasonMetadata struct {
+	Season SeasonID      `json:"season"`
+	Title  string        `json:"title,omitempty"`
+	Aired  ShowDateRange `json:"aired,omitempty"`
+
+	EpisodeCount   int `json:"episode_count,omitempty"`
+	ChallengeCount int `json:"challenge_count,omitempty"`
+	TripStumpCount int `json:"tripstump_count,omitempty"`
+}
+
+type Season struct {
+	SeasonMetadata `json:",inline"`
+	EpisodeIndex   `json:",inline"`
+	CategoryIndex  `json:",inline"`
+}

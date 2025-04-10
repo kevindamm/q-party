@@ -18,6 +18,25 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-// github:kevindamm/q-party/schema/schema.go
+// github:kevindamm/q-party/schema/data_quality.go
 
 package schema
+
+import _ "embed"
+
+// go:embed data_quality.cue
+var schemaDataQuality string
+
+type DataQualityEnum uint8
+
+type DataQuality struct {
+	QualityID   DataQualityEnum `json:"dqID"`
+	QualityName string          `json:"quality"`
+}
+
+type DataQualityJudgement struct {
+	ChallengeMetadata `json:",inline"`
+
+	Quality  DataQualityEnum `json:"quality"`
+	Comments string          `json:"comments"`
+}
