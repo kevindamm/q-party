@@ -157,7 +157,6 @@ type BoardPosition struct {
 }
 
 type BoardSelection struct {
-	ContestantID      `json:",inline"`
 	ChallengeMetadata `json:",inline"`
 	BoardPosition     `json:",inline"`
 }
@@ -174,11 +173,11 @@ type SelectionOutcome struct {
 
 type CategoryName string
 
-type CategoryIndex map[CategoryName]CategoryAired
+type CategoryIndex map[CategoryName]*CategoryAired
 
 type CategoryMetadata struct {
-	CategoryName `json:"title"`
-	CategoryID   uint64 `json:"catID"`
+	Name       CategoryName `json:"title"`
+	CategoryID uint64       `json:"catID"`
 }
 
 type Category struct {
@@ -191,7 +190,8 @@ type Category struct {
 
 type CategoryAired struct {
 	CategoryMetadata `json:",inline"`
-	Aired            ShowDate `json:"aired"`
+
+	Aired ShowDate `json:"aired"`
 }
 
 type CategoryThemeEnum int
@@ -211,19 +211,20 @@ const (
  * EPISODES
  */
 
-// Shows are numbered sequentially based on air date.
-// These are historic contests obtained piecemeal from jarchive.com
-type MatchID struct {
-	Season    SeasonID    `json:"season,omitempty"`
-	Match     MatchNumber `json:"match"`
-	ShowTitle string      `json:"show_title,omitempty"`
-}
-
 // A match identifier refers to the unique identifier of the ?-Party database.
 // These are not universally unique, they are only certain to be locally unique.
 type MatchNumber uint64
 
-type EpisodeIndex map[MatchNumber]EpisodeMetadata
+// Shows are numbered sequentially based on air date.
+// These are historic contests obtained piecemeal from jarchive.com
+type MatchID struct {
+	Match MatchNumber `json:"match"`
+
+	SeasonStub string `json:"season,omitempty"`
+	ShowTitle  string `json:"show_title,omitempty"`
+}
+
+type EpisodeIndex map[MatchNumber]*EpisodeMetadata
 
 type EpisodeMetadata struct {
 	MatchID   `json:",inline"`
@@ -293,20 +294,19 @@ type Career struct {
  * SEASONS
  */
 
-type SeasonID string
+type SeasonStub string
 
-type SeasonIndex struct {
-	SemVer  []uint                      `json:"version"`
-	Seasons map[SeasonID]SeasonMetadata `json:"seasons"`
+type SeasonID struct {
+	Stub  SeasonStub `json:"stub"`
+	Title string     `json:"title"`
 }
 
+type SeasonIndex map[SeasonStub]*SeasonMetadata
+
 type SeasonMetadata struct {
-	Season SeasonID `json:"season"`
-	Name   string   `json:"name"`
-	Aired  struct {
-		From  ShowDate `json:"from"`
-		Until ShowDate `json:"until"`
-	}
+	Season SeasonID      `json:"season"`
+	Title  string        `json:"title,omitempty"`
+	Aired  ShowDateRange `json:"aired,omitempty"`
 
 	EpisodeCount   int `json:"episode_count,omitempty"`
 	ChallengeCount int `json:"challenge_count,omitempty"`
