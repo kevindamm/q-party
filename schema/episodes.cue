@@ -24,7 +24,7 @@ package schema
 
 // Unique identifier for an episode.
 #MatchID: {
-  season?: #SeasonID
+  season?: #SeasonName
   match: #MatchNumber
   show_title?: string
 }
