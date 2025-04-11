@@ -1,4 +1,4 @@
-// Copyright (c) 2024 Kevin Damm
+// Copyright (c) 2025 Kevin Damm
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -18,29 +18,37 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-// github:kevindamm/q-party/schema/seasons.cue
+// github:kevindamm/q-party/schema/contestant.go
 
 package schema
 
-// Unique identifier for the season and its episodes.
-#SeasonName: string
+import _ "embed"
 
-// Schema for [seasons.json] containing season and episode metadata.
-#SeasonIndex: {
-  version?: [...uint]
-  seasons: [#SeasonName]: #SeasonMetadata
+// go:embed contestant.cue
+var schemaContestants string
+
+type ContestantID struct {
+	PK   uint64 `json:"cid"`
+	Name string `json:"name,omitempty"`
 }
 
-// Metadata for a single season, has identity and some statistics.
-#SeasonMetadata: {
-  season: #SeasonName
-  title: string
-  aired: #ShowDateRange
+type Contestant struct {
+	ContestantID `json:",inline"`
 
-  episode_count?:   *0 | int & >=0
-  challenge_count?: *0 | int & >=0
-  tripstump_count?: *0 | int & >=0
-  ...
+	Name       string     `json:"name"`
+	Occupation string     `json:"occupation,omitempty"`
+	Residence  string     `json:"residence,omitempty"`
+	Notes      string     `json:"notes,omitempty"`
+	Media      []MediaRef `json:"media,omitempty"`
 }
 
-#Season: #SeasonMetadata & #EpisodeIndex & #CategoryIndex
+type Appearance struct {
+	ContestantID `json:",inline"`
+	Episode      MatchID `json:"episode"`
+}
+
+type Career struct {
+	ContestantID `json:",inline"`
+	Appearances  []MatchID `json:"appearances"`
+	Winnings     Value     `json:"winnings"`
+}

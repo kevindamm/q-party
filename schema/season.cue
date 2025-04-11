@@ -18,53 +18,29 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-// github:kevindamm/q-party/schema/episodes.cue
+// github:kevindamm/q-party/schema/season.cue
 
 package schema
 
-// Unique identifier for an episode.
-#MatchID: {
-  season?: #SeasonName
-  match: #MatchNumber
-  show_title?: string
+// Unique identifier for the season and its episodes.
+#SeasonName: string
+
+// Schema for [seasons.json] containing season and episode metadata.
+#SeasonIndex: {
+  version?: [...uint]
+  seasons: [#SeasonName]: #SeasonMetadata
 }
 
-#MatchNumber: uint64 & >0
+// Metadata for a single season, has identity and some statistics.
+#SeasonMetadata: {
+  season: #SeasonName
+  title: string
+  aired: #ShowDateRange
 
-#EpisodeIndex: [#MatchNumber]: #EpisodeMetadata
-
-// Identifiers and statistics for each episode.
-#EpisodeMetadata: #MatchID & {
-  jaid?: uint
-
-  aired?: #ShowDate
-  taped?: #ShowDate
-
-  contestants?: [...#ContestantID]
-  media?: [...#MediaRef]
-  comments?: string
+  episode_count?:   *0 | int & >=0
+  challenge_count?: *0 | int & >=0
+  tripstump_count?: *0 | int & >=0
   ...
 }
 
-// A minified 
-#BoardLayout: {
-  cat_bitmap: [...uint]
-}
-
-#EpisodeStats: #EpisodeMetadata & {
-  single_count?: int
-  double_count?: int
-  triple_stumpers?: [...#BoardPosition]
-}
-
-// Represents a (year, month, day) when a show was aired or taped.
-#ShowDate: {
-  year: int & >1980
-  month: int & >=1 & <=12
-  day: int & >=1 & <=31
-}
-
-#ShowDateRange: {
-  from?: #ShowDate
-  until?: #ShowDate
-}
+#Season: #SeasonMetadata & #EpisodeIndex & #CategoryIndex

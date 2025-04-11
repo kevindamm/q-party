@@ -18,55 +18,53 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-// github:kevindamm/q-party/schema/rounds.cue
+// github:kevindamm/q-party/schema/match.cue
 
 package schema
 
-//
-// ROUNDS = BOARDS | FINAL
-//
+// Unique identifier for an episode.
+#MatchID: {
+  season?: #SeasonName
+  match: #MatchNumber
+  show_title?: string
+}
 
-#RoundID: {
-  episode!: #MatchNumber
-  round!: int & >=0 & <len(_round_names)
-  round_name?: _round_names[round]
+#MatchNumber: uint64 & >0
+
+#EpisodeIndex: [#MatchNumber]: #EpisodeMetadata
+
+// Identifiers and statistics for each episode.
+#EpisodeMetadata: #MatchID & {
+  jaid?: uint
+
+  aired?: #ShowDate
+  taped?: #ShowDate
+
+  contestants?: [...#ContestantID]
+  media?: [...#MediaRef]
+  comments?: string
   ...
 }
 
-// Display strings for the different rounds.
-_round_names: [...string] & [
-    "[UNKNOWN]",
-    "Single!",
-    "Double!",
-    "Final!",
-    "Tiebreaker!!",
-    "[other]",
-]
-
-// Board representation includes the minimum needed information for starting play.
-#Board: #RoundID & {
-  columns: [...#CategoryMetadata]
-  missing?: [...#BoardPosition]
-  ...
+// A minified 
+#BoardLayout: {
+  cat_bitmap: [...uint]
 }
 
-// Board state includes the player selection
-#BoardState: #Board & {
-  history: [...#SelectionOutcome]
+#EpisodeStats: #EpisodeMetadata & {
+  single_count?: int
+  double_count?: int
+  triple_stumpers?: [...#BoardPosition]
 }
 
-// A board position is identified by its column and (row) index.  These value
-// ranges may not need to be hard-coded, though the non-zero positive part will.
-#BoardPosition: {
-  column!: int & >0 // typically 1..6
-  index!: int & >0 // typically 1..5
-  ...
+// Represents a (year, month, day) when a show was aired or taped.
+#ShowDate: {
+  year: int & >1980
+  month: int & >=1 & <=12
+  day: int & >=1 & <=31
 }
 
-// Represents the board position and challenge, without contestant performance.
-#BoardSelection: #ContestantID & #ChallengeMetadata & #BoardPosition
-
-#SelectionOutcome: #BoardSelection & {
-  correct: bool
-  delta: #Value
+#ShowDateRange: {
+  from?: #ShowDate
+  until?: #ShowDate
 }
