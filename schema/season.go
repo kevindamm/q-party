@@ -30,7 +30,7 @@ var schemaSeasons string
 type SeasonSlug string
 
 type SeasonID struct {
-	Stub  SeasonSlug `json:"slug"`
+	Slug  SeasonSlug `json:"slug"`
 	Title string     `json:"title"`
 }
 
@@ -38,7 +38,6 @@ type SeasonIndex map[SeasonSlug]*SeasonMetadata
 
 type SeasonMetadata struct {
 	Season SeasonID      `json:"season"`
-	Title  string        `json:"title,omitempty"`
 	Aired  ShowDateRange `json:"aired,omitempty"`
 
 	EpisodeCount   int `json:"episode_count,omitempty"`

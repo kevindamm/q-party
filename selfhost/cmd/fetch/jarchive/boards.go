@@ -18,19 +18,14 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-// github:kevindamm/q-party/selfhost/cmd/jarchive/challenges.go
+// github:kevindamm/q-party/selfhost/cmd/fetch/jarchive/boards.go
 
-package jarchive
+package main
 
 import "github.com/kevindamm/q-party/schema"
 
-// Host view of the challenge, includes the correct response.
-type JarchiveChallenge struct {
-	schema.Challenge
-	Correct         []string // excluding "what is..." preface
-	IsTripleStumper bool
+type JarchiveBoard struct {
+	schema.MatchNumber
+	schema.RoundEnum
+	Columns []schema.Category
 }
-
-// Sentinel value for board entries that are missing/blank.
-var UNKNOWN_CHALLENGE = JarchiveChallenge{
-	Challenge: schema.Challenge{ChallengeMetadata: schema.ChallengeMetadata[schema.Value]{ChallengeID: 0}}}
