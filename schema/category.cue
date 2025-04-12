@@ -24,7 +24,7 @@ package schema
 
 #CategoryID: string
 
-#CategoryIndex: [=~#CategoryID]: #CategoryAired
+#CategoryIndex: [=~#CategoryID]: [...#CategoryAired]
 
 #CategoryMetadata: {
   catID: #CategoryID

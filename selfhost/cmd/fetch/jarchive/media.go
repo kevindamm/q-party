@@ -1,4 +1,4 @@
-// Copyright (c) 2024 Kevin Damm
+// Copyright (c) 2025 Kevin Damm
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -18,19 +18,21 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-// github:kevindamm/q-party/media.go
+// github:kevindamm/q-party/selfhost/cmd/fetch/jarchive/media.go
 
-package jarchive
-
-type MediaClue struct {
-	MimeType `json:"mime"`
-	MediaURL string `json:"url"`
-}
+package main
 
 // This enumeration over available media types is modeled after its equivalent
 // MIME type such as image/jpeg, image/png, audio/mpeg, etc.  The default (its
 // zero value) is an empty string which implicitly represents an unknown media.
 type MimeType string
+
+// Challenges may have zero or more media clues (image, audio, video).  Each is
+// represented by its own MediaClue instance.  MediaURL is relative a base URL.
+type MediaClue struct {
+	MimeType MimeType `json:"mime"`
+	MediaURL string   `json:"url"`
+}
 
 const (
 	MediaImageJPG MimeType = "image/jpeg"

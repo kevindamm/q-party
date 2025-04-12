@@ -29,7 +29,7 @@ var schemaCategories string
 
 type CategoryName string
 
-type CategoryIndex map[CategoryName]*CategoryAired
+type CategoryIndex map[CategoryName][]CategoryAired
 
 type CategoryMetadata struct {
 	Name       CategoryName `json:"title"`

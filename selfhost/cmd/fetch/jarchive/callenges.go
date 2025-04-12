@@ -18,34 +18,44 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-// github:kevindamm/q-party/selfhost/cmd/jarchive/episodes.go
+// github:kevindamm/q-party/selfhost/cmd/fetch/jarchive/challenges.go
 
-package jarchive
+package main
 
-import (
-	"fmt"
+import "github.com/kevindamm/q-party/schema"
 
-	"github.com/kevindamm/q-party/schema"
-)
-
-type EpisodeID int
-
-func EpisodeURL(id EpisodeID) string {
-	return fmt.Sprintf("https://j-archive.com/showgame.php?game_id=%d", id)
+// Full representation of the challenge, including the correct response.
+type JarchiveChallenge struct {
+	schema.Challenge
+	Responses []string
+	Correct   []string
+	Stumped   int // 0..3 how many incorrect responses were given (not counting silence)
 }
 
-type EpisodeMatchNumber map[EpisodeID]schema.MatchNumber
-type MatchNumberEpisode map[schema.MatchNumber]EpisodeID
+// Full representation, as with the above, as well as each player's wager.
+type JarchiveFinal struct {
+	schema.Challenge
+	Wagers    []schema.PlayerWager
+	Responses []string
+	Correct   []string
+	Stumped   int // 0..|players|
+}
 
-// All details of the episode, including correct answers & the contestants' bios.
-type JarchiveEpisode struct {
-	schema.EpisodeMetadata `json:",inline"`
-	Comments               string             `json:"comments,omitempty"`
-	Media                  []schema.MediaClue `json:"media,omitempty"`
+// Sentinel value for board entries that are missing/blank.
+func UnknownChallenge() JarchiveChallenge {
+	return JarchiveChallenge{
+		schema.UnknownChallenge(),
+		[]string{},
+		[]string{},
+		0}
+}
 
-	// Due to absence of archival evidence, not every episode has both single & double rounds.
-	Single     *JarchiveBoard     `json:"single,omitempty"`
-	Double     *JarchiveBoard     `json:"double,omitempty"`
-	Final      *JarchiveChallenge `json:"final,omitempty"`
-	TieBreaker *JarchiveChallenge `json:"tiebreaker,omitempty"`
+// There may not be a final jeopardy (or it may not have been entered yet).
+func UnknownFinal() JarchiveFinal {
+	return JarchiveFinal{
+		schema.UnknownChallenge(),
+		[]schema.PlayerWager{},
+		[]string{},
+		[]string{},
+		0}
 }

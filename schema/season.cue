@@ -22,19 +22,20 @@
 
 package schema
 
-// Unique identifier for the season and its episodes.
-#SeasonName: string
+#SeasonSlug: string
 
-// Schema for [seasons.json] containing season and episode metadata.
-#SeasonIndex: {
-  version?: [...uint]
-  seasons: [#SeasonName]: #SeasonMetadata
+// Unique identifier for the season and its episodes.
+#SeasonName: {
+  slug: #SeasonSlug
+  title: string
 }
+
+// Schema for `{season_slug}.json` containing episode and category metadata.
+#SeasonIndex: [#SeasonName]: #SeasonMetadata
 
 // Metadata for a single season, has identity and some statistics.
 #SeasonMetadata: {
   season: #SeasonName
-  title: string
   aired: #ShowDateRange
 
   episode_count?:   *0 | int & >=0
