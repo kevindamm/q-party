@@ -64,7 +64,6 @@ UnknownChallenge: #ChallengeMetadata & { qid: 0 }
 // The allowed mime types for media assets (plus text/plain;encoding=UTF-8).
 #MimeType: ( "image/jpeg" |
               "image/png" |
-             "image/jpeg" |
           "image/svg+xml" |
              "audio/mpeg" |
               "video/mp4" |
