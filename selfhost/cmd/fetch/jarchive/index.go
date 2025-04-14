@@ -26,16 +26,19 @@ import (
 	"bufio"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
+	"log"
 	"os"
 	"path"
+	"regexp"
 	"slices"
 	"sync"
 
 	"github.com/kevindamm/q-party/schema"
 	"golang.org/x/sync/errgroup"
 )
+
+var CURRENT_VERSION = []int{0, 0, 0}
 
 // Concurrency-safe interface to a collection of seasons, episodes and categories.
 type JarchiveIndex interface {
@@ -46,18 +49,94 @@ type JarchiveIndex interface {
 	AddCategoryMetadata(*schema.CategoryMetadata) error
 	AddEpisode(*JarchiveEpisode) error
 
-	Extend(JarchiveIndex) error
-
 	GetSeasonList() []schema.SeasonSlug
 	GetSeasonInfo(schema.SeasonSlug) schema.SeasonMetadata
 	GetEpisodeList(schema.SeasonSlug) []schema.MatchNumber
 	GetEpisodeInfo(schema.MatchNumber) schema.EpisodeMetadata
 	GetCategoryCalendar(schema.CategoryName) []schema.CategoryAired
 
-	Fetch() error
-	ParseHtml([]byte) error
-	ParseJSONLines(io.Reader) error
+	Fetch() (JarchiveIndex, error)
+
+	ExtendOverwrite(JarchiveIndex) error
 	WriteJSONLines(io.Writer) error
+}
+
+func NewJarchiveIndex(version []int) JarchiveIndex {
+	index := new(index)
+	index.SemVer = version
+	index.Seasons = make(schema.SeasonIndex)
+	index.Episodes = make(schema.EpisodeIndex)
+	index.Categories = make(schema.CategoryIndex)
+	return index
+}
+
+func ParseJSONLines(reader io.Reader) (JarchiveIndex, error) {
+	var group errgroup.Group
+	index := NewJarchiveIndex(CURRENT_VERSION)
+	scanner := bufio.NewScanner(reader)
+	scanner.Split(bufio.ScanLines)
+
+	for scanner.Scan() {
+		line := scanner.Bytes()
+		season := new(schema.SeasonMetadata)
+
+		group.Go(func() error {
+			err := json.Unmarshal(line, season)
+			if err != nil {
+				return err
+			}
+			return index.AddSeasonMetadata(season)
+		})
+	}
+
+	if err := group.Wait(); err != nil {
+		return index, err
+	}
+	return index, nil
+}
+
+// Parse the contents of the HTML-formatted byte-slice into a JarchiveIndex
+// representing metadata about all seasons in the archive.
+func ParseHtml(data []byte) (JarchiveIndex, error) {
+	// The layout of this index is simple enough that it can be parsed with regex.
+	// It could written with x/net/html (see parsing in episode.go) but any change
+	// to the source material would need a corresponding update here, and would be
+	// and be as much (or more!) work to make the appropriate changes.
+	// <xx-meme>
+	//   I don't always parse my HTML with regexes,
+	//   but when I do, I comment at length about it.
+	// </xx-meme>
+	reSeasonMetadata := regexp.MustCompile(
+		`<tr><td><a href="showseason.php\?season=([^"]+)">(?:<i>)?([^<]+)(?:</i>)?</a></td>(.*)`)
+	season_matches := reSeasonMetadata.FindAllSubmatch(data, -1)
+	if len(season_matches) == 0 {
+		return nil, errors.New("no seasons found in jarchive index HTML")
+	}
+
+	index := NewJarchiveIndex(CURRENT_VERSION)
+	errs := make([]error, 0)
+	reAirDateRange := regexp.MustCompile(`<td(?: class="[^"]+")?>(\d+)-(\d+)-(\d+) to (\d+)-(\d+)-(\d+)</td>`)
+	for _, smatch := range season_matches {
+		season := new(schema.SeasonMetadata)
+		season.Season.Slug = schema.SeasonSlug(string(smatch[1]))
+		season.Season.Title = string(smatch[2])
+
+		date_match := reAirDateRange.FindSubmatch(smatch[3])
+		if len(date_match) > 0 {
+			season.Aired.From.Year = atoi(date_match[1])
+			season.Aired.From.Month = atoi(date_match[2])
+			season.Aired.From.Day = atoi(date_match[3])
+			season.Aired.Until.Year = atoi(date_match[4])
+			season.Aired.Until.Month = atoi(date_match[5])
+			season.Aired.Until.Day = atoi(date_match[6])
+		}
+		err := index.AddSeasonMetadata(season)
+		if err != nil {
+			errs = append(errs, err)
+		}
+	}
+
+	return index, errors.Join(errs...)
 }
 
 func LoadLocalIndex(datapath string) (JarchiveIndex, error) {
@@ -67,8 +146,7 @@ func LoadLocalIndex(datapath string) (JarchiveIndex, error) {
 		return nil, err
 	}
 	defer file.Close()
-	index := new(index)
-	err = index.ParseJSONLines(file)
+	index, err := ParseJSONLines(file)
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +170,8 @@ func (index *index) Version() []int {
 func (index *index) AddSeasonMetadata(season *schema.SeasonMetadata) error {
 	index.lock.Lock()
 	defer index.lock.Unlock()
-	// TODO
+	index.Seasons[season.Season.Slug] = season
+	// TODO is overwriting an existing key considered an error?
 	return nil
 }
 
@@ -117,9 +196,9 @@ func (index *index) AddEpisode(episode *JarchiveEpisode) error {
 	return nil
 }
 
-func (this *index) Extend(other JarchiveIndex) error {
+func (this *index) ExtendOverwrite(other JarchiveIndex) error {
 	if !slices.Equal(this.SemVer[:3], other.Version()[:3]) {
-		return fmt.Errorf("incompatbile versions merging JarchiveIndex %v != %v",
+		log.Printf("WARNING incompatbile versions merging JarchiveIndex %v != %v",
 			this.SemVer, other.Version())
 	}
 
@@ -131,34 +210,11 @@ func (this *index) Extend(other JarchiveIndex) error {
 		this.lock.Lock()
 		defer this.lock.Unlock()
 		for key := range other_index.Seasons {
-			// TODO merge season info piecewise? but expect there won't be competing partial writes.
+			// expect there won't be competing partial writes
 			this.Seasons[key] = other_index.Seasons[key]
 		}
 	}
 	// TODO inspect other.(Episodes|Categories), nonempty ones are written
-	return nil
-}
-
-func (index *index) ParseJSONLines(reader io.Reader) error {
-	var group errgroup.Group
-	scanner := bufio.NewScanner(reader)
-	scanner.Split(bufio.ScanLines)
-
-	for scanner.Scan() {
-		season := new(schema.SeasonMetadata)
-		line := scanner.Bytes()
-		group.Go(func() error {
-			err := json.Unmarshal(line, season)
-			if err != nil {
-				return err
-			}
-			return index.AddSeasonMetadata(season)
-		})
-	}
-
-	if err := group.Wait(); err != nil {
-		return err
-	}
 	return nil
 }
 
@@ -168,8 +224,13 @@ func (index *index) WriteJSONLines(writer io.Writer) error {
 }
 
 func (index *index) GetSeasonList() []schema.SeasonSlug {
-	// TODO
-	return []schema.SeasonSlug{}
+	slugs := make([]schema.SeasonSlug, len(index.Seasons))
+	i := 0
+	for _, season := range index.Seasons {
+		slugs[i] = season.Season.Slug
+		i++
+	}
+	return slugs
 }
 
 func (index *index) GetSeasonInfo(key schema.SeasonSlug) schema.SeasonMetadata {
@@ -196,14 +257,8 @@ func (index *index) GetCategoryCalendar(key schema.CategoryName) []schema.Catego
 
 const LIST_SEASONS_URL = "https://j-archive.com/listseasons.php"
 
-func (index *index) Fetch() error {
+func (index *index) Fetch() (JarchiveIndex, error) {
 
 	// TODO
-	return nil
-}
-
-func (index *index) ParseHtml(data []byte) error {
-
-	// TODO
-	return nil
+	return index, nil
 }

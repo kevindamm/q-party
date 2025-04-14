@@ -26,11 +26,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"regexp"
 	"strconv"
-	"strings"
 
 	"github.com/kevindamm/q-party/schema"
 )
@@ -58,8 +58,7 @@ func FetchSeason(season_id schema.SeasonID, outpath string) (*JarchiveSeason, er
 		return nil, err
 	}
 
-	season_index := new(JarchiveSeason)
-	err = ParseSeasonIndexHtml(data, season_index)
+	season_index, err := ParseSeasonIndexHtml(data)
 	return season_index, err
 }
 
@@ -78,22 +77,25 @@ func LoadSeasonIndex(filepath string) (*JarchiveSeason, error) {
 	return nil, nil
 }
 
-func ParseSeasonIndexHtml(data []byte, season *JarchiveSeason) error {
-	errs := make([]string, 0)
+func ParseSeasonIndexHtml(data []byte) (*JarchiveSeason, error) {
+	season := new(JarchiveSeason)
+	errs := make([]error, 0)
 
 	// Since the layout of this file is very simple, we can just use regexes here.
 	reSeasonName := regexp.MustCompile(`<h2 class="season">(.*)</h2>`)
 	match := reSeasonName.FindSubmatch(data)
 	if len(match) > 0 {
 		season.Metadata.Season.Title = string(match[1])
+	} else {
+		log.Printf("no title found in season index")
 	}
 
 	reEpisodeLink := regexp.MustCompile(`"showgame\.php\?game_id=(\d+)"(.*)\n`)
 	matches := reEpisodeLink.FindAllSubmatch(data, -1)
-	for range matches {
+	for _, match := range matches {
 		game_id, err := strconv.Atoi(string(match[1]))
 		if err != nil {
-			errs = append(errs, err.Error())
+			errs = append(errs, err)
 			continue
 		}
 		episode := schema.EpisodeMetadata{
@@ -106,8 +108,5 @@ func ParseSeasonIndexHtml(data []byte, season *JarchiveSeason) error {
 		season.Metadata.EpisodeCount += 1
 	}
 
-	if len(errs) == 0 {
-		return nil
-	}
-	return errors.New(strings.Join(errs, "\n"))
+	return season, errors.Join(errs...)
 }

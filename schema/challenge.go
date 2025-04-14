@@ -66,10 +66,26 @@ func UnknownChallenge() Challenge {
 			ChallengeID: UNKNOWN_CHALLENGE_ID}}
 }
 
+// Challenges may have zero or more media clues (image, audio, video).  Each is
+// represented by its own MediaClue instance.  MediaURL is relative a base URL.
 type MediaRef struct {
 	MimeType string `json:"mime"`
-	URL      string `json:"url"`
+	MediaURL string `json:"url"`
 }
+
+// This enumeration over available media types is modeled after its equivalent
+// MIME type such as image/jpeg, image/png, audio/mpeg, etc.  The default (its
+// zero value) is an empty string which implicitly represents an unknown media.
+type MimeType string
+
+const (
+	MediaImageJPG MimeType = "image/jpeg"
+	MediaImagePNG MimeType = "image/png"
+	MediaImageSVG MimeType = "image/svg+xml"
+	MediaAudioMP3 MimeType = "audio/mpeg"
+	MediaVideoMP4 MimeType = "video/mp4"
+	MediaVideoMOV MimeType = "video/quicktime"
+)
 
 type HostChallenge struct {
 	Challenge `json:",inline"`

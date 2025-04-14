@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Kevin Damm
+// Copyright (c) 2024 Kevin Damm
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -18,27 +18,16 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-// github:kevindamm/q-party/selfhost/cmd/fetch/jarchive/media.go
+// github:kevindamm/q-party/cmd/jarchive/html/parsing.go
 
 package main
 
-// This enumeration over available media types is modeled after its equivalent
-// MIME type such as image/jpeg, image/png, audio/mpeg, etc.  The default (its
-// zero value) is an empty string which implicitly represents an unknown media.
-type MimeType string
+import "strconv"
 
-// Challenges may have zero or more media clues (image, audio, video).  Each is
-// represented by its own MediaClue instance.  MediaURL is relative a base URL.
-type MediaClue struct {
-	MimeType MimeType `json:"mime"`
-	MediaURL string   `json:"url"`
+func atoi(str []byte) int {
+	// this module-private function's input is always checked to pass regex \d,
+	// and we assume that these year values will never exceed what can be an int.
+	value, _ := strconv.Atoi(string(str))
+	// if it were exposed in server code, it would have more rigorous validation.
+	return value
 }
-
-const (
-	MediaImageJPG MimeType = "image/jpeg"
-	MediaImagePNG MimeType = "image/png"
-	MediaImageSVG MimeType = "image/svg+xml"
-	MediaAudioMP3 MimeType = "audio/mpeg"
-	MediaVideoMP4 MimeType = "video/mp4"
-	MediaVideoMOV MimeType = "video/quicktime"
-)
