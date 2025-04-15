@@ -37,7 +37,7 @@ type SeasonID struct {
 type SeasonIndex map[SeasonSlug]*SeasonMetadata
 
 type SeasonMetadata struct {
-	Season SeasonID      `json:"season"`
+	Season SeasonID      `json:",inline"`
 	Aired  ShowDateRange `json:"aired,omitempty"`
 
 	EpisodeCount   int `json:"episode_count,omitempty"`

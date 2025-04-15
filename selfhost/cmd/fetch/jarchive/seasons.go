@@ -24,61 +24,28 @@ package main
 
 import (
 	"errors"
-	"fmt"
-	"io"
 	"log"
-	"net/http"
-	"os"
 	"regexp"
 	"strconv"
 
 	"github.com/kevindamm/q-party/schema"
 )
 
-type JarchiveSeason struct {
+type JarchiveSeason interface {
+}
+
+type season_index struct {
 	Metadata schema.SeasonMetadata `json:",inline"`
-	Episodes schema.EpisodeIndex   `json:"episodes"`
+	Episodes schema.EpisodeIndex   `json:"episodes,omitempty"`
 }
 
-func FetchSeason(season_id schema.SeasonID, outpath string) (*JarchiveSeason, error) {
-	url := SeasonURL(season_id)
-	response, err := http.Get(url)
-	if err != nil {
-		return nil, err
-	}
-	defer response.Body.Close()
-	data, err := io.ReadAll(response.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	filepath := HtmlFilePath(season_id)
-	err = os.WriteFile(filepath, data, 0644)
-	if err != nil {
-		return nil, err
-	}
-
-	season_index, err := ParseSeasonIndexHtml(data)
-	return season_index, err
-}
-
-const season_index_url_prefix = "https://j-archive.com/showseason.php?season="
-
-func SeasonURL(season_id schema.SeasonID) string {
-	return fmt.Sprint(season_index_url_prefix, season_id.Slug)
-}
-
-func HtmlFilePath(season_id schema.SeasonID) string {
-	return fmt.Sprintf("%s.html", season_id.Slug)
-}
-
-func LoadSeasonIndex(filepath string) (*JarchiveSeason, error) {
+func LoadSeasonIndex(filepath string) (JarchiveSeason, error) {
 	// TODO
 	return nil, nil
 }
 
-func ParseSeasonIndexHtml(data []byte) (*JarchiveSeason, error) {
-	season := new(JarchiveSeason)
+func ParseSeasonIndexHtml(data []byte) (JarchiveSeason, error) {
+	season := new(season_index)
 	errs := make([]error, 0)
 
 	// Since the layout of this file is very simple, we can just use regexes here.

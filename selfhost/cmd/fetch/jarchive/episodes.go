@@ -23,17 +23,10 @@
 package main
 
 import (
-	"fmt"
-	"sync"
-
 	"github.com/kevindamm/q-party/schema"
 )
 
 type EpisodeID int
-
-func EpisodeURL(id EpisodeID) string {
-	return fmt.Sprintf("https://j-archive.com/showgame.php?game_id=%d", id)
-}
 
 type EpisodeMatchNumber map[EpisodeID]schema.MatchNumber
 type MatchNumberEpisode map[schema.MatchNumber]EpisodeID
@@ -49,9 +42,4 @@ type JarchiveEpisode struct {
 	Double     *JarchiveBoard `json:"double,omitempty"`
 	Final      *JarchiveFinal `json:"final,omitempty"`
 	TieBreaker *JarchiveFinal `json:"tiebreaker,omitempty"`
-}
-
-type JarchiveEpisodeIndex struct {
-	schema.EpisodeIndex
-	lock sync.RWMutex
 }
