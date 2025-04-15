@@ -37,7 +37,7 @@ var JARCHIVE_INDEX_HTML []byte
 var TEST_VERSION = []int{0, 0, 0}
 
 func TestParseIndexHTML(t *testing.T) {
-	jarchive_index, err := jarchive.ParseHtml(JARCHIVE_INDEX_HTML)
+	jarchive_index, err := jarchive.ParseIndexHtml(JARCHIVE_INDEX_HTML)
 	if err != nil {
 		t.Error("Failed to parse jarchive index:", err)
 		return

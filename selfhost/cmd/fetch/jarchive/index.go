@@ -55,8 +55,6 @@ type JarchiveIndex interface {
 	GetEpisodeInfo(schema.MatchNumber) schema.EpisodeMetadata
 	GetCategoryCalendar(schema.CategoryName) []schema.CategoryAired
 
-	Fetch() (JarchiveIndex, error)
-
 	ExtendOverwrite(JarchiveIndex) error
 	WriteJSONLines(io.Writer) error
 }
@@ -95,9 +93,23 @@ func ParseJSONLines(reader io.Reader) (JarchiveIndex, error) {
 	return index, nil
 }
 
-// Parse the contents of the HTML-formatted byte-slice into a JarchiveIndex
+func LoadLocalIndex(datapath string) (JarchiveIndex, error) {
+	index_path := path.Join(datapath, "jarchive.jsonl")
+	file, err := os.Open(index_path)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+	index, err := ParseJSONLines(file)
+	if err != nil {
+		return nil, err
+	}
+	return index, err
+}
+
+// Parse the contents of the HTML-formatted byte-slice into a [JarchiveIndex],
 // representing metadata about all seasons in the archive.
-func ParseHtml(data []byte) (JarchiveIndex, error) {
+func ParseIndexHtml(data []byte) (JarchiveIndex, error) {
 	// The layout of this index is simple enough that it can be parsed with regex.
 	// It could written with x/net/html (see parsing in episode.go) but any change
 	// to the source material would need a corresponding update here, and would be
@@ -139,18 +151,9 @@ func ParseHtml(data []byte) (JarchiveIndex, error) {
 	return index, errors.Join(errs...)
 }
 
-func LoadLocalIndex(datapath string) (JarchiveIndex, error) {
-	index_path := path.Join(datapath, "jarchive.jsonl")
-	file, err := os.Open(index_path)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-	index, err := ParseJSONLines(file)
-	if err != nil {
-		return nil, err
-	}
-	return index, err
+func (index *index) WriteJSONLines(writer io.Writer) error {
+	// TODO
+	return nil
 }
 
 // Internal representation of [JarchiveIndex] with safe read and update access.
@@ -172,6 +175,7 @@ func (index *index) AddSeasonMetadata(season *schema.SeasonMetadata) error {
 	defer index.lock.Unlock()
 	index.Seasons[season.Season.Slug] = season
 	// TODO is overwriting an existing key considered an error?
+
 	return nil
 }
 
@@ -218,11 +222,6 @@ func (this *index) ExtendOverwrite(other JarchiveIndex) error {
 	return nil
 }
 
-func (index *index) WriteJSONLines(writer io.Writer) error {
-	// TODO
-	return nil
-}
-
 func (index *index) GetSeasonList() []schema.SeasonSlug {
 	slugs := make([]schema.SeasonSlug, len(index.Seasons))
 	i := 0
@@ -253,12 +252,4 @@ func (index *index) GetCategoryCalendar(key schema.CategoryName) []schema.Catego
 	index.lock.RLock()
 	defer index.lock.RUnlock()
 	return index.Categories[key]
-}
-
-const LIST_SEASONS_URL = "https://j-archive.com/listseasons.php"
-
-func (index *index) Fetch() (JarchiveIndex, error) {
-
-	// TODO
-	return index, nil
 }
