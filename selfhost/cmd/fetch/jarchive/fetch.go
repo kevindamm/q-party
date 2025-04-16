@@ -38,7 +38,7 @@ import (
 type Fetcher interface {
 	FetchIndex() <-chan JarchiveIndex
 	FetchSeason(schema.SeasonSlug) <-chan JarchiveSeason
-	FetchEpisode(schema.MatchNumber) <-chan JarchiveEpisode
+	FetchEpisode(EpisodeID, schema.MatchNumber) <-chan *JarchiveEpisode
 
 	Errors() <-chan error
 	Close()
@@ -80,12 +80,20 @@ func (fetcher *fetcher) start_titration(pause time.Duration) {
 	for range fetcher.ticker.C {
 		select {
 		case task, _ := <-fetcher.urls:
-			response, err := http.Get(task.url)
+			request, err := http.NewRequest("GET", task.url, nil)
+			if err != nil {
+				fetcher.errors <- err
+				continue
+			}
+			request.Header.Set("User-Agent", fetcher.useragent)
+			client := &http.Client{}
+			response, err := client.Do(request)
 			if err != nil {
 				fetcher.errors <- err
 				continue
 			}
 			defer response.Body.Close()
+
 			bytes, err := io.ReadAll(response.Body)
 			if err != nil {
 				fetcher.errors <- err
@@ -174,10 +182,38 @@ func (fetcher *fetcher) FetchSeason(season_slug schema.SeasonSlug) <-chan Jarchi
 	return season_chan
 }
 
-// Fetch an episode's metadata (categories, challenges & contestants).
-func (fetcher *fetcher) FetchEpisode(episode schema.MatchNumber) <-chan JarchiveEpisode {
+// Fetch an episode's metadata (categories, challenges & contestants), keyed by the .
+func (fetcher *fetcher) FetchEpisode(ja_eid EpisodeID, match schema.MatchNumber) <-chan *JarchiveEpisode {
+	bytes_chan := make(chan []byte)
+	task := fetch_task{
+		url:    EpisodeURL(ja_eid),
+		output: bytes_chan,
+	}
+	fetcher.urls <- task
 
-	return make(chan JarchiveEpisode)
+	// async write-and-parse when fetcher gets to this task
+	episode_chan := make(chan *JarchiveEpisode)
+	go func() {
+		defer close(episode_chan)
+		episode_html := <-bytes_chan
+
+		filepath := EpisodeHtmlPath(match)
+		err := os.WriteFile(filepath, episode_html, 0644)
+		if err != nil {
+			fetcher.errors <- err
+			return
+		}
+
+		episode, err := ParseEpisodeHtml(episode_html)
+		if err != nil {
+			fetcher.errors <- err
+			return
+		}
+		episode_chan <- episode
+	}()
+
+	// caller awaits on the JarchiveSeason that is produced
+	return episode_chan
 }
 
 func (fetcher *fetcher) Errors() <-chan error {
