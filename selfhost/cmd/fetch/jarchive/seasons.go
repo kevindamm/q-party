@@ -32,11 +32,8 @@ import (
 )
 
 type JarchiveSeason interface {
-}
-
-type season_index struct {
-	Metadata schema.SeasonMetadata `json:",inline"`
-	Episodes schema.EpisodeIndex   `json:"episodes,omitempty"`
+	GetEpisodeByID(EpisodeID) JarchiveEpisode
+	GetEpisodeByNumber(schema.MatchNumber) *schema.EpisodeMetadata
 }
 
 func LoadSeasonIndex(filepath string) (JarchiveSeason, error) {
@@ -52,7 +49,7 @@ func ParseSeasonIndexHtml(data []byte) (JarchiveSeason, error) {
 	reSeasonName := regexp.MustCompile(`<h2 class="season">(.*)</h2>`)
 	match := reSeasonName.FindSubmatch(data)
 	if len(match) > 0 {
-		season.Metadata.Season.Title = string(match[1])
+		season.Season.Title = string(match[1])
 	} else {
 		log.Printf("no title found in season index")
 	}
@@ -69,11 +66,27 @@ func ParseSeasonIndexHtml(data []byte) (JarchiveSeason, error) {
 			MatchID: schema.NewMatchID(game_id),
 		}
 		episode.MatchID.ShowTitle = string(match[2])
-		episode.MatchID.SeasonSlug = season.Metadata.Season.Slug
-		season.Episodes.Update(episode)
+		episode.MatchID.SeasonSlug = season.Season.Slug
 
-		season.Metadata.EpisodeCount += 1
+		season.Episodes[EpisodeID(game_id)] = JarchiveEpisode{
+			EpisodeMetadata: episode}
+		season.EpisodeCount += 1
+		season.Matches.Update(episode)
 	}
 
 	return season, errors.Join(errs...)
+}
+
+type season_index struct {
+	schema.SeasonMetadata `json:",inline"`
+	Episodes              map[EpisodeID]JarchiveEpisode
+	Matches               schema.EpisodeIndex `json:"episodes,omitempty"`
+}
+
+func (season_index *season_index) GetEpisodeByID(epid EpisodeID) JarchiveEpisode {
+	return season_index.Episodes[epid]
+}
+
+func (season_index *season_index) GetEpisodeByNumber(match schema.MatchNumber) *schema.EpisodeMetadata {
+	return season_index.Matches[match]
 }

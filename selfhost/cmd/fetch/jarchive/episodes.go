@@ -43,3 +43,10 @@ type JarchiveEpisode struct {
 	Final      *JarchiveFinal `json:"final,omitempty"`
 	TieBreaker *JarchiveFinal `json:"tiebreaker,omitempty"`
 }
+
+func ParseEpisodeHtml(episode_html []byte) (*JarchiveEpisode, error) {
+	episode := JarchiveEpisode{}
+	// TODO
+
+	return &episode, nil
+}
