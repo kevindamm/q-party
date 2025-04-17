@@ -35,6 +35,7 @@ import (
 	"sync"
 
 	"github.com/kevindamm/q-party/schema"
+	"github.com/kevindamm/q-party/selfhost/cmd/fetch"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -158,12 +159,46 @@ func (index *index) WriteJSONLines(writer io.Writer) error {
 
 // Internal representation of [JarchiveIndex] with safe read and update access.
 type index struct {
+	fetch.Fetchable
 	SemVer     []int                `json:"version"`
 	Seasons    schema.SeasonIndex   `json:"seasons"`
 	Episodes   schema.EpisodeIndex  `json:"episodes"`
 	Categories schema.CategoryIndex `json:"categories"`
 
 	lock sync.RWMutex `json:"-"`
+}
+
+func (index *index) String() string {
+	return "(top-level index)"
+}
+
+func (index *index) URL() string {
+	return "https://j-archive.com/listseasons.php"
+}
+
+func (index *index) FilepathHtml() string {
+	return "index.html"
+}
+
+func (index *index) FilepathJSON() string {
+	return "jarchive.jsonl"
+}
+
+func (index *index) ParseHtml(html_bytes []byte) error {
+	// TODO
+	return nil
+}
+
+func (index *index) WriteJSON(writer io.WriteCloser) error {
+	defer writer.Close()
+	// TODO
+	return nil
+}
+
+func (index *index) LoadJSON(reader io.ReadCloser) error {
+	defer reader.Close()
+	// TODO
+	return nil
 }
 
 func (index *index) Version() []int {

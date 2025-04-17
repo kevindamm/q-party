@@ -24,14 +24,19 @@ package main
 
 import (
 	"errors"
+	"fmt"
+	"io"
 	"log"
+	"path"
 	"regexp"
 	"strconv"
 
 	"github.com/kevindamm/q-party/schema"
+	"github.com/kevindamm/q-party/selfhost/cmd/fetch"
 )
 
 type JarchiveSeason interface {
+	fetch.Fetchable
 	GetEpisodeByID(EpisodeID) JarchiveEpisode
 	GetEpisodeByNumber(schema.MatchNumber) *schema.EpisodeMetadata
 }
@@ -68,8 +73,8 @@ func ParseSeasonIndexHtml(data []byte) (JarchiveSeason, error) {
 		episode.MatchID.ShowTitle = string(match[2])
 		episode.MatchID.SeasonSlug = season.Season.Slug
 
-		season.Episodes[EpisodeID(game_id)] = JarchiveEpisode{
-			EpisodeMetadata: episode}
+		ep_id := EpisodeID(game_id)
+		season.Episodes[ep_id] = NewEpisode(ep_id)
 		season.EpisodeCount += 1
 		season.Matches.Update(episode)
 	}
@@ -83,10 +88,44 @@ type season_index struct {
 	Matches               schema.EpisodeIndex `json:"episodes,omitempty"`
 }
 
-func (season_index *season_index) GetEpisodeByID(epid EpisodeID) JarchiveEpisode {
-	return season_index.Episodes[epid]
+func (season *season_index) String() string {
+	return fmt.Sprintf("season %s", season.Season.Slug)
 }
 
-func (season_index *season_index) GetEpisodeByNumber(match schema.MatchNumber) *schema.EpisodeMetadata {
-	return season_index.Matches[match]
+func (season *season_index) URL() string {
+	const SEASON_INDEX_FMT = "https://j-archive.com/showseason.php?season=%s"
+	return fmt.Sprintf(SEASON_INDEX_FMT, season.Season.Slug)
+}
+
+func (season *season_index) FilepathHTML() string {
+	return path.Join("season", fmt.Sprintf("%s.html", season.Season.Slug))
+}
+
+func (season *season_index) FilepathJSON() string {
+	return path.Join("json", "season", fmt.Sprintf("%s.json", season.Season.Slug))
+}
+
+func (season *season_index) ParseHTML(html_bytes []byte) error {
+	// TODO
+	return nil
+}
+
+func (season *season_index) WriteJSON(output io.WriteCloser) error {
+	defer output.Close()
+	// TODO
+	return nil
+}
+
+func (season *season_index) LoadJSON(input io.ReadCloser) error {
+	defer input.Close()
+	// TODO
+	return nil
+}
+
+func (season *season_index) GetEpisodeByID(epid EpisodeID) JarchiveEpisode {
+	return season.Episodes[epid]
+}
+
+func (season *season_index) GetEpisodeByNumber(match schema.MatchNumber) *schema.EpisodeMetadata {
+	return season.Matches[match]
 }

@@ -23,7 +23,12 @@
 package main
 
 import (
+	"fmt"
+	"io"
+	"path"
+
 	"github.com/kevindamm/q-party/schema"
+	"github.com/kevindamm/q-party/selfhost/cmd/fetch"
 )
 
 type EpisodeID int
@@ -32,21 +37,72 @@ type EpisodeMatchNumber map[EpisodeID]schema.MatchNumber
 type MatchNumberEpisode map[schema.MatchNumber]EpisodeID
 
 // All details of the episode, including correct answers & the contestants' bios.
-type JarchiveEpisode struct {
-	schema.EpisodeMetadata `json:",inline"`
-	Comments               string            `json:"comments,omitempty"`
-	Media                  []schema.MediaRef `json:"media,omitempty"`
+type JarchiveEpisode interface {
+	fetch.Fetchable
+}
 
-	// Due to absence of archival evidence, not every episode has both single & double rounds.
+func NewEpisode(id EpisodeID) JarchiveEpisode {
+	episode := episode{
+		EpisodeID: id,
+	}
+
+	// TODO
+	return &episode
+}
+
+type episode struct {
+	schema.EpisodeMetadata `json:",inline"`
+
+	EpisodeID EpisodeID         `json:"episode_id,omitempty"`
+	Comments  string            `json:"comments,omitempty"`
+	Media     []schema.MediaRef `json:"media,omitempty"`
+
+	// Due to absence of archival evidence,
+	// not every episode has both single & double rounds.
 	Single     *JarchiveBoard `json:"single,omitempty"`
 	Double     *JarchiveBoard `json:"double,omitempty"`
 	Final      *JarchiveFinal `json:"final,omitempty"`
 	TieBreaker *JarchiveFinal `json:"tiebreaker,omitempty"`
 }
 
-func ParseEpisodeHtml(episode_html []byte) (*JarchiveEpisode, error) {
-	episode := JarchiveEpisode{}
+func ParseEpisodeHtml(episode_html []byte) (JarchiveEpisode, error) {
+	episode := episode{}
 	// TODO
 
 	return &episode, nil
+}
+
+func (episode *episode) String() string {
+	// TODO
+	return "episode ..."
+}
+
+func (episode *episode) URL() string {
+	const FULL_EPISODE_FMT = "https://j-archive.com/showgame.php?game_id=%d"
+	return fmt.Sprintf(FULL_EPISODE_FMT, episode.EpisodeID)
+}
+
+func (episode *episode) FilepathHTML() string {
+	return path.Join("episode", fmt.Sprintf("%d.html", episode.EpisodeID))
+}
+
+func (episode *episode) FilepathJSON() string {
+	return path.Join("json", "episode", fmt.Sprintf("%d.html", episode.MatchID))
+}
+
+func (episode *episode) ParseHTML(html_bytes []byte) error {
+
+	// TODO
+	return nil
+}
+
+func (episode *episode) WriteJSON(output io.WriteCloser) error {
+	defer output.Close()
+	// TODO
+	return nil
+}
+func (episode *episode) LoadJSON(input io.ReadCloser) error {
+	defer input.Close()
+	// TODO
+	return nil
 }
