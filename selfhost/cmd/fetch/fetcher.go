@@ -18,43 +18,50 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-// github:kevindamm/q-party/cmd/fetch/jarchive/fetch.go
+// github:kevindamm/q-party/cmd/fetch/jarchive/fetcher.go
 
-package main
+package fetch
 
 import (
 	"fmt"
 	"io"
 	"net/http"
 	"os"
-	"path"
 	"strings"
 	"time"
-
-	"github.com/kevindamm/q-party/schema"
 )
+
+var CURRENT_VERSION = []int{0, 1, 0}
 
 // Abstraction over time-delayed fetching of URLs.
 type Fetcher interface {
-	FetchIndex() <-chan JarchiveIndex
-	FetchSeason(schema.SeasonSlug) <-chan JarchiveSeason
-	FetchEpisode(EpisodeID, schema.MatchNumber) <-chan *JarchiveEpisode
+	// Fetches the resource and sends the populated object on the returned channel.
+	Fetch(Fetchable) <-chan Fetchable
 
+	// Set a common channel that all fetched resources will be sent to.
+	// By default, the fetcher creates a new channel for each Fetch,
+	// this allows callers to build a fan-in channel (and Fetch will still
+	// return a channel but it will be the same one as provided here).
+	// Fetcher takes ownership of closing the channel, in [Close].
+	FanIn(*chan Fetchable)
+
+	// Get the channel where errors are sent.
 	Errors() <-chan error
+	// Close all dependent resources (channels) this Fetcher owns.
 	Close()
 }
 
 // Creates a Fetcher instance and initiates its goroutine for delayed fetching.
 func NewFetcher(pause time.Duration, useragent string) Fetcher {
-	useragent = strings.Trim(useragent, " \t\n")
 	useragent = strings.ReplaceAll(useragent, "'\"", "")
+	useragent = strings.Trim(useragent, " \t\n")
 	if len(useragent) == 0 {
 		useragent = DefaultUserAgent()
 	}
 
 	fetcher := fetcher{
 		useragent: useragent,
-		urls:      make(chan fetch_task),
+		tasks:     make(chan fetch_task),
 		errors:    make(chan error),
 	}
 	go fetcher.start_titration(pause)
@@ -67,7 +74,8 @@ type fetcher struct {
 	ticker    *time.Ticker
 	useragent string
 
-	urls   chan fetch_task
+	output *chan Fetchable
+	tasks  chan fetch_task
 	errors chan error
 }
 
@@ -79,7 +87,7 @@ func (fetcher *fetcher) start_titration(pause time.Duration) {
 
 	for range fetcher.ticker.C {
 		select {
-		case task, _ := <-fetcher.urls:
+		case task, _ := <-fetcher.tasks:
 			request, err := http.NewRequest("GET", task.url, nil)
 			if err != nil {
 				fetcher.errors <- err
@@ -114,106 +122,57 @@ type fetch_task struct {
 	output chan<- []byte
 }
 
-// Fetch the top-level index of jarchive seasons.
-func (fetcher *fetcher) FetchIndex() <-chan JarchiveIndex {
+// First attempts to load a locally-stored representation,
+// fetches a remote copy if one is not found (overridable)
+// and stores both the HTML (before parsing) and JSON file
+// representations relative to the Fetcher's data directory.
+func (fetcher *fetcher) Fetch(resource Fetchable) <-chan Fetchable {
 	bytes_chan := make(chan []byte)
 	task := fetch_task{
-		url:    IndexURL(),
+		url:    resource.URL(),
 		output: bytes_chan,
 	}
-	fetcher.urls <- task
+	fetcher.tasks <- task
 
 	// async write-and-parse when fetcher gets to this task
-	index_chan := make(chan JarchiveIndex)
+	var obj_chan chan Fetchable
+	if fetcher.output != nil {
+		obj_chan = *fetcher.output
+	} else {
+		obj_chan = make(chan Fetchable)
+	}
+
 	go func() {
-		defer close(index_chan)
-		index_html := <-bytes_chan
+		defer close(obj_chan)
+		html_bytes := <-bytes_chan
 
-		filepath := IndexHtmlPath()
-		err := os.WriteFile(filepath, index_html, 0644)
+		filepath := resource.FilepathHTML()
+		err := os.WriteFile(filepath, html_bytes, 0644)
 		if err != nil {
 			fetcher.errors <- err
 			return
 		}
 
-		index, err := ParseIndexHtml(index_html)
+		err = resource.ParseHTML(html_bytes)
 		if err != nil {
 			fetcher.errors <- err
 			return
 		}
-		index_chan <- index
+		obj_chan <- resource
 	}()
 
 	// caller awaits on the JarchiveIndex that is produced
-	return index_chan
+	return obj_chan
 }
 
-// Fetch the season metadata and its list of episodes.
-func (fetcher *fetcher) FetchSeason(season_slug schema.SeasonSlug) <-chan JarchiveSeason {
-	bytes_chan := make(chan []byte)
-	task := fetch_task{
-		url:    SeasonURL(season_slug),
-		output: bytes_chan,
+func (fetcher *fetcher) FanIn(common_output *chan Fetchable) {
+	if fetcher.output != nil {
+		close(*fetcher.output)
 	}
-	fetcher.urls <- task
-
-	// async write-and-parse when fetcher gets to this task
-	season_chan := make(chan JarchiveSeason)
-	go func() {
-		defer close(season_chan)
-		season_html := <-bytes_chan
-
-		filepath := SeasonIndexHtmlPath(season_slug)
-		err := os.WriteFile(filepath, season_html, 0644)
-		if err != nil {
-			fetcher.errors <- err
-			return
-		}
-
-		season_index, err := ParseSeasonIndexHtml(season_html)
-		if err != nil {
-			fetcher.errors <- err
-			return
-		}
-		season_chan <- season_index
-	}()
-
-	// caller awaits on the JarchiveSeason that is produced
-	return season_chan
-}
-
-// Fetch an episode's metadata (categories, challenges & contestants), keyed by the .
-func (fetcher *fetcher) FetchEpisode(ja_eid EpisodeID, match schema.MatchNumber) <-chan *JarchiveEpisode {
-	bytes_chan := make(chan []byte)
-	task := fetch_task{
-		url:    EpisodeURL(ja_eid),
-		output: bytes_chan,
+	if common_output == nil {
+		return
 	}
-	fetcher.urls <- task
-
-	// async write-and-parse when fetcher gets to this task
-	episode_chan := make(chan *JarchiveEpisode)
-	go func() {
-		defer close(episode_chan)
-		episode_html := <-bytes_chan
-
-		filepath := EpisodeHtmlPath(match)
-		err := os.WriteFile(filepath, episode_html, 0644)
-		if err != nil {
-			fetcher.errors <- err
-			return
-		}
-
-		episode, err := ParseEpisodeHtml(episode_html)
-		if err != nil {
-			fetcher.errors <- err
-			return
-		}
-		episode_chan <- episode
-	}()
-
-	// caller awaits on the JarchiveSeason that is produced
-	return episode_chan
+	fetcher.output = common_output
 }
 
 func (fetcher *fetcher) Errors() <-chan error {
@@ -222,7 +181,7 @@ func (fetcher *fetcher) Errors() <-chan error {
 
 func (fetcher *fetcher) Close() {
 	close(fetcher.errors)
-	close(fetcher.urls)
+	close(fetcher.tasks)
 	fetcher.ticker.Stop()
 }
 
@@ -238,30 +197,4 @@ func DefaultUserAgent() string {
 
 	// I append a special signature at the end of legitimate requests from the original author.  This signature is not published on github.
 	return fmt.Sprintf("q-party/golang/%d.%d +https://github.com/kevindamm/q-party (FORKED)", major, minor)
-}
-
-func IndexURL() string {
-	return "https://j-archive.com/listseasons.php"
-}
-
-func SeasonURL(season_slug schema.SeasonSlug) string {
-	const SEASON_INDEX_FMT = "https://j-archive.com/showseason.php?season=%s"
-	return fmt.Sprintf(SEASON_INDEX_FMT, season_slug)
-}
-
-func EpisodeURL(id EpisodeID) string {
-	const FULL_EPISODE_FMT = "https://j-archive.com/showgame.php?game_id=%d"
-	return fmt.Sprintf(FULL_EPISODE_FMT, id)
-}
-
-func IndexHtmlPath() string {
-	return "index.html"
-}
-
-func SeasonIndexHtmlPath(season_slug schema.SeasonSlug) string {
-	return path.Join("season", fmt.Sprintf("%s.html", season_slug))
-}
-
-func EpisodeHtmlPath(match schema.MatchNumber) string {
-	return path.Join("episode", fmt.Sprintf("%d.html", match))
 }
