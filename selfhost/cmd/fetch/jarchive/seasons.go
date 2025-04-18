@@ -23,7 +23,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -37,49 +36,20 @@ import (
 
 type JarchiveSeason interface {
 	fetch.Fetchable
-	GetEpisodeByID(EpisodeID) JarchiveEpisode
-	GetEpisodeByNumber(schema.MatchNumber) *schema.EpisodeMetadata
+	SeasonSlug() schema.SeasonSlug
+	Metadata() *schema.SeasonMetadata
+	GetEpisodeMetadata(schema.MatchNumber) *schema.EpisodeMetadata
+	GetJarchiveEpisode(EpisodeID) JarchiveEpisode
 }
 
-func LoadSeasonIndex(filepath string) (JarchiveSeason, error) {
-	// TODO
-	return nil, nil
-}
+type JarchiveEpisodeIndex map[EpisodeID]JarchiveEpisode
 
-func ParseSeasonIndexHtml(data []byte) (JarchiveSeason, error) {
-	season := new(season_index)
-	errs := make([]error, 0)
-
-	// Since the layout of this file is very simple, we can just use regexes here.
-	reSeasonName := regexp.MustCompile(`<h2 class="season">(.*)</h2>`)
-	match := reSeasonName.FindSubmatch(data)
-	if len(match) > 0 {
-		season.Season.Title = string(match[1])
-	} else {
-		log.Printf("no title found in season index")
-	}
-
-	reEpisodeLink := regexp.MustCompile(`"showgame\.php\?game_id=(\d+)"(.*)\n`)
-	matches := reEpisodeLink.FindAllSubmatch(data, -1)
-	for _, match := range matches {
-		game_id, err := strconv.Atoi(string(match[1]))
-		if err != nil {
-			errs = append(errs, err)
-			continue
-		}
-		episode := schema.EpisodeMetadata{
-			MatchID: schema.NewMatchID(game_id),
-		}
-		episode.MatchID.ShowTitle = string(match[2])
-		episode.MatchID.SeasonSlug = season.Season.Slug
-
-		ep_id := EpisodeID(game_id)
-		season.Episodes[ep_id] = NewEpisode(ep_id)
-		season.EpisodeCount += 1
-		season.Matches.Update(episode)
-	}
-
-	return season, errors.Join(errs...)
+func NewJarchiveSeason(slug schema.SeasonSlug) JarchiveSeason {
+	season_index := new(season_index)
+	season_index.Slug = slug
+	season_index.Episodes = make(JarchiveEpisodeIndex)
+	season_index.Matches = make(schema.EpisodeIndex)
+	return season_index
 }
 
 type season_index struct {
@@ -89,23 +59,24 @@ type season_index struct {
 }
 
 func (season *season_index) String() string {
-	return fmt.Sprintf("season %s", season.Season.Slug)
+	return fmt.Sprintf("season %s", season.Slug)
 }
 
 func (season *season_index) URL() string {
 	const SEASON_INDEX_FMT = "https://j-archive.com/showseason.php?season=%s"
-	return fmt.Sprintf(SEASON_INDEX_FMT, season.Season.Slug)
+	return fmt.Sprintf(SEASON_INDEX_FMT, season.Slug)
 }
 
 func (season *season_index) FilepathHTML() string {
-	return path.Join("season", fmt.Sprintf("%s.html", season.Season.Slug))
+	return path.Join("season", fmt.Sprintf("%s.html", season.Slug))
 }
 
 func (season *season_index) FilepathJSON() string {
-	return path.Join("json", "season", fmt.Sprintf("%s.json", season.Season.Slug))
+	return path.Join("json", "season", fmt.Sprintf("%s.json", season.Slug))
 }
 
-func (season *season_index) ParseHTML(html_bytes []byte) error {
+func (season *season_index) LoadJSON(input io.ReadCloser) error {
+	defer input.Close()
 	// TODO
 	return nil
 }
@@ -116,16 +87,53 @@ func (season *season_index) WriteJSON(output io.WriteCloser) error {
 	return nil
 }
 
-func (season *season_index) LoadJSON(input io.ReadCloser) error {
-	defer input.Close()
-	// TODO
+func (season *season_index) ParseHTML(season_html []byte) error {
+	errs := make([]error, 0)
+
+	// Since the layout of this file is very simple, we can just use regexes here.
+	reSeasonName := regexp.MustCompile(`<h2 class="season">(.*)</h2>`)
+	match := reSeasonName.FindSubmatch(season_html)
+	if len(match) > 0 {
+		season.Title = string(match[1])
+	} else {
+		log.Printf("no title found in season index")
+	}
+
+	reEpisodeLink := regexp.MustCompile(`"showgame\.php\?game_id=(\d+)"(?:.*)\n`)
+	matches := reEpisodeLink.FindAllSubmatch(season_html, -1)
+	for _, match := range matches {
+		game_id, err := strconv.Atoi(string(match[1]))
+		if err != nil {
+			errs = append(errs, err)
+			continue
+		}
+		episode := schema.EpisodeMetadata{
+			MatchID: schema.NewMatchID(game_id),
+		}
+		episode.MatchID.ShowTitle = string(match[2])
+		episode.MatchID.SeasonSlug = season.Slug
+
+		ep_id := EpisodeID(game_id)
+		season.Episodes[ep_id] = NewEpisode(ep_id)
+		season.EpisodeCount += 1
+		season.Matches.Update(episode)
+	}
+
 	return nil
 }
 
-func (season *season_index) GetEpisodeByID(epid EpisodeID) JarchiveEpisode {
+func (season *season_index) SeasonSlug() schema.SeasonSlug {
+	return season.Slug
+}
+
+func (season *season_index) Metadata() *schema.SeasonMetadata {
+	return &season.SeasonMetadata
+}
+
+func (season *season_index) GetJarchiveEpisode(epid EpisodeID) JarchiveEpisode {
 	return season.Episodes[epid]
 }
 
-func (season *season_index) GetEpisodeByNumber(match schema.MatchNumber) *schema.EpisodeMetadata {
+func (season *season_index) GetEpisodeMetadata(match schema.MatchNumber) *schema.EpisodeMetadata {
 	return season.Matches[match]
 }

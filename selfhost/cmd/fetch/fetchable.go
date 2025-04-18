@@ -18,12 +18,16 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-// github:kevindamm/q-party/cmd/fetch/jarchive/fetchable.go
+// github:kevindamm/q-party/cmd/fetch/fetchable.go
 
 package fetch
 
 import "io"
 
+// Abstraction over resources that can be fetched from a remote URL path, cached
+// locally (indefinitely) and parsed from its HTML and JSON representations.  It
+// facilitates the ability to call `fetcher.Fetch(MyResource)` by defining these
+// functions that Fetcher can use as continuations when the resource is fetched.
 type Fetchable interface {
 	// Descriptive string used only in debugging / log output.
 	String() string

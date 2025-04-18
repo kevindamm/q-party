@@ -38,9 +38,10 @@ package schema
 #SeasonMetadata: #SeasonName & {
   aired: #ShowDateRange
 
-  episode_count?:   *0 | int & >=0
-  challenge_count?: *0 | int & >=0
-  tripstump_count?: *0 | int & >=0
+  episode_count?:   *0 | int & >0
+  category_count?:  *0 | int & >0
+  challenge_count?: *0 | int & >0
+  tripstump_count?: *0 | int & >0
   ...
 }
 

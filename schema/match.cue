@@ -35,8 +35,6 @@ package schema
 
 // Identifiers and statistics for each episode.
 #EpisodeMetadata: #MatchID & {
-  jaid?: uint
-
   aired?: #ShowDate
   taped?: #ShowDate
 
