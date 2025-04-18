@@ -29,9 +29,9 @@ import (
 	"io"
 	"log"
 	"os"
-	"path"
 	"regexp"
 	"slices"
+	"strings"
 	"sync"
 
 	"github.com/kevindamm/q-party/schema"
@@ -39,82 +39,99 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-var CURRENT_VERSION = []int{0, 0, 0}
-
 // Concurrency-safe interface to a collection of seasons, episodes and categories.
 type JarchiveIndex interface {
-	Version() []int
+	fetch.Fetchable // fetches the top-level index (season slugs and metadata)
 
 	AddSeasonMetadata(*schema.SeasonMetadata) error
-	AddEpisodeMetadata(*schema.EpisodeMetadata) error
-	AddCategoryMetadata(*schema.CategoryMetadata) error
-	AddEpisode(*JarchiveEpisode) error
+	AddSeason(JarchiveSeason) error
+	AddEpisode(JarchiveEpisode) error
+	ExtendOverwrite(JarchiveIndex) error
 
 	GetSeasonList() []schema.SeasonSlug
-	GetSeasonInfo(schema.SeasonSlug) schema.SeasonMetadata
+	GetSeasonMetadata(schema.SeasonSlug) schema.SeasonMetadata
 	GetEpisodeList(schema.SeasonSlug) []schema.MatchNumber
 	GetEpisodeInfo(schema.MatchNumber) schema.EpisodeMetadata
-	GetCategoryCalendar(schema.CategoryName) []schema.CategoryAired
 
-	ExtendOverwrite(JarchiveIndex) error
-	WriteJSONLines(io.Writer) error
+	// Returns the category and its air dates for any episodes currently indexed.
+	// Does not fetch or load any files, it only searches the in-memory index.
+	GetCategoryCalendar(
+		schema.CategoryName,
+		*schema.ShowDateRange,
+	) []schema.CategoryAired
 }
 
-func NewJarchiveIndex(version []int) JarchiveIndex {
-	index := new(index)
-	index.SemVer = version
-	index.Seasons = make(schema.SeasonIndex)
-	index.Episodes = make(schema.EpisodeIndex)
-	index.Categories = make(schema.CategoryIndex)
-	return index
+func NewJarchiveIndex() JarchiveIndex {
+	jarchive_index := new(jarchive_index)
+	jarchive_index.Seasons = make(schema.SeasonIndex)
+	jarchive_index.Episodes = make(schema.EpisodeIndex)
+	jarchive_index.Categories = make(schema.CategoryIndex)
+	jarchive_index.EpisodeMatch = make(EpisodeMatchNumber)
+	jarchive_index.MatchEpisode = make(MatchNumberEpisode)
+	return jarchive_index
 }
 
-func ParseJSONLines(reader io.Reader) (JarchiveIndex, error) {
-	var group errgroup.Group
-	index := NewJarchiveIndex(CURRENT_VERSION)
-	scanner := bufio.NewScanner(reader)
-	scanner.Split(bufio.ScanLines)
-
-	for scanner.Scan() {
-		line := scanner.Bytes()
-		season := new(schema.SeasonMetadata)
-
-		group.Go(func() error {
-			err := json.Unmarshal(line, season)
-			if err != nil {
-				return err
-			}
-			return index.AddSeasonMetadata(season)
-		})
-	}
-
-	if err := group.Wait(); err != nil {
-		return index, err
-	}
-	return index, nil
-}
-
-func LoadLocalIndex(datapath string) (JarchiveIndex, error) {
-	index_path := path.Join(datapath, "jarchive.jsonl")
-	file, err := os.Open(index_path)
+func LoadJarchiveJSONL(filepath string) (JarchiveIndex, error) {
+	file, err := os.Open(filepath)
 	if err != nil {
 		return nil, err
 	}
 	defer file.Close()
-	index, err := ParseJSONLines(file)
-	if err != nil {
-		return nil, err
+	scanner := bufio.NewScanner(file)
+	scanner.Split(bufio.ScanLines)
+
+	errs := make([]error, 0)
+	jarchive := NewJarchiveIndex()
+	for scanner.Scan() {
+		var season season_index
+		err := json.Unmarshal(scanner.Bytes(), &season)
+		if err != nil {
+			errs = append(errs, err)
+		} else {
+			jarchive.AddSeason(&season)
+		}
 	}
-	return index, err
+	return jarchive, errors.Join(errs...)
 }
 
-// Parse the contents of the HTML-formatted byte-slice into a [JarchiveIndex],
-// representing metadata about all seasons in the archive.
-func ParseIndexHtml(data []byte) (JarchiveIndex, error) {
+type EpisodeMatchNumber map[EpisodeID]schema.MatchNumber
+type MatchNumberEpisode map[schema.MatchNumber]EpisodeID
+
+// Internal representation of [JarchiveIndex] with safe read and update access.
+type jarchive_index struct {
+	fetch.Fetchable
+
+	Seasons    schema.SeasonIndex   `json:"seasons"`
+	Episodes   schema.EpisodeIndex  `json:"episodes"`
+	Categories schema.CategoryIndex `json:"categories"`
+
+	EpisodeMatch EpisodeMatchNumber `json:"-"`
+	MatchEpisode MatchNumberEpisode `json:"-"`
+
+	lock sync.RWMutex `json:"-"`
+}
+
+func (jarchive *jarchive_index) String() string {
+	return "_"
+}
+
+func (jarchive *jarchive_index) URL() string {
+	return "https://j-archive.com/listseasons.php"
+}
+
+func (jarchive *jarchive_index) FilepathHtml() string {
+	return "index.html"
+}
+
+func (jarchive *jarchive_index) FilepathJSON() string {
+	return "jarchive.jsonl"
+}
+
+func (jarchive *jarchive_index) ParseHTML(data []byte) error {
 	// The layout of this index is simple enough that it can be parsed with regex.
 	// It could written with x/net/html (see parsing in episode.go) but any change
 	// to the source material would need a corresponding update here, and would be
-	// and be as much (or more!) work to make the appropriate changes.
+	// as much (or more!) work to make the appropriate changes.
 	// <xx-meme>
 	//   I don't always parse my HTML with regexes,
 	//   but when I do, I comment at length about it.
@@ -123,168 +140,211 @@ func ParseIndexHtml(data []byte) (JarchiveIndex, error) {
 		`<tr><td><a href="showseason.php\?season=([^"]+)">(?:<i>)?([^<]+)(?:</i>)?</a></td>(.*)`)
 	season_matches := reSeasonMetadata.FindAllSubmatch(data, -1)
 	if len(season_matches) == 0 {
-		return nil, errors.New("no seasons found in jarchive index HTML")
+		return errors.New("no seasons found in jarchive index HTML")
 	}
 
-	index := NewJarchiveIndex(CURRENT_VERSION)
 	errs := make([]error, 0)
 	reAirDateRange := regexp.MustCompile(`<td(?: class="[^"]+")?>(\d+)-(\d+)-(\d+) to (\d+)-(\d+)-(\d+)</td>`)
 	for _, smatch := range season_matches {
-		season := new(schema.SeasonMetadata)
-		season.Season.Slug = schema.SeasonSlug(string(smatch[1]))
-		season.Season.Title = string(smatch[2])
+		var season schema.SeasonMetadata
+		season_slug := string(smatch[1])
+		season_slug = strings.ReplaceAll(season_slug, "'\"", "")
+		season_slug = strings.Trim(season_slug, " \t\n")
+		season.Slug = schema.SeasonSlug(season_slug)
+		season.Title = string(smatch[2])
 
-		date_match := reAirDateRange.FindSubmatch(smatch[3])
-		if len(date_match) > 0 {
-			season.Aired.From.Year = atoi(date_match[1])
-			season.Aired.From.Month = atoi(date_match[2])
-			season.Aired.From.Day = atoi(date_match[3])
-			season.Aired.Until.Year = atoi(date_match[4])
-			season.Aired.Until.Month = atoi(date_match[5])
-			season.Aired.Until.Day = atoi(date_match[6])
+		if season_slug == "trebekpilots" { // dubious start and end times for pilots
+			season.Aired.From = schema.ShowDate{Year: 1983, Month: 9, Day: 18}
+			season.Aired.Until = schema.ShowDate{Year: 1984, Month: 1, Day: 1}
+		} else {
+			date_match := reAirDateRange.FindSubmatch(smatch[3])
+			if len(date_match) > 0 {
+				season.Aired.From.Year = atoi(date_match[1])
+				season.Aired.From.Month = atoi(date_match[2])
+				season.Aired.From.Day = atoi(date_match[3])
+				season.Aired.Until.Year = atoi(date_match[4])
+				season.Aired.Until.Month = atoi(date_match[5])
+				season.Aired.Until.Day = atoi(date_match[6])
+			}
 		}
-		err := index.AddSeasonMetadata(season)
+
+		err := jarchive.AddSeasonMetadata(&season)
 		if err != nil {
 			errs = append(errs, err)
 		}
 	}
 
-	return index, errors.Join(errs...)
+	return errors.Join(errs...)
 }
 
-func (index *index) WriteJSONLines(writer io.Writer) error {
-	// TODO
-	return nil
-}
-
-// Internal representation of [JarchiveIndex] with safe read and update access.
-type index struct {
-	fetch.Fetchable
-	SemVer     []int                `json:"version"`
-	Seasons    schema.SeasonIndex   `json:"seasons"`
-	Episodes   schema.EpisodeIndex  `json:"episodes"`
-	Categories schema.CategoryIndex `json:"categories"`
-
-	lock sync.RWMutex `json:"-"`
-}
-
-func (index *index) String() string {
-	return "(top-level index)"
-}
-
-func (index *index) URL() string {
-	return "https://j-archive.com/listseasons.php"
-}
-
-func (index *index) FilepathHtml() string {
-	return "index.html"
-}
-
-func (index *index) FilepathJSON() string {
-	return "jarchive.jsonl"
-}
-
-func (index *index) ParseHtml(html_bytes []byte) error {
-	// TODO
-	return nil
-}
-
-func (index *index) WriteJSON(writer io.WriteCloser) error {
+// Writes JSONL line-separated [schema.SeasonMetadata] JSON for the index.
+func (jarchive *jarchive_index) WriteJSON(writer io.WriteCloser) error {
 	defer writer.Close()
-	// TODO
+	for _, season := range jarchive.Seasons {
+		json_bytes, err := json.Marshal(season)
+		if err != nil {
+			return err
+		}
+		json_bytes = append(json_bytes, byte('\n'))
+		_, err = writer.Write(json_bytes)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
-func (index *index) LoadJSON(reader io.ReadCloser) error {
+// Reads JSONL
+func (jarchive *jarchive_index) LoadJSON(reader io.ReadCloser) error {
 	defer reader.Close()
-	// TODO
-	return nil
-}
+	var group errgroup.Group
+	scanner := bufio.NewScanner(reader)
+	scanner.Split(bufio.ScanLines)
 
-func (index *index) Version() []int {
-	return index.SemVer
-}
+	for scanner.Scan() {
+		line := scanner.Bytes()
+		var season schema.SeasonMetadata
 
-func (index *index) AddSeasonMetadata(season *schema.SeasonMetadata) error {
-	index.lock.Lock()
-	defer index.lock.Unlock()
-	index.Seasons[season.Season.Slug] = season
-	// TODO is overwriting an existing key considered an error?
-
-	return nil
-}
-
-func (index *index) AddEpisodeMetadata(episode *schema.EpisodeMetadata) error {
-	index.lock.Lock()
-	defer index.lock.Unlock()
-	// TODO
-	return nil
-}
-
-func (index *index) AddCategoryMetadata(category *schema.CategoryMetadata) error {
-	index.lock.Lock()
-	defer index.lock.Unlock()
-	// TODO
-	return nil
-}
-
-func (index *index) AddEpisode(episode *JarchiveEpisode) error {
-	index.lock.Lock()
-	defer index.lock.Unlock()
-	// TODO
-	return nil
-}
-
-func (this *index) ExtendOverwrite(other JarchiveIndex) error {
-	if !slices.Equal(this.SemVer[:3], other.Version()[:3]) {
-		log.Printf("WARNING incompatbile versions merging JarchiveIndex %v != %v",
-			this.SemVer, other.Version())
+		group.Go(func() error {
+			err := json.Unmarshal(line, &season)
+			if err != nil {
+				return err
+			}
+			return jarchive.AddSeasonMetadata(&season)
+		})
 	}
 
-	other_index, ok := other.(*index)
+	if err := group.Wait(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (jarchive *jarchive_index) AddSeasonMetadata(season *schema.SeasonMetadata) error {
+	jarchive.lock.Lock()
+	defer jarchive.lock.Unlock()
+	if _, found := jarchive.Seasons[season.Slug]; found {
+		log.Printf("WARNING AddSeasonMetadata called with the same slug '%s' multiple times", season.Slug)
+	}
+	jarchive.Seasons[season.Slug] = season
+	return nil
+}
+
+func (jarchive *jarchive_index) AddSeason(season JarchiveSeason) error {
+	jarchive.lock.Lock()
+	defer jarchive.lock.Unlock()
+
+	if _, found := jarchive.Seasons[season.SeasonSlug()]; found {
+		log.Printf("WARNING inserting (more than once) metadata for season '%s'",
+			season.SeasonSlug())
+	}
+	jarchive.Seasons[season.SeasonSlug()] = season.Metadata()
+	return nil
+}
+
+func (jarchive *jarchive_index) AddEpisode(episode JarchiveEpisode) error {
+	jarchive.lock.Lock()
+	defer jarchive.lock.Unlock()
+
+	if _, found := jarchive.Episodes[episode.MatchNumber()]; found {
+		log.Printf("")
+	}
+
+	return nil
+}
+
+func (jarchive *jarchive_index) ExtendOverwrite(other JarchiveIndex) error {
+	other_index, ok := other.(*jarchive_index)
 	if !ok {
 		return errors.New("invalid type of other (expected an index)")
 	}
+	if len(other_index.Seasons) > 0 ||
+		len(other_index.Episodes) > 0 ||
+		len(other_index.Categories) > 0 {
+		// We could make this lock more fine-grained but this structure is seldom
+		// updated (and mostly during system startup); correctness >> optimization.
+		jarchive.lock.Lock()
+		defer jarchive.lock.Unlock()
+	}
+
 	if len(other_index.Seasons) > 0 {
-		this.lock.Lock()
-		defer this.lock.Unlock()
 		for key := range other_index.Seasons {
-			// expect there won't be competing partial writes
-			this.Seasons[key] = other_index.Seasons[key]
+			if _, found := jarchive.Seasons[key]; found {
+				log.Printf("WARNING found multiple updates to season %s (duplicate Slug?)", key)
+			}
+			jarchive.Seasons[key] = other_index.Seasons[key]
 		}
 	}
-	// TODO inspect other.(Episodes|Categories), nonempty ones are written
+
+	if len(other_index.Episodes) > 0 {
+		for key := range other_index.Episodes {
+			if _, found := jarchive.Episodes[key]; found {
+				log.Printf("WARNING found multiple updates to episode %d (duplicate MatchNumber?)", key)
+			}
+			jarchive.Episodes[key] = other_index.Episodes[key]
+		}
+	}
+
+	if len(other_index.Categories) > 0 {
+		for key := range other_index.Categories {
+			if _, found := jarchive.Categories[key]; found {
+				log.Printf("WARNING found multiple updates to category %s (duplicate CategoryName?)", key)
+			}
+			jarchive.Categories[key] = other_index.Categories[key]
+		}
+	}
+
 	return nil
 }
 
-func (index *index) GetSeasonList() []schema.SeasonSlug {
-	slugs := make([]schema.SeasonSlug, len(index.Seasons))
+func (jarchive *jarchive_index) GetSeasonList() []schema.SeasonSlug {
+	slugs := make([]schema.SeasonSlug, len(jarchive.Seasons))
 	i := 0
-	for _, season := range index.Seasons {
-		slugs[i] = season.Season.Slug
+	for slug := range jarchive.Seasons {
+		slugs[i] = slug
 		i++
 	}
+	slices.Sort(slugs)
 	return slugs
 }
 
-func (index *index) GetSeasonInfo(key schema.SeasonSlug) schema.SeasonMetadata {
-	index.lock.RLock()
-	defer index.lock.RUnlock()
-	return *index.Seasons[key]
+func (jarchive *jarchive_index) GetSeasonMetadata(key schema.SeasonSlug) schema.SeasonMetadata {
+	jarchive.lock.RLock()
+	defer jarchive.lock.RUnlock()
+	return *jarchive.Seasons[key]
 }
 
-func (index *index) GetEpisodeList(schema.SeasonSlug) []schema.MatchNumber {
-	// TODO
-	return []schema.MatchNumber{}
+func (jarchive *jarchive_index) GetEpisodeList(season_slug schema.SeasonSlug) []schema.MatchNumber {
+	jarchive.lock.RLock()
+	defer jarchive.lock.RUnlock()
+	matches := make([]schema.MatchNumber, 0)
+	for match_num, episode := range jarchive.Episodes {
+		if episode.SeasonSlug == season_slug {
+			matches = append(matches, match_num)
+		}
+	}
+	return matches
 }
 
-func (index *index) GetEpisodeInfo(key schema.MatchNumber) schema.EpisodeMetadata {
-	index.lock.RLock()
-	defer index.lock.RUnlock()
-	return *index.Episodes[key]
+func (jarchive *jarchive_index) GetEpisodeInfo(key schema.MatchNumber) schema.EpisodeMetadata {
+	jarchive.lock.RLock()
+	defer jarchive.lock.RUnlock()
+	return *jarchive.Episodes[key]
 }
-func (index *index) GetCategoryCalendar(key schema.CategoryName) []schema.CategoryAired {
-	index.lock.RLock()
-	defer index.lock.RUnlock()
-	return index.Categories[key]
+
+func (jarchive *jarchive_index) GetCategoryCalendar(key schema.CategoryName, scope *schema.ShowDateRange) []schema.CategoryAired {
+	jarchive.lock.RLock()
+	defer jarchive.lock.RUnlock()
+	if scope == nil {
+		// Retrieve from entire known date range.
+		return jarchive.Categories[key]
+	}
+
+	response := make([]schema.CategoryAired, 0)
+	for _, aircat := range jarchive.Categories[key] {
+		if scope.Contains(aircat.Aired) {
+			response = append(response, aircat)
+		}
+	}
+	return response
 }

@@ -60,7 +60,7 @@ func main() {
 	if *data_path == "" {
 		*data_path = "."
 	}
-	jarchive, err := LoadLocalIndex(*data_path) // loads jarchive.jsonl and supporting seasons, episodes
+	jarchive, err := LoadJarchiveJSONL(*data_path) // loads jarchive.jsonl and supporting seasons, episodes
 	if err != nil {
 		debug.Fatal(err)
 	}

@@ -51,8 +51,6 @@ func NewMatchID(match_number int) MatchID {
 
 type EpisodeMetadata struct {
 	MatchID   `json:",inline"`
-	EpisodeID uint `json:"jaid,omitempty"`
-
 	AiredDate ShowDate `json:"aired,omitempty"`
 	TapedDate ShowDate `json:"taped,omitempty"`
 
@@ -79,9 +77,6 @@ func (episodes EpisodeIndex) Update(metadata EpisodeMetadata) {
 		existing.ShowTitle = metadata.ShowTitle
 	}
 
-	if metadata.EpisodeID != 0 {
-		existing.EpisodeID = metadata.EpisodeID
-	}
 	if metadata.AiredDate.String() != "" {
 		existing.AiredDate = metadata.AiredDate
 	}
@@ -129,7 +124,40 @@ func (sd ShowDate) String() string {
 	return fmt.Sprintf("%04d/%02d/%02d", sd.Year, sd.Month, sd.Day)
 }
 
+// Returns 0 if `this` and `other` are equal;
+// +1 if this is later than other, and -1 if before.
+func (this ShowDate) Compare(other ShowDate) int {
+	if this.Year < other.Year {
+		return -1
+	}
+	if this.Year > other.Year {
+		return +1
+	}
+	// (this.Year == other.Year)
+	if this.Month < other.Month {
+		return -1
+	}
+	if this.Month > other.Month {
+		return +1
+	}
+	// (this.Month == other.Month)
+	if this.Day < other.Day {
+		return -1
+	}
+	if this.Day > other.Day {
+		return +1
+	}
+	// The dates are equal.
+	return 0
+}
+
 type ShowDateRange struct {
 	From  ShowDate `json:"from,omitempty"`
 	Until ShowDate `json:"until,omitempty"`
+}
+
+func (scope ShowDateRange) Contains(date ShowDate) bool {
+	return (                         // including endpoints,
+	date.Compare(scope.From) >= 0 && // after beginning and
+		date.Compare(scope.Until) <= 0) // before ending
 }

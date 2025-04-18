@@ -25,6 +25,7 @@ package main
 import (
 	"fmt"
 	"io"
+	"log"
 	"path"
 
 	"github.com/kevindamm/q-party/schema"
@@ -33,21 +34,27 @@ import (
 
 type EpisodeID int
 
-type EpisodeMatchNumber map[EpisodeID]schema.MatchNumber
-type MatchNumberEpisode map[schema.MatchNumber]EpisodeID
-
 // All details of the episode, including correct answers & the contestants' bios.
 type JarchiveEpisode interface {
 	fetch.Fetchable
+	// Properties are set via ParseHTML or LoadJSON (of Fetchable interface)
+
+	// Property getters
+	MatchNumber() schema.MatchNumber // may be 0 for unknown
+
 }
 
 func NewEpisode(id EpisodeID) JarchiveEpisode {
-	episode := episode{
+	if id == 0 {
+		log.Fatal("zero value invalid for episode ID (equiv to UNKNOWN episode)")
+	}
+	return &episode{
 		EpisodeID: id,
 	}
+}
 
-	// TODO
-	return &episode
+func UnknownEpisode() JarchiveEpisode {
+	return &episode{EpisodeID: 0}
 }
 
 type episode struct {
@@ -65,16 +72,14 @@ type episode struct {
 	TieBreaker *JarchiveFinal `json:"tiebreaker,omitempty"`
 }
 
-func ParseEpisodeHtml(episode_html []byte) (JarchiveEpisode, error) {
-	episode := episode{}
-	// TODO
-
-	return &episode, nil
+func (episode *episode) String() string {
+	return fmt.Sprintf("Match %d (episode #%d)",
+		episode.MatchID.Match,
+		episode.EpisodeID)
 }
 
-func (episode *episode) String() string {
-	// TODO
-	return "episode ..."
+func (episode *episode) MatchNumber() schema.MatchNumber {
+	return episode.MatchID.Match
 }
 
 func (episode *episode) URL() string {
@@ -83,26 +88,29 @@ func (episode *episode) URL() string {
 }
 
 func (episode *episode) FilepathHTML() string {
-	return path.Join("episode", fmt.Sprintf("%d.html", episode.EpisodeID))
+	return path.Join("jarchive", "episode",
+		fmt.Sprintf("%d.html", episode.EpisodeID))
 }
 
 func (episode *episode) FilepathJSON() string {
-	return path.Join("json", "episode", fmt.Sprintf("%d.html", episode.MatchID))
+	return path.Join("json", "episode",
+		fmt.Sprintf("%d.html", episode.MatchID.Match))
 }
 
 func (episode *episode) ParseHTML(html_bytes []byte) error {
-
 	// TODO
+	// TODO
+	// TODO populate this instance with parsed contents
 	return nil
 }
 
 func (episode *episode) WriteJSON(output io.WriteCloser) error {
 	defer output.Close()
-	// TODO
+	// TODO json.Unmarshal
 	return nil
 }
 func (episode *episode) LoadJSON(input io.ReadCloser) error {
 	defer input.Close()
-	// TODO
+	// TODO json.Marshal
 	return nil
 }

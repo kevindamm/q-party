@@ -37,7 +37,8 @@ var JARCHIVE_INDEX_HTML []byte
 var TEST_VERSION = []int{0, 0, 0}
 
 func TestParseIndexHTML(t *testing.T) {
-	jarchive_index, err := jarchive.ParseIndexHtml(JARCHIVE_INDEX_HTML)
+	jarchive_index := jarchive.NewJarchiveIndex()
+	err := jarchive_index.ParseHTML(JARCHIVE_INDEX_HTML)
 	if err != nil {
 		t.Error("Failed to parse jarchive index:", err)
 		return
@@ -65,7 +66,7 @@ func TestParseIndexHTML(t *testing.T) {
 	}
 
 	for _, slug := range jarchive_index.GetSeasonList() {
-		season := jarchive_index.GetSeasonInfo(slug)
+		season := jarchive_index.GetSeasonMetadata(slug)
 		if season.Aired.From.Year == 0 ||
 			season.Aired.From.Month == 0 ||
 			season.Aired.From.Day == 0 {
