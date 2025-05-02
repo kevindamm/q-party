@@ -34,8 +34,6 @@ import (
 //go:embed testdata/jarchive_index.html
 var JARCHIVE_INDEX_HTML []byte
 
-var TEST_VERSION = []int{0, 0, 0}
-
 func TestParseIndexHTML(t *testing.T) {
 	jarchive_index := jarchive.NewJarchiveIndex()
 	err := jarchive_index.ParseHTML(JARCHIVE_INDEX_HTML)

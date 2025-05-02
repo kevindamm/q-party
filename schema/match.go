@@ -25,6 +25,8 @@ package schema
 import (
 	_ "embed"
 	"fmt"
+	"regexp"
+	"strconv"
 )
 
 // go:embed match.cue
@@ -51,8 +53,8 @@ func NewMatchID(match_number int) MatchID {
 
 type EpisodeMetadata struct {
 	MatchID   `json:",inline"`
-	AiredDate ShowDate `json:"aired,omitempty"`
-	TapedDate ShowDate `json:"taped,omitempty"`
+	AiredDate *ShowDate `json:"aired,omitempty"`
+	TapedDate *ShowDate `json:"taped,omitempty"`
 
 	Contestants []ContestantID `json:"contestants,omitempty"`
 	Media       []MediaRef     `json:"media,omitempty"`
@@ -117,6 +119,22 @@ type ShowDate struct {
 	Day   int `json:"day"`
 }
 
+// formatted as YYYY-MM-DD
+func ParseShowDate(image string) *ShowDate {
+	reShowDate := regexp.MustCompile(`(\d{4})-(\d{2})-(\d{2})`)
+	matches := reShowDate.FindStringSubmatch(image)
+	// We can ignore the error here because we know these are all digit patterns.
+	year, _ := strconv.Atoi(matches[1])
+	month, _ := strconv.Atoi(matches[2])
+	day, _ := strconv.Atoi(matches[3])
+
+	return &ShowDate{
+		Year:  year,
+		Month: month,
+		Day:   day,
+	}
+}
+
 func (sd ShowDate) String() string {
 	if sd.Year+sd.Month+sd.Day == 0 {
 		return ""
@@ -126,7 +144,7 @@ func (sd ShowDate) String() string {
 
 // Returns 0 if `this` and `other` are equal;
 // +1 if this is later than other, and -1 if before.
-func (this ShowDate) Compare(other ShowDate) int {
+func (this ShowDate) Compare(other *ShowDate) int {
 	if this.Year < other.Year {
 		return -1
 	}
@@ -152,8 +170,8 @@ func (this ShowDate) Compare(other ShowDate) int {
 }
 
 type ShowDateRange struct {
-	From  ShowDate `json:"from,omitempty"`
-	Until ShowDate `json:"until,omitempty"`
+	From  *ShowDate `json:"from,omitempty"`
+	Until *ShowDate `json:"until,omitempty"`
 }
 
 func (scope ShowDateRange) Contains(date ShowDate) bool {
