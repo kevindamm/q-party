@@ -41,7 +41,7 @@ type JarchiveEpisode interface {
 
 	// Property getters
 	MatchNumber() schema.MatchNumber // may be 0 for unknown
-
+	Metadata() schema.EpisodeMetadata
 }
 
 func NewEpisode(id EpisodeID) JarchiveEpisode {
@@ -80,6 +80,10 @@ func (episode *episode) String() string {
 
 func (episode *episode) MatchNumber() schema.MatchNumber {
 	return episode.MatchID.Match
+}
+
+func (episode *episode) Metadata() schema.EpisodeMetadata {
+	return episode.EpisodeMetadata
 }
 
 func (episode *episode) URL() string {

@@ -67,7 +67,7 @@ func TestDateCompare(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.this.Compare(tt.other); got != tt.want {
+			if got := tt.this.Compare(&tt.other); got != tt.want {
 				t.Errorf("ShowDate.Compare() = %v, want %v", got, tt.want)
 			}
 		})
@@ -76,8 +76,8 @@ func TestDateCompare(t *testing.T) {
 
 func TestDateRangeContains(t *testing.T) {
 	scope := schema.ShowDateRange{
-		From:  schema.ShowDate{Year: 1995, Month: 3, Day: 25},
-		Until: schema.ShowDate{Year: 1997, Month: 6, Day: 2},
+		From:  &schema.ShowDate{Year: 1995, Month: 3, Day: 25},
+		Until: &schema.ShowDate{Year: 1997, Month: 6, Day: 2},
 	}
 	tests := []struct {
 		name  string

@@ -99,7 +99,7 @@ func (season *season_index) ParseHTML(season_html []byte) error {
 		log.Printf("no title found in season index")
 	}
 
-	reEpisodeLink := regexp.MustCompile(`"showgame\.php\?game_id=(\d+)"(?:.*)\n`)
+	reEpisodeLink := regexp.MustCompile(`"showgame\.php\?game_id=(\d+)" title="([^"]+)">.*(aired&#160;([\d-]+))?.*</a>\n`)
 	matches := reEpisodeLink.FindAllSubmatch(season_html, -1)
 	for _, match := range matches {
 		game_id, err := strconv.Atoi(string(match[1]))
@@ -110,7 +110,11 @@ func (season *season_index) ParseHTML(season_html []byte) error {
 		episode := schema.EpisodeMetadata{
 			MatchID: schema.NewMatchID(game_id),
 		}
-		episode.MatchID.ShowTitle = string(match[2])
+
+		episode.TapedDate = schema.ParseShowDate(string(match[2]))
+		if len(match[3]) > 0 {
+			episode.AiredDate = schema.ParseShowDate(string(match[4]))
+		}
 		episode.MatchID.SeasonSlug = season.Slug
 
 		ep_id := EpisodeID(game_id)
