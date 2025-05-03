@@ -38,21 +38,22 @@ type MatchNumber uint64
 
 // Shows are numbered sequentially based on air date.
 type MatchID struct {
-	Match     MatchNumber `json:"match"`
-	ShowTitle string      `json:"show_title,omitempty"`
-
-	SeasonSlug SeasonSlug `json:"season,omitempty"`
+	MatchNumber `json:"match"`
+	ShowTitle   string     `json:"show_title,omitempty"`
+	SeasonSlug  SeasonSlug `json:"season,omitempty"`
 }
 
 // Convenience function for constructing the above, when not querying from DB.
 func NewMatchID(match_number int) MatchID {
 	return MatchID{
-		Match: MatchNumber(uint64(match_number)),
+		MatchNumber: MatchNumber(uint64(match_number)),
 	}
 }
 
+// Data about the episode that is unrelated to the match, rounds or challenges.
 type EpisodeMetadata struct {
-	MatchID   `json:",inline"`
+	MatchID `json:",inline"`
+
 	AiredDate *ShowDate `json:"aired,omitempty"`
 	TapedDate *ShowDate `json:"taped,omitempty"`
 
@@ -65,39 +66,40 @@ type EpisodeIndex map[MatchNumber]*EpisodeMetadata
 
 // Will add (and possibly overwrite) the values from metadata into the mapping.
 func (episodes EpisodeIndex) Update(metadata EpisodeMetadata) {
-	match := metadata.Match
-	existing, ok := episodes[match]
-	if !ok {
+	match := metadata.MatchNumber
+	episode, exists := episodes[match]
+	if !exists {
 		episodes[match] = &metadata
 		return
 	}
 
 	if len(metadata.SeasonSlug) > 0 {
-		existing.SeasonSlug = metadata.SeasonSlug
+		episode.SeasonSlug = metadata.SeasonSlug
 	}
 	if len(metadata.ShowTitle) > 0 {
-		existing.ShowTitle = metadata.ShowTitle
+		episode.ShowTitle = metadata.ShowTitle
 	}
 
 	if metadata.AiredDate.String() != "" {
-		existing.AiredDate = metadata.AiredDate
+		episode.AiredDate = metadata.AiredDate
 	}
 	if metadata.TapedDate.String() != "" {
-		existing.TapedDate = metadata.AiredDate
+		episode.TapedDate = metadata.AiredDate
 	}
 
-	// Sequence types are added to, not replaced with.
+	// Sequence types are added to, not replaced with.  TODO merge lists
 	if len(metadata.Contestants) > 0 {
-		existing.Contestants = append(existing.Contestants, metadata.Contestants...)
+		episode.Contestants = append(episode.Contestants, metadata.Contestants...)
 	}
 	if len(metadata.Media) > 0 {
-		existing.Media = append(existing.Media, metadata.Media...)
+		episode.Media = append(episode.Media, metadata.Media...)
 	}
+
 	if len(metadata.Comments) > 0 {
-		if len(existing.Comments) == 0 {
-			existing.Comments = metadata.Comments
+		if len(episode.Comments) == 0 {
+			episode.Comments = metadata.Comments
 		} else {
-			existing.Comments = existing.Comments + "\n\n" + metadata.Comments
+			episode.Comments = episode.Comments + "\n\n" + metadata.Comments
 		}
 	}
 }

@@ -35,16 +35,14 @@ import (
 type EpisodeID int
 
 // All details of the episode, including correct answers & the contestants' bios.
+// Properties are set via Fetchable interface: ParseHTML, LoadJSON.
 type JarchiveEpisode interface {
 	fetch.Fetchable
-	// Properties are set via ParseHTML or LoadJSON (of Fetchable interface)
-
-	// Property getters
-	MatchNumber() schema.MatchNumber // may be 0 for unknown
-	Metadata() schema.EpisodeMetadata
+	Metadata() *schema.EpisodeMetadata
 }
 
-func NewEpisode(id EpisodeID) JarchiveEpisode {
+// Constructor for an episode when only its (jarchive) EpisodeID is known.
+func NewEpisodeStub(id EpisodeID) JarchiveEpisode {
 	if id == 0 {
 		log.Fatal("zero value invalid for episode ID (equiv to UNKNOWN episode)")
 	}
@@ -74,16 +72,12 @@ type episode struct {
 
 func (episode *episode) String() string {
 	return fmt.Sprintf("Match %d (episode #%d)",
-		episode.MatchID.Match,
+		episode.MatchNumber,
 		episode.EpisodeID)
 }
 
-func (episode *episode) MatchNumber() schema.MatchNumber {
-	return episode.MatchID.Match
-}
-
-func (episode *episode) Metadata() schema.EpisodeMetadata {
-	return episode.EpisodeMetadata
+func (episode *episode) Metadata() *schema.EpisodeMetadata {
+	return &episode.EpisodeMetadata
 }
 
 func (episode *episode) URL() string {
@@ -98,7 +92,7 @@ func (episode *episode) FilepathHTML() string {
 
 func (episode *episode) FilepathJSON() string {
 	return path.Join("json", "episode",
-		fmt.Sprintf("%d.html", episode.MatchID.Match))
+		fmt.Sprintf("%d.html", episode.MatchNumber))
 }
 
 func (episode *episode) ParseHTML(html_bytes []byte) error {

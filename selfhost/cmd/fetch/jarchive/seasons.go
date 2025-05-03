@@ -117,13 +117,21 @@ func (season *season_index) ParseHTML(season_html []byte) error {
 		}
 		episode.MatchID.SeasonSlug = season.Slug
 
-		ep_id := EpisodeID(game_id)
-		season.Episodes[ep_id] = NewEpisode(ep_id)
-		season.EpisodeCount += 1
+		season.AddEpisode(game_id)
 		season.Matches.Update(episode)
 	}
 
 	return nil
+}
+
+func (season *season_index) AddEpisode(game_id int) {
+	ep_id := EpisodeID(game_id)
+	if _, exists := season.Episodes[ep_id]; exists {
+		log.Fatalf("repeated game_id insertion for season %s, episode %d",
+			season.Slug, game_id)
+	}
+	season.Episodes[ep_id] = NewEpisodeStub(ep_id)
+	season.EpisodeCount += 1
 }
 
 func (season *season_index) SeasonSlug() schema.SeasonSlug {
