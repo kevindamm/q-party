@@ -69,7 +69,7 @@ func UnknownChallenge() Challenge {
 // Challenges may have zero or more media clues (image, audio, video).  Each is
 // represented by its own MediaClue instance.  MediaURL is relative a base URL.
 type MediaRef struct {
-	MimeType string `json:"mime"`
+	MimeType `json:"mime,omitempty"`
 	MediaURL string `json:"url"`
 }
 

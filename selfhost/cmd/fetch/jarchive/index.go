@@ -26,6 +26,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"log"
 	"os"
@@ -154,17 +155,17 @@ func (jarchive *jarchive_index) ParseHTML(data []byte) error {
 		season.Title = string(smatch[2])
 
 		if season_slug == "trebekpilots" { // dubious start and end times for pilots
-			season.Aired.From = schema.ShowDate{Year: 1983, Month: 9, Day: 18}
-			season.Aired.Until = schema.ShowDate{Year: 1984, Month: 1, Day: 1}
+			season.Aired.From = &schema.ShowDate{Year: 1983, Month: 9, Day: 18}
+			season.Aired.Until = &schema.ShowDate{Year: 1984, Month: 1, Day: 1}
 		} else {
 			date_match := reAirDateRange.FindSubmatch(smatch[3])
 			if len(date_match) > 0 {
-				season.Aired.From.Year = atoi(date_match[1])
-				season.Aired.From.Month = atoi(date_match[2])
-				season.Aired.From.Day = atoi(date_match[3])
-				season.Aired.Until.Year = atoi(date_match[4])
-				season.Aired.Until.Month = atoi(date_match[5])
-				season.Aired.Until.Day = atoi(date_match[6])
+				season.Aired.From.Year = digits(date_match[1])
+				season.Aired.From.Month = digits(date_match[2])
+				season.Aired.From.Day = digits(date_match[3])
+				season.Aired.Until.Year = digits(date_match[4])
+				season.Aired.Until.Month = digits(date_match[5])
+				season.Aired.Until.Day = digits(date_match[6])
 			}
 		}
 
@@ -221,42 +222,54 @@ func (jarchive *jarchive_index) LoadJSON(reader io.ReadCloser) error {
 }
 
 func (jarchive *jarchive_index) AddSeasonMetadata(season *schema.SeasonMetadata) error {
+	var err error
 	jarchive.lock.Lock()
 	defer jarchive.lock.Unlock()
+
 	if _, found := jarchive.Seasons[season.Slug]; found {
 		log.Printf("WARNING AddSeasonMetadata called with the same slug '%s' multiple times", season.Slug)
+		err = fmt.Errorf("multiple insertion season %s metadata", season.Slug)
 	}
 	jarchive.Seasons[season.Slug] = season
-	return nil
+	return err
 }
 
 func (jarchive *jarchive_index) AddSeason(season JarchiveSeason) error {
+	var err error
 	jarchive.lock.Lock()
 	defer jarchive.lock.Unlock()
 
 	if _, found := jarchive.Seasons[season.SeasonSlug()]; found {
 		log.Printf("WARNING inserting (more than once) metadata for season '%s'",
 			season.SeasonSlug())
+		err = fmt.Errorf("multiple insertion season %s data", season.SeasonSlug())
 	}
 	jarchive.Seasons[season.SeasonSlug()] = season.Metadata()
-	return nil
+	return err
 }
 
 func (jarchive *jarchive_index) AddEpisode(episode JarchiveEpisode) error {
+	var err error
 	jarchive.lock.Lock()
 	defer jarchive.lock.Unlock()
 
-	if _, found := jarchive.Episodes[episode.MatchNumber()]; found {
-		log.Printf("")
+	if _, found := jarchive.Episodes[episode.Metadata().MatchNumber]; found {
+		metadata := episode.Metadata()
+		log.Printf("WARNING inserting (more than once) metadata for episode (%s/%d)",
+			metadata.SeasonSlug,
+			metadata.MatchNumber)
+		err = fmt.Errorf("multiple insertion episode (%s) %d",
+			metadata.SeasonSlug,
+			metadata.MatchNumber)
 	}
-
-	return nil
+	jarchive.Episodes[episode.Metadata().MatchNumber] = episode.Metadata()
+	return err
 }
 
 func (jarchive *jarchive_index) ExtendOverwrite(other JarchiveIndex) error {
 	other_index, ok := other.(*jarchive_index)
 	if !ok {
-		return errors.New("invalid type of other (expected an index)")
+		return fmt.Errorf("invalid type of other %T (expected an index)", other)
 	}
 	if len(other_index.Seasons) > 0 ||
 		len(other_index.Episodes) > 0 ||
