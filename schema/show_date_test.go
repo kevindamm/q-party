@@ -18,7 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-// github:kevindamm/q-party/schema/matches.go
+// github:kevindamm/q-party/schema/show_date_test.go
 
 package schema_test
 

@@ -18,41 +18,47 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-// github:kevindamm/q-party/schema/seasons.go
+// github:kevindamm/q-party/schema/round.ts
 
-package schema
+import * as z from "@zod/mini"
 
-import _ "embed"
+import { CategoryMetadata } from "./category"
+import { ChallengeMetadata, Value } from "./challenge"
+import { ContestantID } from "./contestant"
+import { MatchNumber } from "./match"
 
-// go:embed season.cue
-var schemaSeasons string
+export const RoundEnum = z.enum([
+    "[UNKNOWN]",
+    "Single!",
+    "Double!",
+    "Final!",
+    "Tiebreaker!!",
+    "[other]",
+  ])
 
-type SeasonSlug string
+export const RoundID = z.object({
+  episode: MatchNumber,
+  round: RoundEnum,
+})
 
-type SeasonID struct {
-	Slug  SeasonSlug `json:"slug"`
-	Title string     `json:"title,omitempty"`
-}
+export const BoardPosition = z.required(z.object({
+  column: z.int().check(z.positive()),
+  index: z.int().check(z.positive()),
+}))
 
-type SeasonIndex map[SeasonSlug]*SeasonMetadata
+export const Board = z.extend(RoundID, {
+  columns: z.array(CategoryMetadata),
+  missing: z.set(BoardPosition),
+})
 
-type SeasonDirectory struct {
-	Version []int       `json:"version"`
-	Seasons SeasonIndex `json:"seasons"`
-}
+export const BoardSelection = z.extend(ContestantID,
+  z.extend(ChallengeMetadata, BoardPosition))
 
-type SeasonMetadata struct {
-	SeasonID `json:",inline"`
-	Aired    ShowDateRange `json:"aired,omitempty"`
+export const SelectionOutcome = z.extend(BoardSelection, {
+  correct: z.boolean(),
+  delta: Value,
+})
 
-	EpisodeCount   int `json:"episode_count,omitempty"`
-	CategoryCount  int `json:"category_count,omitempty"`
-	ChallengeCount int `json:"challenge_count,omitempty"`
-	TripStumpCount int `json:"tripstump_count,omitempty"`
-}
-
-type Season struct {
-	SeasonMetadata `json:",inline"`
-	Episodes       MatchIndex    `json:"episodes,inline"`
-	Categories     CategoryIndex `json:"categories,inline"`
-}
+export const BoardState = z.extend(Board, {
+  history: z.array(SelectionOutcome),
+})

@@ -50,8 +50,11 @@ _round_names: [...string] & [
   ...
 }
 
-// Board state includes the player selection
+// Board state includes the player selection and a minified representation of
+// which positions are still available, organized by category as a bitmap of
+// those (0) missing and (1) present, with least significant bit at the top.
 #BoardState: #Board & {
+  cat_bitmap: [...uint]
   history: [...#SelectionOutcome]
 }
 

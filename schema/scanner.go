@@ -36,8 +36,8 @@ func LoadSeason(reader io.Reader) (*Season, error) {
 	return season, nil
 }
 
-func LoadEpisode(reader io.Reader) (*EpisodeMetadata, error) {
-	episode := new(EpisodeMetadata)
+func LoadMatch(reader io.Reader) (*MatchMetadata, error) {
+	episode := new(MatchMetadata)
 
 	return episode, nil
 }

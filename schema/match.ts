@@ -18,41 +18,39 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-// github:kevindamm/q-party/schema/seasons.go
+// github:kevindamm/q-party/schema/match.ts
 
-package schema
+import * as z from "@zod/mini"
+import { SeasonSlug } from "./season"
+import { ShowDate } from "./show_date"
+import { ContestantID } from "./contestant"
+import { MediaRef } from "./challenge"
+import { BoardPosition } from "./round"
 
-import _ "embed"
+export const MatchNumber = z.int64()
+    .check(z.positive())
+    .brand("MatchNumber")
 
-// go:embed season.cue
-var schemaSeasons string
+export const MatchID = z.object({
+  match: MatchNumber,
+  show_title: z.string().check(z.minLength(3)),
+  season: SeasonSlug,
+})
 
-type SeasonSlug string
+export const MatchMetadata = z.extend(MatchID, {
+  aired: z.optional(ShowDate),
+  taped: z.optional(ShowDate),
 
-type SeasonID struct {
-	Slug  SeasonSlug `json:"slug"`
-	Title string     `json:"title,omitempty"`
-}
+  contestants: z.optional(z.array(ContestantID)),
+  media: z.optional(z.set(MediaRef)),
+  comments: z.optional(z.string()),
+})
 
-type SeasonIndex map[SeasonSlug]*SeasonMetadata
+export const MatchIndex = z.map(MatchNumber, MatchMetadata)
 
-type SeasonDirectory struct {
-	Version []int       `json:"version"`
-	Seasons SeasonIndex `json:"seasons"`
-}
+export const MatchStats = z.extend(MatchMetadata, {
+  single_count: z.optional(z.int()),
+  double_count: z.optional(z.int()),
 
-type SeasonMetadata struct {
-	SeasonID `json:",inline"`
-	Aired    ShowDateRange `json:"aired,omitempty"`
-
-	EpisodeCount   int `json:"episode_count,omitempty"`
-	CategoryCount  int `json:"category_count,omitempty"`
-	ChallengeCount int `json:"challenge_count,omitempty"`
-	TripStumpCount int `json:"tripstump_count,omitempty"`
-}
-
-type Season struct {
-	SeasonMetadata `json:",inline"`
-	Episodes       MatchIndex    `json:"episodes,inline"`
-	Categories     CategoryIndex `json:"categories,inline"`
-}
+  triple_stumpers: z.optional(z.set(BoardPosition)),
+})

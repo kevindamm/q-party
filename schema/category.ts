@@ -18,41 +18,27 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-// github:kevindamm/q-party/schema/seasons.go
+// github:kevindamm/q-party/schema/category.ts
 
-package schema
+import * as z from "@zod/mini"
+import { ChallengeMetadata, MediaRef } from "./challenge"
+import { ShowDate } from "./show_date"
 
-import _ "embed"
+export const CategoryID = z.string().brand("CategoryID")
 
-// go:embed season.cue
-var schemaSeasons string
+export const CategoryMetadata = z.required(z.object({
+  catID: CategoryID,
+  title: z.string(),
+}))
 
-type SeasonSlug string
+export const CategoryIndex = z.map(CategoryID, CategoryMetadata)
 
-type SeasonID struct {
-	Slug  SeasonSlug `json:"slug"`
-	Title string     `json:"title,omitempty"`
-}
+export const Category = z.extend(CategoryMetadata, {
+  challenges: z.array(ChallengeMetadata),
+  media: z.optional(z.set(MediaRef)),
+  comments: z.optional(z.string()),
+})
 
-type SeasonIndex map[SeasonSlug]*SeasonMetadata
-
-type SeasonDirectory struct {
-	Version []int       `json:"version"`
-	Seasons SeasonIndex `json:"seasons"`
-}
-
-type SeasonMetadata struct {
-	SeasonID `json:",inline"`
-	Aired    ShowDateRange `json:"aired,omitempty"`
-
-	EpisodeCount   int `json:"episode_count,omitempty"`
-	CategoryCount  int `json:"category_count,omitempty"`
-	ChallengeCount int `json:"challenge_count,omitempty"`
-	TripStumpCount int `json:"tripstump_count,omitempty"`
-}
-
-type Season struct {
-	SeasonMetadata `json:",inline"`
-	Episodes       MatchIndex    `json:"episodes,inline"`
-	Categories     CategoryIndex `json:"categories,inline"`
-}
+export const CategoryAired = z.extend(CategoryMetadata, {
+  aired: ShowDate,
+})

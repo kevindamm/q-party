@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Kevin Damm
+// Copyright (c) 2024 Kevin Damm
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -18,41 +18,18 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-// github:kevindamm/q-party/schema/seasons.go
+// github:kevindamm/q-party/schema/show_date.cue
 
 package schema
 
-import _ "embed"
-
-// go:embed season.cue
-var schemaSeasons string
-
-type SeasonSlug string
-
-type SeasonID struct {
-	Slug  SeasonSlug `json:"slug"`
-	Title string     `json:"title,omitempty"`
+// Represents a (year, month, day) when a show was aired or taped.
+#ShowDate: {
+  year: int & >1980
+  month: int & >=1 & <=12
+  day: int & >=1 & <=31
 }
 
-type SeasonIndex map[SeasonSlug]*SeasonMetadata
-
-type SeasonDirectory struct {
-	Version []int       `json:"version"`
-	Seasons SeasonIndex `json:"seasons"`
-}
-
-type SeasonMetadata struct {
-	SeasonID `json:",inline"`
-	Aired    ShowDateRange `json:"aired,omitempty"`
-
-	EpisodeCount   int `json:"episode_count,omitempty"`
-	CategoryCount  int `json:"category_count,omitempty"`
-	ChallengeCount int `json:"challenge_count,omitempty"`
-	TripStumpCount int `json:"tripstump_count,omitempty"`
-}
-
-type Season struct {
-	SeasonMetadata `json:",inline"`
-	Episodes       MatchIndex    `json:"episodes,inline"`
-	Categories     CategoryIndex `json:"categories,inline"`
+#ShowDateRange: {
+  from?: #ShowDate
+  until?: #ShowDate
 }

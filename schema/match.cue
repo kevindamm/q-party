@@ -22,19 +22,21 @@
 
 package schema
 
+// Numeric index for the episode, equivalent to its database primary key.
+#MatchNumber: uint64 & >0
+
 // Unique identifier for an episode.
 #MatchID: {
-  season?: #SeasonName
+  season?: #SeasonSlug
   match: #MatchNumber
   show_title?: string
 }
 
-#MatchNumber: uint64 & >0
-
-#EpisodeIndex: [#MatchNumber]: #EpisodeMetadata
+// A lookup table of matches to the match metadata
+#MatchIndex: [#MatchNumber]: #MatchMetadata
 
 // Identifiers and statistics for each episode.
-#EpisodeMetadata: #MatchID & {
+#MatchMetadata: #MatchID & {
   aired?: #ShowDate
   taped?: #ShowDate
 
@@ -43,26 +45,9 @@ package schema
   comments?: string
   ...
 }
-
-// A minified 
-#BoardLayout: {
-  cat_bitmap: [...uint]
-}
-
-#EpisodeStats: #EpisodeMetadata & {
+// Additional statistics for the match, with match metadata included.
+#MatchStats: #MatchMetadata & {
   single_count?: int
   double_count?: int
   triple_stumpers?: [...#BoardPosition]
-}
-
-// Represents a (year, month, day) when a show was aired or taped.
-#ShowDate: {
-  year: int & >1980
-  month: int & >=1 & <=12
-  day: int & >=1 & <=31
-}
-
-#ShowDateRange: {
-  from?: #ShowDate
-  until?: #ShowDate
 }

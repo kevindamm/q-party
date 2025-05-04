@@ -18,41 +18,28 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-// github:kevindamm/q-party/schema/seasons.go
+// github:kevindamm/q-party/schema/data_quality.ts
 
-package schema
+import * as z from "@zod/mini"
+import { ChallengeMetadata } from "./challenge"
 
-import _ "embed"
+export const DataQualityEnum = z.enum([
+    "Needs Review",
+    "Entirely Incorrect",
+    "Recently Incorrect",
+    "Suspected Outdated",
+    "Needs Minor Change",
+    "Disagreement",
+    "Correct",
+    "Confirmed Correct",
+])
 
-// go:embed season.cue
-var schemaSeasons string
+export const DataQuality = z.object({
+  dqID: z.int().check(z.gte(0), z.lt(8)),
+  quality: DataQualityEnum,
+})
 
-type SeasonSlug string
-
-type SeasonID struct {
-	Slug  SeasonSlug `json:"slug"`
-	Title string     `json:"title,omitempty"`
-}
-
-type SeasonIndex map[SeasonSlug]*SeasonMetadata
-
-type SeasonDirectory struct {
-	Version []int       `json:"version"`
-	Seasons SeasonIndex `json:"seasons"`
-}
-
-type SeasonMetadata struct {
-	SeasonID `json:",inline"`
-	Aired    ShowDateRange `json:"aired,omitempty"`
-
-	EpisodeCount   int `json:"episode_count,omitempty"`
-	CategoryCount  int `json:"category_count,omitempty"`
-	ChallengeCount int `json:"challenge_count,omitempty"`
-	TripStumpCount int `json:"tripstump_count,omitempty"`
-}
-
-type Season struct {
-	SeasonMetadata `json:",inline"`
-	Episodes       MatchIndex    `json:"episodes,inline"`
-	Categories     CategoryIndex `json:"categories,inline"`
-}
+export const DataQualityJudgement = z.extend(ChallengeMetadata,
+  z.extend(DataQuality, {
+    comments: z.optional(z.string()),
+  }))
