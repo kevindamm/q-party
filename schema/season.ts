@@ -18,41 +18,41 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-// github:kevindamm/q-party/schema/seasons.go
+// github:kevindamm/q-party/schema/season.ts
 
-package schema
+import * as z from "@zod/mini"
 
-import _ "embed"
+import { CategoryIndex } from "./category"
+import { MatchIndex } from "./match"
+import { ShowDateRange } from "./show_date"
+import { MaybePositiveInt } from "./util"
 
-// go:embed season.cue
-var schemaSeasons string
+export const SeasonSlug = z.string()
+  .check(z.regex(/^[a-zA-Z][0-9a-zA-Z_-]*$/))
+  .brand("SeasonSlug")
 
-type SeasonSlug string
+export const SeasonID = z.object({
+  slug: SeasonSlug,
+  title: z.optional(z.string().check(z.trim(), z.minLength(1))),
+})
 
-type SeasonID struct {
-	Slug  SeasonSlug `json:"slug"`
-	Title string     `json:"title,omitempty"`
-}
+export const SeasonMetadata = z.extend(SeasonID, {
+  aired: ShowDateRange,
 
-type SeasonIndex map[SeasonSlug]*SeasonMetadata
+  episode_count: MaybePositiveInt,
+  category_count: MaybePositiveInt,
+  challenge_count: MaybePositiveInt,
+  tripstump_count: MaybePositiveInt,
+})
 
-type SeasonDirectory struct {
-	Version []int       `json:"version"`
-	Seasons SeasonIndex `json:"seasons"`
-}
+export const SeasonIndex = z.map(SeasonSlug, SeasonMetadata)
 
-type SeasonMetadata struct {
-	SeasonID `json:",inline"`
-	Aired    ShowDateRange `json:"aired,omitempty"`
+export const SeasonDirectory = z.object({
+  version: z.array(z.number()),
+  seasons: SeasonIndex,
+})
 
-	EpisodeCount   int `json:"episode_count,omitempty"`
-	CategoryCount  int `json:"category_count,omitempty"`
-	ChallengeCount int `json:"challenge_count,omitempty"`
-	TripStumpCount int `json:"tripstump_count,omitempty"`
-}
-
-type Season struct {
-	SeasonMetadata `json:",inline"`
-	Episodes       MatchIndex    `json:"episodes,inline"`
-	Categories     CategoryIndex `json:"categories,inline"`
-}
+export const Season = z.extend(SeasonMetadata, {
+  episodes: MatchIndex,
+  categories: CategoryIndex,
+})

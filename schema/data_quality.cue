@@ -42,5 +42,5 @@ _dq_names: [...string] & [
 }
 
 #DataQualityJudgement: #ChallengeMetadata & #DataQuality & {
-  comments: string
+  comments?: string
 }

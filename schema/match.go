@@ -24,9 +24,6 @@ package schema
 
 import (
 	_ "embed"
-	"fmt"
-	"regexp"
-	"strconv"
 )
 
 // go:embed match.cue
@@ -51,7 +48,7 @@ func NewMatchID(match_number int) MatchID {
 }
 
 // Data about the episode that is unrelated to the match, rounds or challenges.
-type EpisodeMetadata struct {
+type MatchMetadata struct {
 	MatchID `json:",inline"`
 
 	AiredDate *ShowDate `json:"aired,omitempty"`
@@ -62,10 +59,10 @@ type EpisodeMetadata struct {
 	Comments    string         `json:"comments,omitempty"`
 }
 
-type EpisodeIndex map[MatchNumber]*EpisodeMetadata
+type MatchIndex map[MatchNumber]*MatchMetadata
 
 // Will add (and possibly overwrite) the values from metadata into the mapping.
-func (episodes EpisodeIndex) Update(metadata EpisodeMetadata) {
+func (episodes MatchIndex) Update(metadata MatchMetadata) {
 	match := metadata.MatchNumber
 	episode, exists := episodes[match]
 	if !exists {
@@ -108,76 +105,10 @@ type BoardLayout struct {
 	CategoryBitmaps []uint `json:"cat_bitmap"`
 }
 
-type EpisodeStats struct {
-	SingleCount int `json:"single_count,omitempty"`
-	DoubleCount int `json:"double_count,omitempty"`
+type MatchStats struct {
+	MatchMetadata `json:",inline"`
+	SingleCount   int `json:"single_count,omitempty"`
+	DoubleCount   int `json:"double_count,omitempty"`
 
 	TripleStumpers []BoardPosition `json:"triple_stumpers,omitempty"`
-}
-
-type ShowDate struct {
-	Year  int `json:"year"`
-	Month int `json:"month"`
-	Day   int `json:"day"`
-}
-
-// formatted as YYYY-MM-DD
-func ParseShowDate(image string) *ShowDate {
-	reShowDate := regexp.MustCompile(`(\d{4})-(\d{2})-(\d{2})`)
-	matches := reShowDate.FindStringSubmatch(image)
-	// We can ignore the error here because we know these are all digit patterns.
-	year, _ := strconv.Atoi(matches[1])
-	month, _ := strconv.Atoi(matches[2])
-	day, _ := strconv.Atoi(matches[3])
-
-	return &ShowDate{
-		Year:  year,
-		Month: month,
-		Day:   day,
-	}
-}
-
-func (sd ShowDate) String() string {
-	if sd.Year+sd.Month+sd.Day == 0 {
-		return ""
-	}
-	return fmt.Sprintf("%04d/%02d/%02d", sd.Year, sd.Month, sd.Day)
-}
-
-// Returns 0 if `this` and `other` are equal;
-// +1 if this is later than other, and -1 if before.
-func (this ShowDate) Compare(other *ShowDate) int {
-	if this.Year < other.Year {
-		return -1
-	}
-	if this.Year > other.Year {
-		return +1
-	}
-	// (this.Year == other.Year)
-	if this.Month < other.Month {
-		return -1
-	}
-	if this.Month > other.Month {
-		return +1
-	}
-	// (this.Month == other.Month)
-	if this.Day < other.Day {
-		return -1
-	}
-	if this.Day > other.Day {
-		return +1
-	}
-	// The dates are equal.
-	return 0
-}
-
-type ShowDateRange struct {
-	From  *ShowDate `json:"from,omitempty"`
-	Until *ShowDate `json:"until,omitempty"`
-}
-
-func (scope ShowDateRange) Contains(date ShowDate) bool {
-	return (                         // including endpoints,
-	date.Compare(scope.From) >= 0 && // after beginning and
-		date.Compare(scope.Until) <= 0) // before ending
 }

@@ -37,7 +37,7 @@ package schema
 UnknownChallenge: #ChallengeMetadata & { qid: 0 }
 
 // The challenge details, except the correct answer(s).
-#ChallengeData: {
+#ChallengeData: #ChallengeMetadata & {
   clue!: string // markdown format, including media references
 
   media?: [...#MediaRef]
@@ -46,11 +46,11 @@ UnknownChallenge: #ChallengeMetadata & { qid: 0 }
   ...
 }
 
-#Challenge: #ChallengeMetadata & #ChallengeData & {
+#Challenge: #ChallengeData & {
   value: #Value
 }
 
-#BiddingChallenge: #ChallengeMetadata & #ChallengeData & {
+#BiddingChallenge: #ChallengeData & {
   wager: #Wager
 }
 
