@@ -43,9 +43,9 @@ type ChallengeMetadata struct {
 type ChallengeData struct {
 	Clue string `json:"clue"`
 
-	Media    []MediaRef `json:"media,omitempty"`
-	Category string     `json:"category,omitempty"`
-	Comments string     `json:"comments,omitempty"`
+	Media    []MediaRef   `json:"media,omitempty"`
+	Category CategoryName `json:"category,omitempty"`
+	Comments string       `json:"comments,omitempty"`
 }
 
 type Challenge struct {

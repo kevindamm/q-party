@@ -78,9 +78,13 @@ type Board struct {
 }
 
 type BoardState struct {
-	Board   `json:",inline"`
+	Board `json:",inline"`
+
+	Layout  BoardLayout        `json:"cat_bitmap"`
 	History []SelectionOutcome `json:"history"`
 }
+
+type BoardLayout []byte
 
 type BoardPosition struct {
 	Column uint `json:"column"`

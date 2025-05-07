@@ -18,47 +18,41 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-// github:kevindamm/q-party/schema/category.go
+// github:kevindamm/q-party/cmd/fetch/jarchive/challenges_test.go
 
-package schema
+package main_test
 
-import _ "embed"
+import (
+	"strings"
+	"testing"
 
-// go:embed category.cue
-var schemaCategories string
-
-type CategoryName string
-
-type CategoryIndex map[CategoryName][]CategoryAired
-
-type CategoryMetadata struct {
-	Name       CategoryName `json:"title"`
-	CategoryID uint64       `json:"catID"`
-}
-
-type Category struct {
-	CategoryMetadata `json:",inline"`
-
-	Challenges []*Challenge `json:"challenges"`
-	Media      []MediaRef   `json:"media,omitempty"`
-	Comments   string       `json:"comments,omitempty"`
-}
-
-type CategoryAired struct {
-	CategoryMetadata `json:",inline"`
-
-	Aired ShowDate `json:"aired"`
-}
-
-type CategoryThemeEnum int
-type CategoryTheme string
-
-const (
-	UNKNOWN_CATEGORY CategoryThemeEnum = iota
-	CATEGORY_GEO_POLITICAL
-	CATEGORY_ENTERTAINMENT
-	CATEGORY_HISTORY_ROYALTY
-	CATEGORY_ART_LITERATURE
-	CATEGORY_SCIENCE_NATURE
-	CATEGORY_SPORTS_LEISURE
+	jarchive "github.com/kevindamm/q-party/selfhost/cmd/fetch/jarchive"
+	"golang.org/x/net/html"
 )
+
+func TestParseChallenge(t *testing.T) {
+	html_string := ` `
+	html_reader := strings.NewReader(html_string)
+	dom, err := html.Parse(html_reader)
+	if err != nil {
+		t.Fatalf("??? failed to parse test input\n%s\n\n%s\n",
+			err, html_string)
+	}
+
+	expected := jarchive.JarchiveChallenge{}
+
+	parsed, err := jarchive.ParseChallenge(dom, "CATEGORY")
+	if err != nil {
+		t.Error(err)
+	}
+
+	if !equalChallenge(parsed, &expected) {
+		t.Log("parsed challenges mismatch")
+		t.FailNow()
+	}
+}
+
+func equalChallenge(have, expect *jarchive.JarchiveChallenge) bool {
+	// TODO
+	return false
+}

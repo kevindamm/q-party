@@ -38,7 +38,7 @@ type JarchiveSeason interface {
 	fetch.Fetchable
 	SeasonSlug() schema.SeasonSlug
 	Metadata() *schema.SeasonMetadata
-	GetEpisodeMetadata(schema.MatchNumber) *schema.EpisodeMetadata
+	GetEpisodeMetadata(schema.MatchNumber) *schema.MatchMetadata
 	GetJarchiveEpisode(EpisodeID) JarchiveEpisode
 }
 
@@ -48,14 +48,14 @@ func NewJarchiveSeason(slug schema.SeasonSlug) JarchiveSeason {
 	season_index := new(season_index)
 	season_index.Slug = slug
 	season_index.Episodes = make(JarchiveEpisodeIndex)
-	season_index.Matches = make(schema.EpisodeIndex)
+	season_index.Matches = make(schema.MatchIndex)
 	return season_index
 }
 
 type season_index struct {
 	schema.SeasonMetadata `json:",inline"`
 	Episodes              map[EpisodeID]JarchiveEpisode
-	Matches               schema.EpisodeIndex `json:"episodes,omitempty"`
+	Matches               schema.MatchIndex `json:"episodes,omitempty"`
 }
 
 func (season *season_index) String() string {
@@ -107,7 +107,7 @@ func (season *season_index) ParseHTML(season_html []byte) error {
 			errs = append(errs, err)
 			continue
 		}
-		episode := schema.EpisodeMetadata{
+		episode := schema.MatchMetadata{
 			MatchID: schema.NewMatchID(game_id),
 		}
 
@@ -146,6 +146,6 @@ func (season *season_index) GetJarchiveEpisode(epid EpisodeID) JarchiveEpisode {
 	return season.Episodes[epid]
 }
 
-func (season *season_index) GetEpisodeMetadata(match schema.MatchNumber) *schema.EpisodeMetadata {
+func (season *season_index) GetEpisodeMetadata(match schema.MatchNumber) *schema.MatchMetadata {
 	return season.Matches[match]
 }

@@ -40,7 +40,7 @@ func TestParseSeasonPCJ(t *testing.T) {
 		t.Error(err)
 	}
 
-	expected_episodes := map[jarchive.EpisodeID]schema.EpisodeMetadata{
+	expected_episodes := map[jarchive.EpisodeID]schema.MatchMetadata{
 		9165: {
 			TapedDate: &schema.ShowDate{Year: 2024, Month: 10, Day: 21},
 			AiredDate: &schema.ShowDate{Year: 2025, Month: 2, Day: 5},
