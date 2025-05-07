@@ -18,7 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-// github:kevindamm/q-party/cmd/jarchive/html/parsing.go
+// github:kevindamm/q-party/cmd/fetch/jarchive/parse_util.go
 
 package main
 
@@ -185,12 +185,12 @@ func innerText(node *html.Node) string {
 	return strings.Trim(flattened, " \t\r\n")
 }
 
-func parseIntoMarkdown(root *html.Node) (string, []schema.MediaRef) {
+func innerTextMarkdown(root *html.Node) (string, []schema.MediaRef) {
 	prompt := ""
 	media := make([]schema.MediaRef, 0)
-	var recursiveGather func(*html.Node)
+	var recursiveGather func(*html.Node, []string)
 
-	recursiveGather = func(root *html.Node) {
+	recursiveGather = func(root *html.Node, stack []string) {
 		child := root.FirstChild
 		for child != nil {
 			if child.Type == html.TextNode {
@@ -218,39 +218,39 @@ func parseIntoMarkdown(root *html.Node) (string, []schema.MediaRef) {
 				} else if child.Data == "u" {
 					// Recursively collect the text and media of the prompt.
 					prompt += " _"
-					recursiveGather(child)
+					recursiveGather(child, append(stack, child.Data))
 					prompt += "_ "
 				} else if child.Data == "i" {
 					// Recursively collect the text and media of the prompt.
 					prompt += " *"
-					recursiveGather(child)
+					recursiveGather(child, append(stack, child.Data))
 					prompt += "* "
 				} else if child.Data == "b" {
 					// Recursively collect the text and media of the prompt.
 					prompt += " **"
-					recursiveGather(child)
+					recursiveGather(child, append(stack, child.Data))
 					prompt += "** "
 				} else if child.Data == "del" {
 					prompt += " ~~"
-					recursiveGather(child)
+					recursiveGather(child, append(stack, child.Data))
 					prompt += "~~ "
 				} else if child.Data == "span" {
-					recursiveGather(child)
+					recursiveGather(child, append(stack, child.Data))
 				} else if child.Data == "big" {
 					prompt += "<big>"
-					recursiveGather(child)
+					recursiveGather(child, append(stack, child.Data))
 					prompt += "</big>"
 				} else if child.Data == "small" {
 					prompt += "<small>"
-					recursiveGather(child)
+					recursiveGather(child, append(stack, child.Data))
 					prompt += "</small>"
 				} else if child.Data == "sub" {
 					prompt += "<sub>"
-					recursiveGather(child)
+					recursiveGather(child, append(stack, child.Data))
 					prompt += "</sub>"
 				} else if child.Data == "sup" {
 					prompt += "<sup>"
-					recursiveGather(child)
+					recursiveGather(child, append(stack, child.Data))
 					prompt += "</sup>"
 				} else if child.Data == "br" {
 					// pass, safe to ignore; insert a newline if it's a double-<br/>.
@@ -274,7 +274,7 @@ func parseIntoMarkdown(root *html.Node) (string, []schema.MediaRef) {
 			child = child.NextSibling
 		}
 	}
-	recursiveGather(root)
+	recursiveGather(root, make([]string, 0))
 
 	prompt = strings.Trim(strings.ReplaceAll(prompt, "  ", " "), "\t \r\n")
 	return prompt, media

@@ -101,10 +101,6 @@ func (episodes MatchIndex) Update(metadata MatchMetadata) {
 	}
 }
 
-type BoardLayout struct {
-	CategoryBitmaps []uint `json:"cat_bitmap"`
-}
-
 type MatchStats struct {
 	MatchMetadata `json:",inline"`
 	SingleCount   int `json:"single_count,omitempty"`

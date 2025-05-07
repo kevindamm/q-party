@@ -41,29 +41,17 @@ type JarchiveChallenge struct {
 	Stumped   int // 0..3 how many incorrect responses were given (not counting silence)
 }
 
-// Full representation, as with the above, as well as each player's wager.
-type JarchiveFinal struct {
-	schema.Challenge
-	Wagers    []schema.PlayerWager
-	Responses []string
-	Correct   []string
-	Stumped   int // 0..|players|
+func NewChallenge(category schema.CategoryName) *JarchiveChallenge {
+	challenge := new(JarchiveChallenge)
+	challenge.Category = category
+	challenge.Media = make([]schema.MediaRef, 0)
+	return challenge
 }
 
 // Sentinel value for board entries that are missing/blank.
-func UnknownChallenge() JarchiveChallenge {
-	return JarchiveChallenge{
+func UnknownChallenge() *JarchiveChallenge {
+	return &JarchiveChallenge{
 		schema.UnknownChallenge(),
-		[]string{},
-		[]string{},
-		0}
-}
-
-// There may not be a final jeopardy (or it may not have been entered yet).
-func UnknownFinal() JarchiveFinal {
-	return JarchiveFinal{
-		schema.UnknownChallenge(),
-		[]schema.PlayerWager{},
 		[]string{},
 		[]string{},
 		0}
@@ -102,17 +90,11 @@ func MakeMediaClue(href string) schema.MediaRef {
 		MediaURL: filename}
 }
 
-func NewChallenge(category string) *JarchiveChallenge {
-	challenge := new(JarchiveChallenge)
-	challenge.Category = category
-	challenge.Media = make([]schema.MediaRef, 0)
-	return challenge
-}
-
-func parseChallenge(div *html.Node, challenge *JarchiveChallenge) error {
+func ParseChallenge(div *html.Node, category schema.CategoryName) (*JarchiveChallenge, error) {
 	if strings.Trim(innerText(div), " ") == "" {
-		return nil
+		return UnknownChallenge(), nil
 	}
+	challenge := NewChallenge(category)
 	table := nextDescendantWithClass(div, "table", "")
 
 	var err error
@@ -120,7 +102,7 @@ func parseChallenge(div *html.Node, challenge *JarchiveChallenge) error {
 	if value_td != nil {
 		challenge.Value, err = ParseDollarValue(innerText(value_td))
 		if err != nil {
-			return errors.New("failed to parse challenge value " + err.Error())
+			return nil, errors.New("failed to parse challenge value " + err.Error())
 		}
 	} else {
 		dd_value_td := nextDescendantWithClass(table, "td", "clue_value_daily_double")
@@ -128,7 +110,7 @@ func parseChallenge(div *html.Node, challenge *JarchiveChallenge) error {
 			text := strings.ReplaceAll(innerText(dd_value_td), ",", "")
 			challenge.Value, err = ParseDollarValue(text[4:])
 			if err != nil {
-				return fmt.Errorf("failed to parse daily double value %s\n%s", text, err.Error())
+				return nil, fmt.Errorf("failed to parse daily double value %s\n%s", text, err.Error())
 			}
 			challenge.Value = -challenge.Value
 		}
@@ -150,23 +132,23 @@ func parseChallenge(div *html.Node, challenge *JarchiveChallenge) error {
 	}
 
 	clue_td := nextDescendantWithClass(table, "td", "clue_text")
-	text, media := parseIntoMarkdown(clue_td)
+	text, media := innerTextMarkdown(clue_td)
 	challenge.Clue = text
 	if len(media) > 0 {
 		challenge.Media = media
 	}
 
 	if err != nil {
-		return fmt.Errorf("failed to parse challenge prompt %s...\n%s",
+		return nil, fmt.Errorf("failed to parse challenge prompt %s...\n%s",
 			text[:18], err.Error())
 	}
 	clue_td = nextSiblingWithClass(clue_td, "td", "clue_text")
 	if clue_td == nil {
-		return errors.New("could not find challenge response")
+		return nil, errors.New("could not find challenge response")
 	}
 	correct := nextDescendantWithClass(clue_td, "em", "correct_response")
 	if correct == nil {
-		return errors.New("could not find correct response")
+		return nil, errors.New("could not find correct response")
 	}
 	challenge.Correct = []string{innerText(correct)}
 
@@ -175,46 +157,5 @@ func parseChallenge(div *html.Node, challenge *JarchiveChallenge) error {
 		challenge.Stumped = 3
 	}
 
-	return nil
-}
-
-func parseTiebreakerChallenge(div *html.Node) (*JarchiveChallenge, error) {
-	table := nextDescendantWithClass(div, "table", "")
-	tiebreaker := new(JarchiveChallenge)
-	tiebreaker.Category = innerText(
-		nextDescendantWithClass(table, "td", "category_name"))
-	tiebreaker.Comments = innerText(
-		nextDescendantWithClass(table, "td", "category_comments"))
-
-	clue := nextDescendantWithClass(div, "td", "clue")
-	clue_td := nextDescendantWithClass(clue, "td", "clue_text")
-	tiebreaker.Clue = innerText(clue_td)
-	clue_td = nextSiblingWithClass(clue_td, "td", "clue_text")
-	if clue_td == nil {
-		return nil, errors.New("could not find tiebreaker challenge response")
-	}
-	tiebreaker.Correct = []string{innerText(
-		nextDescendantWithClass(clue_td, "em", "correct_response"))}
-	return tiebreaker, nil
-}
-
-func parseFinalChallenge(div *html.Node) (*JarchiveChallenge, error) {
-	table := nextDescendantWithClass(div, "table", "")
-
-	final := new(JarchiveChallenge)
-	final.Category = innerText(
-		nextDescendantWithClass(table, "td", "category_name"))
-	final.Comments = innerText(
-		nextDescendantWithClass(table, "td", "category_comments"))
-
-	clue := nextDescendantWithClass(div, "td", "clue")
-	clue_td := nextDescendantWithClass(clue, "td", "clue_text")
-	final.Clue = innerText(clue_td)
-	clue_td = nextSiblingWithClass(clue_td, "td", "clue_text")
-	if clue_td == nil {
-		return nil, errors.New("could not find final challenge response")
-	}
-	final.Correct = []string{
-		innerText(nextDescendantWithClass(clue_td, "em", "correct_response"))}
-	return final, nil
+	return challenge, nil
 }

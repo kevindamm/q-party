@@ -52,7 +52,7 @@ type JarchiveIndex interface {
 	GetSeasonList() []schema.SeasonSlug
 	GetSeasonMetadata(schema.SeasonSlug) schema.SeasonMetadata
 	GetEpisodeList(schema.SeasonSlug) []schema.MatchNumber
-	GetEpisodeInfo(schema.MatchNumber) schema.EpisodeMetadata
+	GetEpisodeInfo(schema.MatchNumber) schema.MatchMetadata
 
 	// Returns the category and its air dates for any episodes currently indexed.
 	// Does not fetch or load any files, it only searches the in-memory index.
@@ -65,7 +65,7 @@ type JarchiveIndex interface {
 func NewJarchiveIndex() JarchiveIndex {
 	jarchive_index := new(jarchive_index)
 	jarchive_index.Seasons = make(schema.SeasonIndex)
-	jarchive_index.Episodes = make(schema.EpisodeIndex)
+	jarchive_index.Episodes = make(schema.MatchIndex)
 	jarchive_index.Categories = make(schema.CategoryIndex)
 	jarchive_index.EpisodeMatch = make(EpisodeMatchNumber)
 	jarchive_index.MatchEpisode = make(MatchNumberEpisode)
@@ -103,7 +103,7 @@ type jarchive_index struct {
 	fetch.Fetchable
 
 	Seasons    schema.SeasonIndex   `json:"seasons"`
-	Episodes   schema.EpisodeIndex  `json:"episodes"`
+	Episodes   schema.MatchIndex    `json:"episodes"`
 	Categories schema.CategoryIndex `json:"categories"`
 
 	EpisodeMatch EpisodeMatchNumber `json:"-"`
@@ -339,7 +339,7 @@ func (jarchive *jarchive_index) GetEpisodeList(season_slug schema.SeasonSlug) []
 	return matches
 }
 
-func (jarchive *jarchive_index) GetEpisodeInfo(key schema.MatchNumber) schema.EpisodeMetadata {
+func (jarchive *jarchive_index) GetEpisodeInfo(key schema.MatchNumber) schema.MatchMetadata {
 	jarchive.lock.RLock()
 	defer jarchive.lock.RUnlock()
 	return *jarchive.Episodes[key]

@@ -54,9 +54,12 @@ _round_names: [...string] & [
 // which positions are still available, organized by category as a bitmap of
 // those (0) missing and (1) present, with least significant bit at the top.
 #BoardState: #Board & {
-  cat_bitmap: [...uint]
+  cat_bitmap: #BoardLayout
   history: [...#SelectionOutcome]
 }
+
+// Shorthand representation (bitmap) for board-cell availability.
+#BoardLayout: bytes
 
 // A board position is identified by its column and (row) index.  These value
 // ranges may not need to be hard-coded, though the non-zero positive part will.
