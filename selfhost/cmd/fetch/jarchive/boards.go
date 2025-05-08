@@ -38,35 +38,35 @@ type JarchiveBoard struct {
 func ParseBoard(root *html.Node) *JarchiveBoard {
 	board := new(JarchiveBoard)
 	board.Columns = make([]JarchiveCategory, 6)
-	round_table := nextDescendantWithClass(root, "table", "round")
-	category_tr := nextDescendantWithClass(round_table, "tr", "")
+	round_table := NextDescendantWithClass(root, "table", "round")
+	category_tr := NextDescendantWithClass(round_table, "tr", "")
 	category_tds := childrenWithClass(category_tr, "td", "category")
 	if len(category_tds) != 6 {
 		log.Fatal("expected 6 category entries, found", len(category_tds))
 	}
 	for i, td := range category_tds {
-		table := nextDescendantWithClass(td, "table", "")
-		tbody := nextDescendantWithClass(table, "tbody", "")
+		table := NextDescendantWithClass(td, "table", "")
+		tbody := NextDescendantWithClass(table, "tbody", "")
 		trs := childrenWithClass(tbody, "tr", "")
 		if len(trs) != 2 {
 			log.Fatal("length of trs expected 2 but have ", len(trs))
 		}
 		title, err := innerTextMarkdown(
-			nextDescendantWithClass(trs[0], "td", "category_name"))
+			NextDescendantWithClass(trs[0], "td", "category_name"))
 		if err != nil {
 			log.Fatal("failed to parse category name", err)
 		}
 		comments := innerText(
-			nextDescendantWithClass(trs[1], "td", "category_comments"))
+			NextDescendantWithClass(trs[1], "td", "category_comments"))
 		if title == "" {
 			// Sometimes the category comment appears before the category name.
 			title, err = innerTextMarkdown(
-				nextDescendantWithClass(trs[1], "td", "category_name"))
+				NextDescendantWithClass(trs[1], "td", "category_name"))
 			if err != nil {
 				log.Fatal("failed to parse category name (2x)", err)
 			}
 			comments = innerText(
-				nextDescendantWithClass(trs[0], "td", "category_comments"))
+				NextDescendantWithClass(trs[0], "td", "category_comments"))
 		}
 
 		if title == "" {
@@ -79,7 +79,7 @@ func ParseBoard(root *html.Node) *JarchiveBoard {
 
 	row_count := 5
 	for range row_count { // for each row of the board.
-		category_tr = nextSiblingWithClass(category_tr, "tr", "")
+		category_tr = NextSiblingWithClass(category_tr, "tr", "")
 		clue_tds := childrenWithClass(category_tr, "td", "clue")
 		if len(clue_tds) != 6 {
 			log.Fatal("expected 6 clue entries, found", len(clue_tds))
@@ -87,7 +87,7 @@ func ParseBoard(root *html.Node) *JarchiveBoard {
 
 		for i, clue_td := range clue_tds { // for each category column.
 			column := board.Columns[i]
-			nextChallenge, err := ParseChallenge(clue_td, column.Title)
+			nextChallenge, err := ParseChallenge(clue_td, string(column.Title))
 			if err != nil {
 				log.Fatal("failed to parse clue entry\n", err)
 			}
