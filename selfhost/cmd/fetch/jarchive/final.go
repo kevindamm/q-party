@@ -51,23 +51,23 @@ func UnknownFinal() JarchiveFinalChallenge {
 }
 
 func ParseFinalChallenge(div *html.Node) (*JarchiveFinalChallenge, error) {
-	table := nextDescendantWithClass(div, "table", "")
+	table := NextDescendantWithClass(div, "table", "")
 
 	final := new(JarchiveFinalChallenge)
 	final.Category = schema.CategoryName(innerText(
-		nextDescendantWithClass(table, "td", "category_name")))
+		NextDescendantWithClass(table, "td", "category_name")))
 	final.Comments = innerText(
-		nextDescendantWithClass(table, "td", "category_comments"))
+		NextDescendantWithClass(table, "td", "category_comments"))
 
-	clue := nextDescendantWithClass(div, "td", "clue")
-	clue_td := nextDescendantWithClass(clue, "td", "clue_text")
+	clue := NextDescendantWithClass(div, "td", "clue")
+	clue_td := NextDescendantWithClass(clue, "td", "clue_text")
 	final.Clue = innerText(clue_td)
-	clue_td = nextSiblingWithClass(clue_td, "td", "clue_text")
+	clue_td = NextSiblingWithClass(clue_td, "td", "clue_text")
 	if clue_td == nil {
 		return nil, errors.New("could not find final challenge response")
 	}
 	final.Correct = []string{
-		innerText(nextDescendantWithClass(clue_td, "em", "correct_response"))}
+		innerText(NextDescendantWithClass(clue_td, "em", "correct_response"))}
 	return final, nil
 }
 
@@ -93,21 +93,21 @@ func UnknownTiebreaker() JarchiveTiebreaker {
 
 // A tiebreaker is formatted similarly to the final, but without additional wagers.
 func ParseTiebreakerChallenge(div *html.Node) (*JarchiveTiebreaker, error) {
-	table := nextDescendantWithClass(div, "table", "")
+	table := NextDescendantWithClass(div, "table", "")
 	tiebreaker := new(JarchiveTiebreaker)
 	tiebreaker.Category = schema.CategoryName(innerText(
-		nextDescendantWithClass(table, "td", "category_name")))
+		NextDescendantWithClass(table, "td", "category_name")))
 	tiebreaker.Comments = innerText(
-		nextDescendantWithClass(table, "td", "category_comments"))
+		NextDescendantWithClass(table, "td", "category_comments"))
 
-	clue := nextDescendantWithClass(div, "td", "clue")
-	clue_td := nextDescendantWithClass(clue, "td", "clue_text")
+	clue := NextDescendantWithClass(div, "td", "clue")
+	clue_td := NextDescendantWithClass(clue, "td", "clue_text")
 	tiebreaker.Clue = innerText(clue_td)
-	clue_td = nextSiblingWithClass(clue_td, "td", "clue_text")
+	clue_td = NextSiblingWithClass(clue_td, "td", "clue_text")
 	if clue_td == nil {
 		return nil, errors.New("could not find tiebreaker challenge response")
 	}
 	tiebreaker.Correct = []string{innerText(
-		nextDescendantWithClass(clue_td, "em", "correct_response"))}
+		NextDescendantWithClass(clue_td, "em", "correct_response"))}
 	return tiebreaker, nil
 }

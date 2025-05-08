@@ -72,7 +72,7 @@ func childrenWithClass(node *html.Node, elType string, elClass string) []*html.N
 // with the indicated type and class.  If class=="" then any (or no) class will
 // satisfy the search.  It returns the first matching subelement, depth first.
 // If there is no matching element (and class) then nil is returned instead.
-func nextDescendantWithClass(node *html.Node, elType string, elClass string) *html.Node {
+func NextDescendantWithClass(node *html.Node, elType string, elClass string) *html.Node {
 	var found *html.Node = nil
 	var recursiveFind func(*html.Node, string, string)
 	recursiveFind = func(next *html.Node, elType string, elClass string) {
@@ -111,7 +111,7 @@ func nextDescendantWithClass(node *html.Node, elType string, elClass string) *ht
 // the element being passed as the first argument.  Similarly, elClass can be
 // an empty string, matching against any element of the indicated type, without
 // a class defined on it, or with any arbitrary class or classes.
-func nextSiblingWithClass(el *html.Node, elType string, elClass string) *html.Node {
+func NextSiblingWithClass(el *html.Node, elType string, elClass string) *html.Node {
 	nextEl := el.NextSibling
 	for nextEl != nil {
 		if nextEl.Type != html.ElementNode || nextEl.Data != elType {

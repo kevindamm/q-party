@@ -41,9 +41,12 @@ type JarchiveChallenge struct {
 	Stumped   int // 0..3 how many incorrect responses were given (not counting silence)
 }
 
-func NewChallenge(category schema.CategoryName) *JarchiveChallenge {
+func NewChallenge(category string, id uint64) *JarchiveChallenge {
 	challenge := new(JarchiveChallenge)
-	challenge.Category = category
+	if id != 0 {
+		challenge.ChallengeID = schema.ChallengeID(id)
+	}
+	challenge.Category = schema.CategoryName(category)
 	challenge.Media = make([]schema.MediaRef, 0)
 	return challenge
 }
@@ -90,22 +93,22 @@ func MakeMediaClue(href string) schema.MediaRef {
 		MediaURL: filename}
 }
 
-func ParseChallenge(div *html.Node, category schema.CategoryName) (*JarchiveChallenge, error) {
+func ParseChallenge(div *html.Node, category string) (*JarchiveChallenge, error) {
 	if strings.Trim(innerText(div), " ") == "" {
 		return UnknownChallenge(), nil
 	}
-	challenge := NewChallenge(category)
-	table := nextDescendantWithClass(div, "table", "")
+	challenge := NewChallenge(category, 0)
+	table := NextDescendantWithClass(div, "table", "")
 
 	var err error
-	value_td := nextDescendantWithClass(table, "td", "clue_value")
+	value_td := NextDescendantWithClass(table, "td", "clue_value")
 	if value_td != nil {
 		challenge.Value, err = ParseDollarValue(innerText(value_td))
 		if err != nil {
 			return nil, errors.New("failed to parse challenge value " + err.Error())
 		}
 	} else {
-		dd_value_td := nextDescendantWithClass(table, "td", "clue_value_daily_double")
+		dd_value_td := NextDescendantWithClass(table, "td", "clue_value_daily_double")
 		if dd_value_td != nil {
 			text := strings.ReplaceAll(innerText(dd_value_td), ",", "")
 			challenge.Value, err = ParseDollarValue(text[4:])
@@ -116,8 +119,8 @@ func ParseChallenge(div *html.Node, category schema.CategoryName) (*JarchiveChal
 		}
 	}
 
-	td_order_number := nextDescendantWithClass(table, "td", "clue_order_number")
-	edit_link := nextDescendantWithClass(td_order_number, "a", "")
+	td_order_number := NextDescendantWithClass(table, "td", "clue_order_number")
+	edit_link := NextDescendantWithClass(td_order_number, "a", "")
 	if edit_link != nil {
 		for _, attr := range edit_link.Attr {
 			if attr.Key == "href" {
@@ -131,7 +134,7 @@ func ParseChallenge(div *html.Node, category schema.CategoryName) (*JarchiveChal
 		}
 	}
 
-	clue_td := nextDescendantWithClass(table, "td", "clue_text")
+	clue_td := NextDescendantWithClass(table, "td", "clue_text")
 	text, media := innerTextMarkdown(clue_td)
 	challenge.Clue = text
 	if len(media) > 0 {
@@ -142,17 +145,17 @@ func ParseChallenge(div *html.Node, category schema.CategoryName) (*JarchiveChal
 		return nil, fmt.Errorf("failed to parse challenge prompt %s...\n%s",
 			text[:18], err.Error())
 	}
-	clue_td = nextSiblingWithClass(clue_td, "td", "clue_text")
+	clue_td = NextSiblingWithClass(clue_td, "td", "clue_text")
 	if clue_td == nil {
 		return nil, errors.New("could not find challenge response")
 	}
-	correct := nextDescendantWithClass(clue_td, "em", "correct_response")
+	correct := NextDescendantWithClass(clue_td, "em", "correct_response")
 	if correct == nil {
 		return nil, errors.New("could not find correct response")
 	}
 	challenge.Correct = []string{innerText(correct)}
 
-	judgement := nextDescendantWithClass(clue_td, "table", "")
+	judgement := NextDescendantWithClass(clue_td, "table", "")
 	if innerText(judgement) == "Triple Stumper" {
 		challenge.Stumped = 3
 	}
