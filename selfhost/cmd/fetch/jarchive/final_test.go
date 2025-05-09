@@ -31,24 +31,26 @@ import (
 )
 
 func TestParseFinalChallenge(t *testing.T) {
-	html_string := ` `
+	html_string := `
+	`
 	html_reader := strings.NewReader(html_string)
 	dom, err := html.Parse(html_reader)
 	if err != nil {
-		t.Fatalf("??? failed to parse Final Challenge test input\n%s\n\n%s\n",
+		t.Fatalf("??? failed to parse test final challenge\n%s\n\n%s\n",
 			err, html_string)
 	}
-	expected := jarchive.JarchiveFinalChallenge{}
-	//TODO
+	clue_td := jarchive.NextDescendantWithClass(dom, "td", "clue")
 
-	parsed, err := jarchive.ParseFinalChallenge(dom)
+	expected := &jarchive.JarchiveFinalChallenge{}
+	//expected.Value = ...
+
+	parsed, err := jarchive.ParseFinalChallenge(clue_td)
 	if err != nil {
 		t.Error(err)
 	}
-	if !equalFinal(parsed, &expected) {
-		t.Logf("parsed results mismatch\nexpected:\n%v\n\nparsed:\n%v\n",
-			expected, parsed)
-		t.FailNow()
+
+	if !equalFinal(parsed, expected) {
+		t.Error("final challenge values did not match")
 	}
 }
 
