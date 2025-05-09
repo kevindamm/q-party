@@ -56,15 +56,16 @@ export const ChallengeData = z.extend(ChallengeMetadata, {
   comments: z.optional(z.string()),
 })
 
-export const Challenge = z.extend(ChallengeData, {
-  value: Value,
-})
+export const Challenge = z.union([
+  z.extend(ChallengeData, {
+    value: z.optional(Value),
+  }),
+  z.extend(ChallengeData, {
+    wager: z.optional(Wager),
+  }),
+])
 
-export const BiddingChallenge = z.extend(ChallengeData, {
-  wager: Wager,
-})
-
-export const HostChallenge = z.extend(Challenge, {
+export const HostChallenge = z.extend(ChallengeData, {
   correct: z.set(z.string()),
   value: z.optional(Value),
   wager: z.optional(Wager),

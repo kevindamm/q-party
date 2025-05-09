@@ -28,7 +28,7 @@ package schema
 // A unique identifier for the challenge and (optionally) its ID.
 // If value is undefined it did not have an associated monetary value.
 #ChallengeMetadata: {
-  qid!: uint & >=0
+  qid!: uint64
   value?: #Value
   ...
 }
@@ -37,7 +37,7 @@ package schema
 UnknownChallenge: #ChallengeMetadata & { qid: 0 }
 
 // The challenge details, except the correct answer(s).
-#ChallengeData: #ChallengeMetadata & {
+#ChallengeData: {
   clue!: string // markdown format, including media references
 
   media?: [...#MediaRef]
@@ -46,12 +46,10 @@ UnknownChallenge: #ChallengeMetadata & { qid: 0 }
   ...
 }
 
-#Challenge: #ChallengeData & {
-  value: #Value
-}
-
-#BiddingChallenge: #ChallengeData & {
-  wager: #Wager
+#Challenge: #ChallengeMetadata & #ChallengeData & {
+  value?: #Value
+  wager?: #Wager
+  ...
 }
 
 // A link to the media accompaniment for a challenge
@@ -72,9 +70,6 @@ UnknownChallenge: #ChallengeMetadata & { qid: 0 }
 // The host may see the correct answer while the contestants cannot.
 #HostChallenge: #Challenge & {
   correct: [...string] // excluding "what is..." preface
-  value?: #Value
-  wager?: #Wager
-  ...
 }
 
 // Before answering, sometimes a player must provide a wager value first.
@@ -86,5 +81,5 @@ UnknownChallenge: #ChallengeMetadata & { qid: 0 }
 // The player's response for a challenge, if entered as plain text.
 // This may instead be an audio file stored as multi-part form attachment.
 #PlayerResponse: #ContestantID & #ChallengeMetadata & {
-  response?: string
+  response: string
 }

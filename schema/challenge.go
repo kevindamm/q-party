@@ -37,7 +37,7 @@ type Wager int
 
 type ChallengeMetadata struct {
 	ChallengeID `json:"qid"`
-	Value       `json:"value,omitempty"`
+	Value       `json:"value,omitzero"`
 }
 
 type ChallengeData struct {
@@ -51,13 +51,7 @@ type ChallengeData struct {
 type Challenge struct {
 	ChallengeMetadata `json:",inline"`
 	ChallengeData     `json:",inline"`
-	Value             Value `json:"value"`
-}
-
-type BiddingChallenge struct {
-	ChallengeMetadata `json:",inline"`
-	ChallengeData     `json:",inline"`
-	Wager             Wager `json:"wager"`
+	Wager             Wager `json:"wager,omitzero"`
 }
 
 func UnknownChallenge() Challenge {
@@ -89,10 +83,7 @@ const (
 
 type HostChallenge struct {
 	Challenge `json:",inline"`
-	Value     Value `json:"value,omitempty"`
-	Wager     Wager `json:"wager,omitempty"`
-
-	Correct []string `json:"correct"`
+	Correct   []string `json:"correct"`
 }
 
 type PlayerWager struct {
