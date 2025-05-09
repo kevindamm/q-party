@@ -11,6 +11,7 @@
 		"hono": "^4.7.5"
 	},
 	"devDependencies": {
+		"@antfu/eslint-config": "^4.13.0",
 		"@cloudflare/workers-types": "^4.20250320.0",
 		"@types/node": "^22.13.11",
 		"prettier": "^3.5.3",
