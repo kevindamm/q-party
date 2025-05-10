@@ -178,11 +178,11 @@ func TestParseAudioWageringChallenge(t *testing.T) {
 
 	cat_name := "CATEGORY_NAME"
 	expected := jarchive.NewChallenge(cat_name, 19078)
-	expected.Value = 1900
+	expected.Wager = 1900
 	expected.Clue = "*\"I dream of Jeanie with the light brown hair / Borne, like a vapor...\"*\n\nWhat we call this [0] singing _sans_ accompaniment:"
-	expected.Media = []schema.MediaRef{
-		{schema.MediaAudioMP3, "1984-10-02_DJ_09.mp3"},
-	}
+	expected.Media = []schema.MediaRef{{
+		MimeType: schema.MediaAudioMP3,
+		MediaURL: "1984-10-02_DJ_09.mp3"}}
 	expected.Correct = []string{"a capella"}
 
 	parsed, err := jarchive.ParseChallenge(clue_td, cat_name)
@@ -300,7 +300,7 @@ func equalChallenge(have, expect *jarchive.JarchiveChallenge) error {
 	if len(have.Media) != len(expect.Media) {
 		return fmt.Errorf("Different media references %v\n!=\n%v", have.Media, expect.Media)
 	}
-	for i := 0; i < len(have.Correct); i++ {
+	for i := range len(have.Media) {
 		if have.Media[i].MimeType != expect.Media[i].MimeType {
 			return fmt.Errorf("different mime types for media #%d; %s != %s",
 				i, have.Media[i].MimeType, expect.Media[i].MimeType)
