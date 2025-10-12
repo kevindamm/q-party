@@ -87,22 +87,21 @@ func (fetcher *fetcher) start_titration(pause time.Duration) {
 
 	for range fetcher.ticker.C {
 		select {
-		case task, _ := <-fetcher.tasks:
+		case task := <-fetcher.tasks:
 			request, err := http.NewRequest("GET", task.url, nil)
 			if err != nil {
 				fetcher.errors <- err
 				continue
 			}
 			request.Header.Set("User-Agent", fetcher.useragent)
-			client := &http.Client{}
+			client := http.Client{}
 			response, err := client.Do(request)
 			if err != nil {
 				fetcher.errors <- err
 				continue
 			}
-			defer response.Body.Close()
 
-			bytes, err := io.ReadAll(response.Body)
+			bytes, err := readall(response.Body)
 			if err != nil {
 				fetcher.errors <- err
 			} else {
@@ -185,7 +184,7 @@ func (fetcher *fetcher) Close() {
 	fetcher.ticker.Stop()
 }
 
-// // The UserAgent we identify ourselves as.  Follows sec 3.7 of RFC 1945.
+// The UserAgent we identify ourselves as.  Follows sec 3.7 of RFC 1945.
 func DefaultUserAgent() string {
 	var major, minor int
 	if len(CURRENT_VERSION) > 1 {
@@ -195,6 +194,12 @@ func DefaultUserAgent() string {
 		major = CURRENT_VERSION[0]
 	}
 
-	// I append a special signature at the end of legitimate requests from the original author.  This signature is not published on github.
-	return fmt.Sprintf("q-party/golang/%d.%d +https://github.com/kevindamm/q-party (FORKED)", major, minor)
+	// I append a special signature at the end of legitimate requests, where
+	// the trailing comment is different and unique to my requests.
+	return fmt.Sprintf("q-party/golang/%d.%d +https://github.com/kevindamm/q-party (LAZY FORKED)", major, minor)
+}
+
+func readall(responsebody io.ReadCloser) ([]byte, error) {
+	defer responsebody.Close()
+	return io.ReadAll(responsebody)
 }
